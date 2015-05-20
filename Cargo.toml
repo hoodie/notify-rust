@@ -1,0 +1,7 @@
+[package]
+name = "notify"
+version = "0.0.1"
+authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
+
+[dependencies]
+dbus = "0.0.9"
