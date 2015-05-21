@@ -1,8 +1,10 @@
 [package]
 name = "notify_send"
-version = "0.0.1"
+version = "0.0.2-dev"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Send DBus notifications, purely in rust."
+homepage = "https://github.com/hoodie/notify_send-rs"
+repository = "https://github.com/hoodie/notify_send-rs"
 
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notify", "dbus"]
