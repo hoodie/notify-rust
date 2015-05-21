@@ -3,7 +3,7 @@ use dbus::{Connection, BusType, Message, MessageItem};
 use std::env;
 
 #[macro_export]
-macro_rules! notify {
+macro_rules! notify_send {
     () => ( send (&exe_name(), "summary", "body", "dialog-ok", 5););
     ($title:expr) =>
         ( send (&exe_name(), $title, "", "", 5););
@@ -29,18 +29,18 @@ macro_rules! notify {
 #[test]
 fn it_works() {
     //send( "cargo" , "notify test", "If you can read this, this lib seems to work." , "dialog-ok");
-    notify!("title1-t", t 5000);
-    notify!("title1");
-    notify!("title2", "with message");
-    notify!("title3", "with message and icon", "dialog-ok");
-    notify!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
+    notify_send!("title1-t", t 5000);
+    notify_send!("title1");
+    notify_send!("title2", "with message");
+    notify_send!("title3", "with message and icon", "dialog-ok");
+    notify_send!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
     //TODO: assert response from dbus for failure, this test currently is not a good test
 }
 
-//#[test]
-//fn properly_tested() {
-//    assert!(false);
-//}
+#[test]
+fn properly_tested() {
+    assert!(false);
+}
 
 pub fn exe_name() -> String{
     let exe = env::current_exe().unwrap();
@@ -48,6 +48,7 @@ pub fn exe_name() -> String{
 }
 
 
+#[allow(unused_must_use)]
 pub fn send( appname: &str, summary: &str, body:&str, icon: &str, timeout: i32 )
 {
     let mut m = Message::new_method_call(
