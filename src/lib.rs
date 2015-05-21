@@ -1,18 +1,54 @@
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
+use std::env;
+
+#[macro_export]
+macro_rules! notify {
+    () => ( send (&exe_name(), "summary", "body", "dialog-ok", 5););
+    ($title:expr) =>
+        ( send (&exe_name(), $title, "", "", 5););
+
+    ($title:expr, t $timeout:expr) =>
+        ( send (&exe_name(), $title, "", "", $timeout););
+
+    ($title:expr, $message:expr) =>
+        ( send (&exe_name(), $title, $message, "", 5););
+
+    ($title:expr, $message:expr, t $timeout:expr) =>
+        ( send (&exe_name(), $title, $message, "", $timeout););
+
+    ($title:expr, $message:expr, $icon:expr) =>
+        ( send (&exe_name(), $title, $message, $icon, 5););
+
+    ($title:expr, $message:expr, $icon:expr, t $timeout:expr) =>
+        ( send (&exe_name(), $title, $message, $icon, $timeout););
+
+}
+
 
 #[test]
 fn it_works() {
-    send( "cargo" , "notify test", "If you can read this, this lib seems to work." , "dialog-ok");
+    //send( "cargo" , "notify test", "If you can read this, this lib seems to work." , "dialog-ok");
+    notify!("title1-t", t 5000);
+    notify!("title1");
+    notify!("title2", "with message");
+    notify!("title3", "with message and icon", "dialog-ok");
+    notify!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
     //TODO: assert response from dbus for failure, this test currently is not a good test
 }
 
-#[test]
-fn properly_tested() {
-    assert!(false);
+//#[test]
+//fn properly_tested() {
+//    assert!(false);
+//}
+
+pub fn exe_name() -> String{
+    let exe = env::current_exe().unwrap();
+    exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub fn send( appname: &str, summary: &str, body:&str, icon: &str )
+
+pub fn send( appname: &str, summary: &str, body:&str, icon: &str, timeout: i32 )
 {
     let mut m = Message::new_method_call(
         "org.freedesktop.Notifications",
@@ -39,12 +75,13 @@ pub fn send( appname: &str, summary: &str, body:&str, icon: &str )
                                ),
                            )
                        ),
-                       MessageItem::Int32(9000),                       // timeout
+                       MessageItem::Int32(timeout),                       // timeout
                    ]);
     let c = Connection::get_private(BusType::Session).unwrap();
-    let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
-    let reply = r.get_items();
-    println!("{:?}", reply);
+    c.send_with_reply_and_block(m, timeout);
+    //let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
+    //let reply = r.get_items();
+    //println!("{:?}", reply);
 
  }
 
