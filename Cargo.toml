@@ -2,6 +2,11 @@
 name = "notify_send"
 version = "0.0.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
+description = "Send DBus notifications, purely in rust."
+
+license = "MIT/Apache-2.0"
+keywords = ["desktop", "notify", "dbus"]
+readme = "README.md"
 
 [dependencies]
 dbus = "0.0.9"
