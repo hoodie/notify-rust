@@ -11,7 +11,6 @@ git = "https://github.com/hoodie/notify_send-rs.git"
 
 ```rust
 #[macro_use] extern crate notify_send;
-use notify_send::*;
 
 fn main() {
   notify_send!("title1-t", t 5000);

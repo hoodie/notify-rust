@@ -4,24 +4,24 @@ use std::env;
 
 #[macro_export]
 macro_rules! notify_send {
-    () => ( send (&exe_name(), "summary", "body", "dialog-ok", 5););
-    ($title:expr) =>
-        ( send (&exe_name(), $title, "", "", 5););
+    () => ( $crate::send (&$crate::exe_name(), "summary", "body", "dialog-ok", 5););
+    ($title) =>
+        ( $crate::send (&$crate::exe_name(), $title, "", "", 5););
 
-    ($title:expr, t $timeout:expr) =>
-        ( send (&exe_name(), $title, "", "", $timeout););
+    ($title, t $timeout) =>
+        ( $crate::send (&$crate::exe_name(), $title, "", "", $timeout););
 
-    ($title:expr, $message:expr) =>
-        ( send (&exe_name(), $title, $message, "", 5););
+    ($title, $message) =>
+        ( $crate::send (&$crate::exe_name(), $title, $message, "", 5););
 
-    ($title:expr, $message:expr, t $timeout:expr) =>
-        ( send (&exe_name(), $title, $message, "", $timeout););
+    ($title, $message, t $timeout) =>
+        ( $crate::send (&$crate::exe_name(), $title, $message, "", $timeout););
 
-    ($title:expr, $message:expr, $icon:expr) =>
-        ( send (&exe_name(), $title, $message, $icon, 5););
+    ($title, $message, $icon) =>
+        ( $crate::send (&$crate::exe_name(), $title, $message, $icon, 5););
 
-    ($title:expr, $message:expr, $icon:expr, t $timeout:expr) =>
-        ( send (&exe_name(), $title, $message, $icon, $timeout););
+    ($title, $message, $icon, t $timeout) =>
+        ( $crate::send (&$crate::exe_name(), $title, $message, $icon, $timeout););
 
 }
 
@@ -29,11 +29,11 @@ macro_rules! notify_send {
 #[test]
 fn it_works() {
     //send( "cargo" , "notify test", "If you can read this, this lib seems to work." , "dialog-ok");
-    notify_send!("title1-t", t 5000);
-    notify_send!("title1");
-    notify_send!("title2", "with message");
-    notify_send!("title3", "with message and icon", "dialog-ok");
-    notify_send!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
+    //notify_send!("title1-t", t 5000);
+    //notify_send!("title1");
+    //notify_send!("title2", "with message");
+    //notify_send!("title3", "with message and icon", "dialog-ok");
+    //notify_send!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
     //TODO: assert response from dbus for failure, this test currently is not a good test
 }
 
