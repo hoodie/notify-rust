@@ -19,7 +19,7 @@ fn main()
         .summary("this is the summary")
         .body("this is the body")
         .icon("firefox")
-        .timeout(16)
+        .timeout(6000) //miliseconds
         .send();
 
 
@@ -34,3 +34,12 @@ fn main()
 }
 
 ```
+
+## things to do
+
+* [ ] actions
+* [ ] hints
+* [ ] make use of returned id
+* [ ] GetCapabilities(), CloseNotification(), GetServerInformation()
+
+checkout [the spec](http://www.galago-project.org/specs/notification/0.9/index.html)

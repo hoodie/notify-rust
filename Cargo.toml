@@ -2,7 +2,7 @@
 name = "notify_send"
 version = "0.0.2"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
-description = "Send DBus notifications, purely in rust."
+description = "Sends DBus notifications, through dbus."
 homepage = "https://github.com/hoodie/notify_send-rs"
 repository = "https://github.com/hoodie/notify_send-rs"
 

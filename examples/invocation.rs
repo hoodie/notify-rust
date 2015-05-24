@@ -7,14 +7,14 @@ fn main()
         .summary("this is the summary")
         .body("this is the body")
         .icon("firefox")
-        .timeout(16)
+        .timeout(6000) //miliseconds
         .send();
 
 
     //possible, but don't do this
     Notification {
         appname: "foobar".to_string(),
-        timeout: 20,
+        timeout: 2000,
         ..Notification::new()
     }.send();
 

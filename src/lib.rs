@@ -6,22 +6,24 @@ use dbus::{Connection, BusType, Message, MessageItem};
 
 #[test]
 fn it_works() {
+
     Notification {
-        appname: "foobar".to_string(),
+        //appname: "foobar".to_string(),
         summary: "invocation type 1".to_string(),
+        body: Notification::new().appname,
         timeout: 20,
         ..Notification::new()
     }.send();
 
     let mut message = Notification::new();
     message.summary("invocation type 2");
-    message.body("your body is a wonderland");
+    message.body("your <b>body</b> is a <u>wonderland</u>");
     message.send();
 
     Notification::new()
         .summary("this is the summary")
-        .body("this is the body")
         .summary("invocation type 3")
+        .body("this is the body\nnewline<br/>linebreak")
         .send();
 }
 
@@ -51,7 +53,7 @@ impl Notification {
             summary:  String::new(),
             body:     String::new(),
             icon:     String::new(),
-            timeout:  5
+            timeout:  2000
         }
     }
     pub fn body(&mut self, body:&str) -> &mut Notification {
@@ -70,14 +72,16 @@ impl Notification {
         self.summary = summary.to_string();
         self
     }
-    pub fn send(&self) {
+    pub fn send(&self)
+    {
+        //TODO catch this
         let mut m = Message::new_method_call(
-            "org.freedesktop.NotificationCommandImps",
+            "org.freedesktop.Notifications",
             "/org/freedesktop/Notifications",
             "org.freedesktop.Notifications",
-            "Notify"
-            ).unwrap();
+            "Notify").unwrap();
 
+        //TODO implement hints and actions
         m.append_items(&[
                        MessageItem::Str(self.appname.to_string()),      // appname
                        MessageItem::UInt32(0),                          // notification to update
@@ -94,23 +98,18 @@ impl Notification {
                                                Box::new(MessageItem::Str("".to_string()))
                                                ))
                                        ),
-                                       )
-                               ),
-                               MessageItem::Int32(self.timeout),                       // timeout
+                                   )
+                           ),
+                       MessageItem::Int32(self.timeout),                // timeout
         ]);
         let c = Connection::get_private(BusType::Session).unwrap();
-        println!("{}: ({}) {} \"{}\"",
-                 self.appname,
-                 self.icon,
-                 self.summary,
-                 self.body);
-        c.send_with_reply_and_block(m, self.timeout);
+        println!("{}: ({}) {} \"{}\"", self.appname, self.icon, self.summary, self.body);
+        //c.send_with_reply_and_block(m, 2000);
 
-        //let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
-        //let reply = r.get_items();
-        //println!("{:?}", reply);
-
-
+        //TODO make use of reply
+        let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
+        let reply = r.get_items();
+        println!("{:?}", reply);
     }
 }
 
