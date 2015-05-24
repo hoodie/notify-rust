@@ -27,10 +27,10 @@ fn it_works() {
         .send();
 }
 
-#[test]
-fn properly_tested() {
-    //assert!(false);
-}
+//#[test]
+//fn properly_tested() {
+//    //assert!(false);
+//}
 
 pub fn exe_name() -> String {
     let exe = env::current_exe().unwrap();
@@ -103,13 +103,13 @@ impl Notification {
                        MessageItem::Int32(self.timeout),                // timeout
         ]);
         let c = Connection::get_private(BusType::Session).unwrap();
-        println!("{}: ({}) {} \"{}\"", self.appname, self.icon, self.summary, self.body);
-        //c.send_with_reply_and_block(m, 2000);
+        //println!("{}: ({}) {} \"{}\"", self.appname, self.icon, self.summary, self.body);
+        c.send_with_reply_and_block(m, 2000);
 
-        //TODO make use of reply
-        let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
-        let reply = r.get_items();
-        println!("{:?}", reply);
+        ////TODO make use of reply
+        //let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
+        //let reply = r.get_items();
+        //println!("{:?}", reply);
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "notify_send"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Sends DBus notifications, through dbus."
 homepage = "https://github.com/hoodie/notify_send-rs"

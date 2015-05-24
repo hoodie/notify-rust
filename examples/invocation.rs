@@ -4,8 +4,8 @@ fn main()
 {
     // use it this way
     Notification::new()
-        .summary("this is the summary")
-        .body("this is the body")
+        .summary("Firefox Crashed")
+        .body("Just <b>kidding</b>, this is just the notify_send example.")
         .icon("firefox")
         .timeout(6000) //miliseconds
         .send();
@@ -14,7 +14,8 @@ fn main()
     //possible, but don't do this
     Notification {
         appname: "foobar".to_string(),
-        timeout: 2000,
+        summary: "foobar".to_string(),
+        body: "foobar".to_string(),
         ..Notification::new()
     }.send();
 
