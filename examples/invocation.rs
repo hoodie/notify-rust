@@ -1,5 +1,5 @@
 extern crate notify_send;
-use notify_send::*;
+use notify_send::Notification;
 fn main()
 {
     // use it this way
@@ -12,10 +12,10 @@ fn main()
 
 
     //possible, but don't do this
-    NotifyMessage {
+    Notification {
         appname: "foobar".to_string(),
         timeout: 20,
-        ..NotifyMessage::new()
+        ..Notification::new()
     }.send();
 
 

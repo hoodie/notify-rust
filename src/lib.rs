@@ -6,11 +6,11 @@ use dbus::{Connection, BusType, Message, MessageItem};
 
 #[test]
 fn it_works() {
-    NotifyMessage {
+    Notification {
         appname: "foobar".to_string(),
         summary: "invocation type 1".to_string(),
         timeout: 20,
-        ..NotifyMessage::new()
+        ..Notification::new()
     }.send();
 
     let mut message = Notification::new();
@@ -36,14 +36,6 @@ pub fn exe_name() -> String {
 }
 
 pub struct Notification {
-    pub appname: String,
-    pub summary: String,
-    pub body:    String,
-    pub icon:    String,
-    pub timeout: i32
-}
-
-pub struct NotifyMessage {
     pub appname: String,
     pub summary: String,
     pub body:    String,
@@ -79,30 +71,6 @@ impl Notification {
         self
     }
     pub fn send(&self) {
-        NotifyMessage{
-            appname: self.appname.clone(),
-            summary: self.summary.clone(),
-            body:    self.body.clone(),
-            icon:    self.icon.clone(),
-            timeout: self.timeout
-        }.send();
-    }
-}
-
-
-impl NotifyMessage
-{
-    pub fn new() -> NotifyMessage{
-        NotifyMessage {
-            appname:  exe_name(),
-            summary:  String::new(),
-            body:     String::new(),
-            icon:     String::new(),
-            timeout:  5
-        }
-    }
-    pub fn send(self)
-    {
         let mut m = Message::new_method_call(
             "org.freedesktop.NotificationCommandImps",
             "/org/freedesktop/Notifications",
