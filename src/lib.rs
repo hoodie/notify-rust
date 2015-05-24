@@ -66,6 +66,14 @@ impl Notification {
         self.body = body.to_string();
         self
     }
+    pub fn icon(&mut self, icon:&str) -> &mut Notification {
+        self.icon = icon.to_string();
+        self
+    }
+    pub fn timeout(&mut self, timeout: i32) -> &mut Notification {
+        self.timeout = timeout;
+        self
+    }
     pub fn summary(&mut self, summary:&str) -> &mut Notification {
         self.summary = summary.to_string();
         self
