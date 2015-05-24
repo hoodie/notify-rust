@@ -10,13 +10,27 @@ git = "https://github.com/hoodie/notify_send-rs.git"
 ```
 
 ```rust
-#[macro_use] extern crate notify_send;
+extern crate notify_send;
+use notify_send::*;
+fn main()
+{
+    // use it this way
+    Notification::new()
+        .summary("this is the summary")
+        .body("this is the body")
+        .icon("firefox")
+        .timeout(16)
+        .send();
 
-fn main() {
-  notify_send!("title1-t", t 5000);
-  notify_send!("title1");
-  notify_send!("title2", "with message");
-  notify_send!("title3", "with message and icon", "dialog-ok");
-  notify_send!("title4", "with message, icon and timeout", "dialog-ok", t 3000);
+
+    //possible, but don't do this
+    NotifyMessage {
+        appname: "foobar".to_string(),
+        timeout: 20,
+        ..NotifyMessage::new()
+    }.send();
+
+
 }
+
 ```
