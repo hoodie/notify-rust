@@ -56,22 +56,38 @@ impl Notification {
             timeout:  2000
         }
     }
+
+    pub fn appname(&mut self, appname:&str) -> &mut Notification {
+        self.appname = appname.to_string();
+        self
+    }
+
     pub fn body(&mut self, body:&str) -> &mut Notification {
         self.body = body.to_string();
         self
     }
+
     pub fn icon(&mut self, icon:&str) -> &mut Notification {
         self.icon = icon.to_string();
         self
     }
+
     pub fn timeout(&mut self, timeout: i32) -> &mut Notification {
         self.timeout = timeout;
         self
     }
+
     pub fn summary(&mut self, summary:&str) -> &mut Notification {
         self.summary = summary.to_string();
         self
     }
+
+    pub fn send_debug(&self)
+    {
+        println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
+        self.send();
+    }
+
     pub fn send(&self)
     {
         //TODO catch this
