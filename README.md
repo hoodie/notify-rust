@@ -46,6 +46,9 @@ fn main()
     }.send();
 
 
+  
+    // can't see anything?
+    Notification::new().summary("this will also print to stdout").send_debug();
 
 
 }
