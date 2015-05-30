@@ -8,6 +8,7 @@ using [dbus-rs](https://github.com/diwic/dbus-rs/).
 [dependencies.notify_send]
 git = "https://github.com/hoodie/notify_send-rs.git"
 ```
+## Usage
 
 ```rust
 extern crate notify_send;
@@ -22,6 +23,14 @@ fn main()
         .timeout(6000) //miliseconds
         .send();
 
+    // using format!()
+    Notification::new()
+        .summary("Chromium Crashed")
+        .appname("chromium")
+        .body(&format!("This is <b>{}</b>!<br/>", "a lie"))
+        .icon("chromium")
+        .timeout(6000) //miliseconds
+        .send();
 
     //possible, but don't do this
     Notification {
