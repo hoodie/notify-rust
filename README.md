@@ -32,12 +32,20 @@ fn main()
         .timeout(6000) //miliseconds
         .send();
 
-    //possible, but don't do this
+    // possible, if you like
+    let mut message = Notification::new();
+    message.summary("invocation type 2");
+    message.body("your <b>body</b> is a <u>wonderland</u>");
+    message.send();
+
+    // also possible, if you really really want to
     Notification {
         appname: "foobar".to_string(),
         timeout: 20,
         ..Notification::new()
     }.send();
+
+
 
 
 }
