@@ -25,6 +25,15 @@ fn it_works() {
         .summary("invocation type 3")
         .body("this is the body\nnewline<br/>linebreak")
         .send();
+
+}
+#[test]
+fn loop_test(){
+    for i in 0..5 {
+    Notification::new()
+        .summary(&format!("loop {}",i))
+        .body("this is the body\nnewline<br/>linebreak").send();
+    }
 }
 
 //#[test]
