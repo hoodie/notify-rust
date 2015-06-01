@@ -1,4 +1,7 @@
 # notify_send-rs
+
+[![Build Status](https://travis-ci.org/hoodie/notify_send-rs.png)](https://travis-ci.org/hoodie/notify_send-rs)
+
 Send DBus notifications, purely in rust,
 using [dbus-rs](https://github.com/diwic/dbus-rs/).
 
