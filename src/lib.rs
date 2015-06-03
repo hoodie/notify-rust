@@ -3,6 +3,7 @@
 use std::env;
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
+use std::borrow::Cow;
 
 #[test]
 fn it_works()
@@ -140,11 +141,41 @@ impl Notification
                        MessageItem::Int32(self.timeout),                // timeout
         ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
-
-        //TODO make use of reply
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
-        //let reply = r.get_items().get(0);
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
         else {return 0}
     }
+
+    pub fn get_capabilities() -> Vec<String>
+    {
+        //let capabilities = ;
+        let message = Message::new_method_call(
+            "org.freedesktop.Notifications",
+            "/org/freedesktop/Notifications",
+            "org.freedesktop.Notifications",
+            "GetCapabilities").unwrap();
+        let connection = Connection::get_private(BusType::Session).unwrap();
+        let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
+
+        let mut capabilities = vec![];
+        for result in r.get_items().iter(){
+            if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
+                for item in items.iter(){
+                    if let &MessageItem::Str(ref cap) = item{
+                    capabilities.push(cap.clone());
+                    }
+                }
+            }
+        }
+        return capabilities;
+    }
 }
+
+
+#[test]
+fn get_capabilities()
+{
+    Notification::get_capabilities();
+}
+
+
