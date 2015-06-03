@@ -5,7 +5,8 @@ extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
 
 #[test]
-fn it_works() {
+fn it_works()
+{
 
     Notification {
         //appname: "foobar".to_string(),
@@ -27,8 +28,10 @@ fn it_works() {
         .send();
 
 }
+
 #[test]
-fn loop_test(){
+fn loop_test()
+{
     for i in 0..5 {
     Notification::new()
         .summary(&format!("loop {}",i))
@@ -41,12 +44,14 @@ fn loop_test(){
 //    //assert!(false);
 //}
 
-pub fn exe_name() -> String {
+pub fn exe_name() -> String
+{
     let exe = env::current_exe().unwrap();
     exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub struct Notification {
+pub struct Notification
+{
     pub appname: String,
     pub summary: String,
     pub body:    String,
@@ -55,8 +60,10 @@ pub struct Notification {
 }
 
 
-impl Notification {
-    pub fn new() -> Notification {
+impl Notification
+{
+    pub fn new() -> Notification
+    {
         Notification {
             appname:  exe_name(),
             summary:  String::new(),
@@ -66,48 +73,53 @@ impl Notification {
         }
     }
 
-    pub fn appname(&mut self, appname:&str) -> &mut Notification {
+    pub fn appname(&mut self, appname:&str) -> &mut Notification
+    {
         self.appname = appname.to_string();
         self
     }
 
-    pub fn body(&mut self, body:&str) -> &mut Notification {
+    pub fn body(&mut self, body:&str) -> &mut Notification
+    {
         self.body = body.to_string();
         self
     }
 
-    pub fn icon(&mut self, icon:&str) -> &mut Notification {
+    pub fn icon(&mut self, icon:&str) -> &mut Notification
+    {
         self.icon = icon.to_string();
         self
     }
 
-    pub fn timeout(&mut self, timeout: i32) -> &mut Notification {
+    pub fn timeout(&mut self, timeout: i32) -> &mut Notification
+    {
         self.timeout = timeout;
         self
     }
 
-    pub fn summary(&mut self, summary:&str) -> &mut Notification {
+    pub fn summary(&mut self, summary:&str) -> &mut Notification
+    {
         self.summary = summary.to_string();
         self
     }
 
-    pub fn send_debug(&self)
+    pub fn send_debug(&self) -> u32
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
-        self.send();
+        self.send()
     }
 
-    pub fn send(&self)
+    pub fn send(&self) -> u32
     {
         //TODO catch this
-        let mut m = Message::new_method_call(
+        let mut message = Message::new_method_call(
             "org.freedesktop.Notifications",
             "/org/freedesktop/Notifications",
             "org.freedesktop.Notifications",
             "Notify").unwrap();
 
         //TODO implement hints and actions
-        m.append_items(&[
+        message.append_items(&[
                        MessageItem::Str(self.appname.to_string()),      // appname
                        MessageItem::UInt32(0),                          // notification to update
                        MessageItem::Str(self.icon.to_string()),         // icon
@@ -127,15 +139,12 @@ impl Notification {
                            ),
                        MessageItem::Int32(self.timeout),                // timeout
         ]);
-        let c = Connection::get_private(BusType::Session).unwrap();
-        //println!("{}: ({}) {} \"{}\"", self.appname, self.icon, self.summary, self.body);
-        c.send_with_reply_and_block(m, 2000);
+        let connection = Connection::get_private(BusType::Session).unwrap();
 
-        ////TODO make use of reply
-        //let mut r = c.send_with_reply_and_block(m, 2000).unwrap();
-        //let reply = r.get_items();
-        //println!("{:?}", reply);
+        //TODO make use of reply
+        let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
+        //let reply = r.get_items().get(0);
+        if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
+        else {return 0}
     }
 }
-
-
