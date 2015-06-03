@@ -1,9 +1,6 @@
-#![allow(dead_code)]
-#![allow(unused_must_use)]
 use std::env;
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
-use std::borrow::Cow;
 
 #[test]
 fn it_works()
@@ -57,6 +54,7 @@ pub struct Notification
     pub summary: String,
     pub body:    String,
     pub icon:    String,
+    pub actions: Vec<String>,
     pub timeout: i32
 }
 
@@ -70,6 +68,7 @@ impl Notification
             summary:  String::new(),
             body:     String::new(),
             icon:     String::new(),
+            actions:  Vec::new(),
             timeout:  2000
         }
     }
@@ -104,10 +103,29 @@ impl Notification
         self
     }
 
+    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
+    {
+        self.actions = actions;
+        self
+    }
+
     pub fn send_debug(&self) -> u32
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         self.send()
+    }
+
+    fn pack_actions(&self) -> Vec<MessageItem>
+    {
+        if self.actions.len() > 0 {
+        let mut actions = vec![];
+        for action in self.actions.iter()
+        {
+            actions.push(MessageItem::Str(action.to_string()))
+        }
+        return actions;
+        }
+        return vec!( MessageItem::Str("".to_string()))
     }
 
     pub fn send(&self) -> u32
@@ -121,25 +139,26 @@ impl Notification
 
         //TODO implement hints and actions
         message.append_items(&[
-                       MessageItem::Str(self.appname.to_string()),      // appname
-                       MessageItem::UInt32(0),                          // notification to update
-                       MessageItem::Str(self.icon.to_string()),         // icon
-                       MessageItem::Str(self.summary.to_string()),      // summary (title)
-                       MessageItem::Str(self.body.to_string()),         // body
-                       MessageItem::new_array(                          // actions
-                           vec!( MessageItem::Str("".to_string()))),
-                           MessageItem::new_array(                      // hints
-                               vec!(
-                                   MessageItem::DictEntry(
-                                       Box::new(MessageItem::Str("".to_string())),
-                                       Box::new(MessageItem::Variant(
-                                               Box::new(MessageItem::Str("".to_string()))
-                                               ))
-                                       ),
-                                   )
-                           ),
-                       MessageItem::Int32(self.timeout),                // timeout
-        ]);
+                             MessageItem::Str(self.appname.to_string()),      // appname
+                             MessageItem::UInt32(0),                          // notification to update
+                             MessageItem::Str(self.icon.to_string()),         // icon
+                             MessageItem::Str(self.summary.to_string()),      // summary (title)
+                             MessageItem::Str(self.body.to_string()),         // body
+                             MessageItem::new_array(                          // actions
+                                 self.pack_actions()
+                                 ),
+                                 MessageItem::new_array(                      // hints
+                                     vec!(
+                                         MessageItem::DictEntry(
+                                             Box::new(MessageItem::Str("".to_string())),
+                                             Box::new(MessageItem::Variant(
+                                                     Box::new(MessageItem::Str("".to_string()))
+                                                     ))
+                                             ),
+                                             )
+                                     ),
+                                     MessageItem::Int32(self.timeout),                // timeout
+                                     ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
@@ -148,7 +167,9 @@ impl Notification
 
     pub fn get_capabilities() -> Vec<String>
     {
-        //let capabilities = ;
+        use std::borrow::Cow;
+        let mut capabilities = vec![];
+
         let message = Message::new_method_call(
             "org.freedesktop.Notifications",
             "/org/freedesktop/Notifications",
@@ -157,13 +178,10 @@ impl Notification
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
 
-        let mut capabilities = vec![];
-        for result in r.get_items().iter(){
-            if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
-                for item in items.iter(){
-                    if let &MessageItem::Str(ref cap) = item{
+        if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
+            for item in items.iter(){
+                if let &MessageItem::Str(ref cap) = item{
                     capabilities.push(cap.clone());
-                    }
                 }
             }
         }
