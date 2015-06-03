@@ -2,6 +2,8 @@ use std::env;
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
 
+pub mod server;
+
 #[test]
 fn it_works()
 {
@@ -139,26 +141,22 @@ impl Notification
 
         //TODO implement hints and actions
         message.append_items(&[
-                             MessageItem::Str(self.appname.to_string()),      // appname
-                             MessageItem::UInt32(0),                          // notification to update
-                             MessageItem::Str(self.icon.to_string()),         // icon
-                             MessageItem::Str(self.summary.to_string()),      // summary (title)
-                             MessageItem::Str(self.body.to_string()),         // body
-                             MessageItem::new_array(                          // actions
-                                 self.pack_actions()
-                                 ),
-                                 MessageItem::new_array(                      // hints
-                                     vec!(
-                                         MessageItem::DictEntry(
-                                             Box::new(MessageItem::Str("".to_string())),
-                                             Box::new(MessageItem::Variant(
-                                                     Box::new(MessageItem::Str("".to_string()))
-                                                     ))
-                                             ),
-                                             )
-                                     ),
-                                     MessageItem::Int32(self.timeout),                // timeout
-                                     ]);
+           MessageItem::Str(self.appname.to_string()),      // appname
+           MessageItem::UInt32(0),                          // notification to update
+           MessageItem::Str(self.icon.to_string()),         // icon
+           MessageItem::Str(self.summary.to_string()),      // summary (title)
+           MessageItem::Str(self.body.to_string()),         // body
+           MessageItem::new_array(self.pack_actions()),     // actions
+           MessageItem::new_array(                          // hints
+               vec!(
+                   MessageItem::DictEntry(
+                       Box::new(MessageItem::Str("".to_string())),
+                       Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
+                       ),
+                   )
+           ),
+           MessageItem::Int32(self.timeout)                // timeout
+           ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
