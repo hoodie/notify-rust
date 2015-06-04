@@ -4,12 +4,19 @@ use dbus::{Connection, BusType, Message, MessageItem};
 
 pub mod server;
 
+/// # Executable Name
+///
+/// Returns the name of the current executable, used as a default for `Notification.appname`.
 pub fn exe_name() -> String
 {
     let exe = env::current_exe().unwrap();
     exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
+/// # Desktop Notifications.
+///
+/// Here I write something about what a desktop notification is and does.
+/// Followed by a brief example.
 pub struct Notification
 {
     pub appname: String,
@@ -23,6 +30,11 @@ pub struct Notification
 
 impl Notification
 {
+    /// Constructs a new Notification.
+    ///
+    /// Most fields are empty by default, only `appname` is prefilled with the name of the current
+    /// executable.
+    /// The appname is used by some desktop environments to group notifications.
     pub fn new() -> Notification
     {
         Notification {
@@ -35,6 +47,70 @@ impl Notification
         }
     }
 
+    /// Overwrite the appname field used for Notification.
+    pub fn appname(&mut self, appname:&str) -> &mut Notification
+    {
+        self.appname = appname.to_string();
+        self
+    }
+
+    /// Set the content of the `body` field.
+    pub fn body(&mut self, body:&str) -> &mut Notification
+    {
+        self.body = body.to_string();
+        self
+    }
+
+    /// Set the `icon` field.
+    ///
+    /// You can use commom icon names here, usually those in `/usr/share/icons`
+    /// can all be used.
+    /// You can also use an absolute path to file.
+    pub fn icon(&mut self, icon:&str) -> &mut Notification
+    {
+        self.icon = icon.to_string();
+        self
+    }
+
+    /// Set the `timeout`.
+    pub fn timeout(&mut self, timeout: i32) -> &mut Notification
+    {
+        self.timeout = timeout;
+        self
+    }
+
+    /// Set the `summary`.
+    pub fn summary(&mut self, summary:&str) -> &mut Notification
+    {
+        self.summary = summary.to_string();
+        self
+    }
+
+    /// Set `actions`.
+    ///
+    /// To quote http://www.galago-project.org/specs/notification/0.9/x408.html#command-notify
+    ///
+    /// >  Actions are sent over as a list of pairs.
+    /// >  Each even element in the list (starting at index 0) represents the identifier for the action.
+    /// >  Each odd element in the list is the localized string that will be displayed to the user.
+    ///
+    /// There is nothing fancy going on here yet.
+
+    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
+    {
+        self.actions = actions;
+        self
+    }
+
+    /// Finalizes a Notification.
+    ///
+    /// Part of the builder pattern, returns a complete copy of the built notification.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let notification = Notification::new().summary("this one can be written into an immutable variable").finalize();
+    /// ```
     pub fn finalize(&self) -> Notification
     {
         Notification {
@@ -45,48 +121,6 @@ impl Notification
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
         }
-    }
-
-    pub fn appname(&mut self, appname:&str) -> &mut Notification
-    {
-        self.appname = appname.to_string();
-        self
-    }
-
-    pub fn body(&mut self, body:&str) -> &mut Notification
-    {
-        self.body = body.to_string();
-        self
-    }
-
-    pub fn icon(&mut self, icon:&str) -> &mut Notification
-    {
-        self.icon = icon.to_string();
-        self
-    }
-
-    pub fn timeout(&mut self, timeout: i32) -> &mut Notification
-    {
-        self.timeout = timeout;
-        self
-    }
-
-    pub fn summary(&mut self, summary:&str) -> &mut Notification
-    {
-        self.summary = summary.to_string();
-        self
-    }
-
-    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
-    {
-        self.actions = actions;
-        self
-    }
-
-    pub fn send_debug(&self) -> u32
-    {
-        println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
-        self.send()
     }
 
     fn pack_actions(&self) -> Vec<MessageItem>
@@ -102,6 +136,9 @@ impl Notification
         return vec!( MessageItem::Str("".to_string()))
     }
 
+    /// Sends Notification to DBus.
+    ///
+    /// Returns id from DBus. 
     pub fn send(&self) -> u32
     {
         //TODO catch this
@@ -133,6 +170,13 @@ impl Notification
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
         else {return 0}
+    }
+
+    /// Wraps send() but prints notification to stdout.
+    pub fn send_debug(&self) -> u32
+    {
+        println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
+        self.send()
     }
 
     pub fn get_capabilities() -> Vec<String>
