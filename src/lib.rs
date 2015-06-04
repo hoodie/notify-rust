@@ -2,6 +2,14 @@
 //!
 //! Desktop notifications are popup messages generated to notify the user of certain events.
 //!
+//! # Example
+//! ```
+//! Notification::new()
+//!     .summary("Firefox News")
+//!     .body("This will almost look like a real firefox notification.")
+//!     .icon("firefox")
+//!     .send();
+//! ```
 
 use std::env;
 extern crate dbus;
@@ -18,10 +26,10 @@ pub fn exe_name() -> String
     exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-/// Desktop Notifications.
+/// Desktop Notification.
 ///
-/// Here I write something about what a desktop notification is and does.
-/// Followed by a brief example.
+/// A desktop notification is configured via builder pattern, before it is launched with `send()`.
+
 pub struct Notification
 {
     pub appname: String,
@@ -112,7 +120,6 @@ impl Notification
     /// >  Each odd element in the list is the localized string that will be displayed to the user.
     ///
     /// There is nothing fancy going on here yet.
-
     pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
     {
         self.actions = actions;
@@ -122,12 +129,6 @@ impl Notification
     /// Finalizes a Notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// let notification = Notification::new().summary("this one can be written into an immutable variable").finalize();
-    /// ```
     pub fn finalize(&self) -> Notification
     {
         Notification {
@@ -196,6 +197,7 @@ impl Notification
         self.send()
     }
 
+    /// Get list of all capabilities of the running Notification Server.
     pub fn get_capabilities() -> Vec<String>
     {
         use std::borrow::Cow;
