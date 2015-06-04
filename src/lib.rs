@@ -4,46 +4,6 @@ use dbus::{Connection, BusType, Message, MessageItem};
 
 pub mod server;
 
-#[test]
-fn it_works()
-{
-
-    Notification {
-        //appname: "foobar".to_string(),
-        summary: "invocation type 1".to_string(),
-        body: Notification::new().appname,
-        timeout: 20,
-        ..Notification::new()
-    }.send();
-
-    let mut message = Notification::new();
-    message.summary("invocation type 2");
-    message.body("your <b>body</b> is a <u>wonderland</u>");
-    message.send();
-
-    Notification::new()
-        .summary("this is the summary")
-        .summary("invocation type 3")
-        .body("this is the body\nnewline<br/>linebreak")
-        .send();
-
-}
-
-#[test]
-fn loop_test()
-{
-    for i in 0..5 {
-    Notification::new()
-        .summary(&format!("loop {}",i))
-        .body("this is the body\nnewline<br/>linebreak").send();
-    }
-}
-
-//#[test]
-//fn properly_tested() {
-//    //assert!(false);
-//}
-
 pub fn exe_name() -> String
 {
     let exe = env::current_exe().unwrap();
@@ -72,6 +32,18 @@ impl Notification
             icon:     String::new(),
             actions:  Vec::new(),
             timeout:  2000
+        }
+    }
+
+    pub fn finalize(&self) -> Notification
+    {
+        Notification {
+            appname:  self.appname.clone(),
+            summary:  self.summary.clone(),
+            body:     self.body.clone(),
+            icon:     self.icon.clone(),
+            actions:  self.actions.clone(),
+            timeout:  self.timeout.clone(),
         }
     }
 
@@ -185,13 +157,8 @@ impl Notification
         }
         return capabilities;
     }
-}
 
 
-#[test]
-fn get_capabilities()
-{
-    Notification::get_capabilities();
 }
 
 
