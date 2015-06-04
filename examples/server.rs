@@ -5,5 +5,4 @@ fn main()
 {
     let mut server = NotificationServer::new();
     server.start();
-
 }
