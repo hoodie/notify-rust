@@ -1,6 +1,6 @@
 # notify-rust
 
-[![Build Status](https://travis-ci.org/hoodie/notify_send-rs.png)](https://travis-ci.org/hoodie/notify_send-rs)
+[![Build Status](https://travis-ci.org/hoodie/notify_send-rs.png)](https://travis-ci.org/hoodie/notify-rust)
 
 Sends desktop notifications. 
 This implementation does not rely on libnotify, as it is using [dbus-rs](https://github.com/diwic/dbus-rs/).
