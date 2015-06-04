@@ -7,7 +7,6 @@ fn main()
         .summary("Firefox Crashed")
         .body("Just <b>kidding</b>, this is just the notify_send example.")
         .icon("firefox")
-        .timeout(6000) //miliseconds
         .send();
 
 

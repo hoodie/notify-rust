@@ -48,7 +48,7 @@ impl Notification
             body:     String::new(),
             icon:     String::new(),
             actions:  Vec::new(),
-            timeout:  2000
+            timeout:  -1
         }
     }
 
@@ -94,6 +94,9 @@ impl Notification
     ///
     /// This sets the time (in miliseconds) from the time the notification is displayed until it is
     /// closed again by the Notification Server.
+    /// According to [specification](https://developer.gnome.org/notification-spec/)
+    /// -1 will leave the timeout to be set by the server and
+    /// 0 will cause the notification never to expire.
     pub fn timeout(&mut self, timeout: i32) -> &mut Notification
     {
         self.timeout = timeout;
