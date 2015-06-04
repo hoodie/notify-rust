@@ -10,8 +10,8 @@ The API shown below should be stable.
 
 ```toml
 #Cargo.toml
-[dependencies.notify_send]
-git = "https://github.com/hoodie/notify_send-rs.git"
+[dependencies]
+notify-rust = "0.0.5"
 ```
 ## Usage
 
