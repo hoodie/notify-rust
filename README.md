@@ -64,6 +64,7 @@ fn main()
 * [ ] hints
 * [ ] make use of returned id
 * [ ] GetCapabilities(), CloseNotification(), GetServerInformation()
+* [ ] become good enough to make this [list](https://wiki.archlinux.org/index.php/Desktop_notifications#Usage_in_programming)
 
 [check](http://www.galago-project.org/specs/notification/0.9/index.html)
 [out](https://developer.gnome.org/notification-spec/)
