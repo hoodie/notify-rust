@@ -1,6 +1,10 @@
-//! EXPERIMENTAL Server taking the place of your Desktop Environments Notification Server.
+//! **Experimental** server taking the place of your Desktop Environments Notification Server.
 //!
-//! This is not nearly meant for anything but testing.
+//! This is not nearly meant for anything but testing, as it only prints notifications to stdout.
+//! It does not respond properly either yet.
+//!
+//! This server will not replace an already running notification server.
+//!
 extern crate dbus;
 
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};

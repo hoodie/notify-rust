@@ -59,7 +59,20 @@ impl Notification
         self
     }
 
+    /// Set the `summary`.
+    ///
+    /// Often acts as title of the notification. For more elaborate content use the `body` field.
+    pub fn summary(&mut self, summary:&str) -> &mut Notification
+    {
+        self.summary = summary.to_string();
+        self
+    }
+
     /// Set the content of the `body` field.
+    ///
+    /// Multiline textual content of the notification.
+    /// Each line should be treated as a paragraph.
+    /// Simple html markup should be supported, depending on the server implementation.
     pub fn body(&mut self, body:&str) -> &mut Notification
     {
         self.body = body.to_string();
@@ -78,16 +91,12 @@ impl Notification
     }
 
     /// Set the `timeout`.
+    ///
+    /// This sets the time (in miliseconds) from the time the notification is displayed until it is
+    /// closed again by the Notification Server.
     pub fn timeout(&mut self, timeout: i32) -> &mut Notification
     {
         self.timeout = timeout;
-        self
-    }
-
-    /// Set the `summary`.
-    pub fn summary(&mut self, summary:&str) -> &mut Notification
-    {
-        self.summary = summary.to_string();
         self
     }
 
