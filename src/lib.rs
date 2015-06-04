@@ -8,7 +8,7 @@
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
-//!     .send();
+//!     .show();
 //! ```
 
 use std::env;
@@ -190,18 +190,12 @@ impl Notification
         else {return 0}
     }
 
-    /// Deprecated, please use `show()`
-    pub fn send(&self) -> u32 { self.show() }
-
     /// Wraps show() but prints notification to stdout.
     pub fn show_debug(&self) -> u32
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         self.show()
     }
-
-    /// Deprecated, please use `show_debug()`
-    pub fn send_debug(&self) -> u32 {self.show_debug()}
 
     /// Get list of all capabilities of the running Notification Server.
     pub fn get_capabilities() -> Vec<String>
