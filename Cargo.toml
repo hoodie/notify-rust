@@ -1,13 +1,13 @@
 [package]
-name = "notify_send"
-version = "0.0.4-dev"
+name = "notify-rust"
+version = "0.0.5"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
-description = "Sends DBus notifications, through dbus."
+description = "Desktop notifications, from rust."
 homepage = "https://github.com/hoodie/notify_send-rs"
 repository = "https://github.com/hoodie/notify_send-rs"
 
 license = "MIT/Apache-2.0"
-keywords = ["desktop", "notify", "dbus"]
+keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
 readme = "README.md"
 
 [dependencies]
