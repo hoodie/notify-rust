@@ -1,3 +1,6 @@
+//! EXPERIMENTAL Server taking the place of your Desktop Environments Notification Server.
+//!
+//! This is not nearly meant for anything but testing.
 extern crate dbus;
 
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};

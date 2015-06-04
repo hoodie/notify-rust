@@ -65,4 +65,7 @@ fn main()
 * [ ] make use of returned id
 * [ ] GetCapabilities(), CloseNotification(), GetServerInformation()
 
-checkout [the spec](http://www.galago-project.org/specs/notification/0.9/index.html)
+[check](http://www.galago-project.org/specs/notification/0.9/index.html)
+[out](https://developer.gnome.org/notification-spec/)
+[the](https://wiki.ubuntu.com/NotifyOSD)
+[specifications](https://wiki.archlinux.org/index.php/Desktop_notifications)

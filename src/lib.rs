@@ -1,10 +1,15 @@
+//! Desktop Notifications for Rust.
+//!
+//! Desktop notifications are popup messages generated to notify the user of certain events.
+//!
+
 use std::env;
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
 
 pub mod server;
 
-/// # Executable Name
+/// Executable Name
 ///
 /// Returns the name of the current executable, used as a default for `Notification.appname`.
 pub fn exe_name() -> String
@@ -13,7 +18,7 @@ pub fn exe_name() -> String
     exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-/// # Desktop Notifications.
+/// Desktop Notifications.
 ///
 /// Here I write something about what a desktop notification is and does.
 /// Followed by a brief example.
