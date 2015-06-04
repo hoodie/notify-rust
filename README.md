@@ -26,7 +26,7 @@ fn main()
         .body("this is the body")
         .icon("firefox")
         .timeout(6000) //miliseconds
-        .send();
+        .show();
 
     // using format!()
     Notification::new()
@@ -35,25 +35,25 @@ fn main()
         .body(&format!("This is <b>{}</b>!<br/>", "a lie"))
         .icon("chromium")
         .timeout(6000) //miliseconds
-        .send();
+        .show();
 
     // possible, if you like
     let mut message = Notification::new();
     message.summary("invocation type 2");
     message.body("your <b>body</b> is a <u>wonderland</u>");
-    message.send();
+    message.show();
 
     // also possible, if you really really want to
     Notification {
         appname: "foobar".to_string(),
         timeout: 20,
         ..Notification::new()
-    }.send();
+    }.show();
 
 
 
     // can't see anything?
-    Notification::new().summary("this will also print to stdout").send_debug();
+    Notification::new().summary("this will also print to stdout").show_debug();
 
 
 }
