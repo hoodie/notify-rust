@@ -5,9 +5,9 @@ fn main()
     // use it this way
     Notification::new()
         .summary("Firefox Crashed")
-        .body("Just <b>kidding</b>, this is just the notify_send example.")
+        .body("Just <b>kidding</b>, this is just the notify_show example.")
         .icon("firefox")
-        .send();
+        .show();
 
 
     //possible, but don't do this
@@ -16,7 +16,7 @@ fn main()
         summary: "foobar".to_string(),
         body: "foobar".to_string(),
         ..Notification::new()
-    }.send();
+    }.show();
 
 
 }

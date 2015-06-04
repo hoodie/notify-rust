@@ -28,7 +28,7 @@ pub fn exe_name() -> String
 
 /// Desktop Notification.
 ///
-/// A desktop notification is configured via builder pattern, before it is launched with `send()`.
+/// A desktop notification is configured via builder pattern, before it is launched with `show()`.
 
 pub struct Notification
 {
@@ -157,7 +157,7 @@ impl Notification
     /// Sends Notification to DBus.
     ///
     /// Returns id from DBus. 
-    pub fn send(&self) -> u32
+    pub fn show(&self) -> u32
     {
         //TODO catch this
         let mut message = Message::new_method_call(
@@ -190,12 +190,18 @@ impl Notification
         else {return 0}
     }
 
-    /// Wraps send() but prints notification to stdout.
-    pub fn send_debug(&self) -> u32
+    /// Deprecated, please use `show()`
+    pub fn send(&self) -> u32 { self.show() }
+
+    /// Wraps show() but prints notification to stdout.
+    pub fn show_debug(&self) -> u32
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
-        self.send()
+        self.show()
     }
+
+    /// Deprecated, please use `show_debug()`
+    pub fn send_debug(&self) -> u32 {self.show_debug()}
 
     /// Get list of all capabilities of the running Notification Server.
     pub fn get_capabilities() -> Vec<String>

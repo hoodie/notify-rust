@@ -19,7 +19,7 @@ fn main()
             "something_else".to_string(),
             "Something Else".to_string()
             ])
-        .send();
+        .show();
 
 
 }
