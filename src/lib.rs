@@ -42,7 +42,7 @@ pub struct Notification
     pub timeout: i32
 }
 
-#[derive(Eq, PartialEq, Hash, Clone)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationCategory
 { // as found on https://developer.gnome.org/notification-spec/
     Device,                //A generic device-related notification that doesn't fit into any other category.
@@ -68,10 +68,9 @@ pub enum NotificationCategory
     Custom(String)
 }
 
-#[derive(Eq, PartialEq, Hash, Clone)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
 { // as found on https://developer.gnome.org/notification-spec/
-    ActionIcon(String),
     ActionIcons(bool),
     Category(NotificationCategory),
     DesktopEntry(String),
@@ -86,7 +85,7 @@ pub enum NotificationHint
     X(i32),
     Y(i32),
     Urgency(i32), // 0, 1, 2
-    Custom(String)
+    Custom(String,String)
 }
 
 impl Notification
@@ -150,6 +149,8 @@ impl Notification
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification
     {
         self.hints.insert(hint);
+        self.pack_hints();
+        println!("{:?}", self.hints);
         self
     }
 
@@ -195,6 +196,39 @@ impl Notification
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
         }
+    }
+
+    fn pack_hints(&self) -> Vec<MessageItem>
+    {
+        let mut hints = vec!();
+        for hint in self.hints.iter(){
+            let entry:(String,String) = match hint {
+                &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{:?}",  value)), // bool
+              //&NotificationHint::Category(value)         => ("category".to_string(),        format!("{:?}",  value)), //bool
+                &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
+              //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
+                &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),
+              //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_string(),       format!("{:?}",  value)),
+                &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{:?}",  value)), // bool
+                &NotificationHint::SoundFile(ref value)    => ("sound-file".to_string(),      value.clone()),
+                &NotificationHint::SoundName(ref value)    => ("sound-name".to_string(),      value.clone()),
+                &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{:?}",  value)),
+                &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{:?}",  value)),
+                &NotificationHint::X(value)                => ("x".to_string(),               format!("{:?}",  value)),
+                &NotificationHint::Y(value)                => ("y".to_string(),               format!("{:?}",  value)),
+                &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{:?}",  value)),
+                _                                          => ("Foo".to_string(),"bar".to_string())
+                //NotificationHint::Custom(key,value)      => (&key,&value)
+            };
+
+            hints.push(
+                MessageItem::DictEntry(
+                    Box::new(MessageItem::Str(entry.0)),
+                    Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
+                    )
+                );
+        }
+        hints
     }
 
     fn pack_actions(&self) -> Vec<MessageItem>
