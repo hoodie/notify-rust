@@ -43,36 +43,10 @@ pub struct Notification
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub enum NotificationCategory
-{ // as found on https://developer.gnome.org/notification-spec/
-    Device,                //A generic device-related notification that doesn't fit into any other category.
-    DeviceAdded,           //A device, such as a USB device, was added to the system.
-    DeviceError,           //A device had some kind of error.
-    DeviceRemoved,         //A device, such as a USB device, was removed from the system.
-    Email,                 //A generic e-mail-related notification that doesn't fit into any other category.
-    EmailArrived,          //A new e-mail notification.
-    EmailBounced,          //A notification stating that an e-mail has bounced.
-    Im,                    //A generic instant message-related notification that doesn't fit into any other category.
-    ImError,               //An instant message error notification.
-    ImReceived,            //A received instant message notification.
-    Network,               //A generic network notification that doesn't fit into any other category.
-    NetworkConnected,      //A network connection notification, such as successful sign-on to a network service. This should not be confused with device.added for new network devices.
-    NetworkDisconnected,   //A network disconnected notification. This should not be confused with device.removed for disconnected network devices.
-    NetworkError,          //A network-related or connection-related error.
-    Presence,              //A generic presence change notification that doesn't fit into any other category, such as going away or idle.
-    PresenceOffline,       //An offline presence change notification.
-    PresenceOnline,        //An online presence change notification.
-    Transfer,              //A generic file transfer or download notification that doesn't fit into any other category.
-    TransferComplete,      //A file transfer or download complete notification.
-    TransferError,         //A file transfer or download error.
-    Custom(String)
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
 { // as found on https://developer.gnome.org/notification-spec/
     ActionIcons(bool),
-    Category(NotificationCategory),
+    Category(String),
     DesktopEntry(String),
     //ImageData(iiibiiay),
     ImagePath(String),
@@ -203,20 +177,20 @@ impl Notification
         let mut hints = vec!();
         for hint in self.hints.iter(){
             let entry:(String,String) = match hint {
-                &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{:?}",  value)), // bool
-              //&NotificationHint::Category(value)         => ("category".to_string(),        format!("{:?}",  value)), //bool
+                &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{}",  value)), // bool
+                &NotificationHint::Category(ref value)     => ("category".to_string(),        format!("{}",  value)), //bool
                 &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
               //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
                 &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),
               //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_string(),       format!("{:?}",  value)),
-                &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{:?}",  value)), // bool
+                &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{}",  value)), // bool
                 &NotificationHint::SoundFile(ref value)    => ("sound-file".to_string(),      value.clone()),
                 &NotificationHint::SoundName(ref value)    => ("sound-name".to_string(),      value.clone()),
-                &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{:?}",  value)),
-                &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{:?}",  value)),
-                &NotificationHint::X(value)                => ("x".to_string(),               format!("{:?}",  value)),
-                &NotificationHint::Y(value)                => ("y".to_string(),               format!("{:?}",  value)),
-                &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{:?}",  value)),
+                &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{}",  value)),
+                &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{}",  value)),
+                &NotificationHint::X(value)                => ("x".to_string(),               format!("{}",  value)),
+                &NotificationHint::Y(value)                => ("y".to_string(),               format!("{}",  value)),
+                &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value)),
                 _                                          => ("Foo".to_string(),"bar".to_string())
                 //NotificationHint::Custom(key,value)      => (&key,&value)
             };
@@ -265,12 +239,7 @@ impl Notification
            MessageItem::Str(self.body.to_string()),         // body
            MessageItem::new_array(self.pack_actions()),     // actions
            MessageItem::new_array(                          // hints
-               vec!(
-                   MessageItem::DictEntry(
-                       Box::new(MessageItem::Str("".to_string())),
-                       Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
-                       ),
-                   )
+               self.pack_hints()
            ),
            MessageItem::Int32(self.timeout)                // timeout
            ]);
