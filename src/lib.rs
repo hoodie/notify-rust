@@ -14,6 +14,7 @@
 use std::env;
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
+use std::collections::HashSet;
 
 pub mod server;
 
@@ -36,10 +37,57 @@ pub struct Notification
     pub summary: String,
     pub body:    String,
     pub icon:    String,
+    pub hints:   HashSet<NotificationHint>,
     pub actions: Vec<String>,
     pub timeout: i32
 }
 
+#[derive(Eq, PartialEq, Hash, Clone)]
+pub enum NotificationCategory
+{ // as found on https://developer.gnome.org/notification-spec/
+    Device,                //A generic device-related notification that doesn't fit into any other category.
+    DeviceAdded,           //A device, such as a USB device, was added to the system.
+    DeviceError,           //A device had some kind of error.
+    DeviceRemoved,         //A device, such as a USB device, was removed from the system.
+    Email,                 //A generic e-mail-related notification that doesn't fit into any other category.
+    EmailArrived,          //A new e-mail notification.
+    EmailBounced,          //A notification stating that an e-mail has bounced.
+    Im,                    //A generic instant message-related notification that doesn't fit into any other category.
+    ImError,               //An instant message error notification.
+    ImReceived,            //A received instant message notification.
+    Network,               //A generic network notification that doesn't fit into any other category.
+    NetworkConnected,      //A network connection notification, such as successful sign-on to a network service. This should not be confused with device.added for new network devices.
+    NetworkDisconnected,   //A network disconnected notification. This should not be confused with device.removed for disconnected network devices.
+    NetworkError,          //A network-related or connection-related error.
+    Presence,              //A generic presence change notification that doesn't fit into any other category, such as going away or idle.
+    PresenceOffline,       //An offline presence change notification.
+    PresenceOnline,        //An online presence change notification.
+    Transfer,              //A generic file transfer or download notification that doesn't fit into any other category.
+    TransferComplete,      //A file transfer or download complete notification.
+    TransferError,         //A file transfer or download error.
+    Custom(String)
+}
+
+#[derive(Eq, PartialEq, Hash, Clone)]
+pub enum NotificationHint
+{ // as found on https://developer.gnome.org/notification-spec/
+    ActionIcon(String),
+    ActionIcons(bool),
+    Category(NotificationCategory),
+    DesktopEntry(String),
+    //ImageData(iiibiiay),
+    ImagePath(String),
+    //IconData(iiibiiay),
+    Resident(bool),
+    SoundFile(String),
+    SoundName(String),
+    SuppressSound(bool),
+    Transient(bool),
+    X(i32),
+    Y(i32),
+    Urgency(i32), // 0, 1, 2
+    Custom(String)
+}
 
 impl Notification
 {
@@ -55,6 +103,7 @@ impl Notification
             summary:  String::new(),
             body:     String::new(),
             icon:     String::new(),
+            hints:   HashSet::new(),
             actions:  Vec::new(),
             timeout:  -1
         }
@@ -98,6 +147,12 @@ impl Notification
         self
     }
 
+    pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification
+    {
+        self.hints.insert(hint);
+        self
+    }
+
     /// Set the `timeout`.
     ///
     /// This sets the time (in miliseconds) from the time the notification is displayed until it is
@@ -136,6 +191,7 @@ impl Notification
             summary:  self.summary.clone(),
             body:     self.body.clone(),
             icon:     self.icon.clone(),
+            hints:    self.hints.clone(),
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
         }
@@ -154,9 +210,9 @@ impl Notification
         return vec!( MessageItem::Str("".to_string()))
     }
 
-    /// Sends Notification to DBus.
+    /// Sends Notification to D-Bus.
     ///
-    /// Returns id from DBus. 
+    /// Returns id from D-Bus.
     pub fn show(&self) -> u32
     {
         //TODO catch this
