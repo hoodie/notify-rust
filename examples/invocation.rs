@@ -1,5 +1,5 @@
-extern crate notify_send;
-use notify_send::Notification;
+extern crate notify_rust;
+use notify_rust::Notification;
 fn main()
 {
     // use it this way

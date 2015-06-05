@@ -14,8 +14,8 @@ notify-rust = "0.0.5"
 ## Usage
 
 ```rust
-extern crate notify_send;
-use notify_send::Notification;
+extern crate notify_rust;
+use notify_rust::Notification;
 fn main()
 {
     // use it this way

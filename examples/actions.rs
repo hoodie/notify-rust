@@ -1,5 +1,5 @@
-extern crate notify_send;
-use notify_send::Notification;
+extern crate notify_rust;
+use notify_rust::Notification;
 fn main()
 {
     // Actions are sent over as a list of pairs.
@@ -9,7 +9,7 @@ fn main()
 
     Notification::new()
         .summary("Firefox Crashed")
-        .body("Just <b>kidding</b>, this is just the notify_send example.")
+        .body("Just <b>kidding</b>, this is just the notify_rust example.")
         .icon("firefox")
         .timeout(6000) //miliseconds
         .actions(
