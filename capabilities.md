@@ -29,7 +29,7 @@
 * icon-static
 * actions
 
-# gnome 3
+## gnome 3
 actions
 body
 body-markup

@@ -178,7 +178,7 @@ impl Notification
         for hint in self.hints.iter(){
             let entry:(String,String) = match hint {
                 &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{}",  value)), // bool
-                &NotificationHint::Category(ref value)     => ("category".to_string(),        format!("{}",  value)), //bool
+                &NotificationHint::Category(ref value)     => ("category".to_string(),        value.clone()),
                 &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
               //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
                 &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),

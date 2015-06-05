@@ -53,12 +53,14 @@ impl NotificationServer
                     // Callback
                     // TODO how do I elegantly access self.counter?
                     Box::new(move |msg| {
-                                    println!("appname: {:?} icon:{:?} summary:{:?} body:{:?}",
+                                    println!("appname: {:?} icon:{:?} summary:{:?} body:{:?}\nactions: {:?} hints:{:?}",
                                              msg.get_items().get(0).unwrap(),
                                              //msg.get_items().get(1).unwrap(),
                                              msg.get_items().get(2).unwrap(),
                                              msg.get_items().get(3).unwrap(),
                                              msg.get_items().get(4).unwrap(),
+                                             msg.get_items().get(5).unwrap(),
+                                             msg.get_items().get(6).unwrap(),
                                              );
                                     Ok(vec!(MessageItem::Int32(42)))
                                    }

@@ -1,9 +1,6 @@
-use std::collections::HashSet;
-
 extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
-use notify_rust::NotificationCategory as Category;
 
 fn main()
 {
@@ -16,13 +13,14 @@ fn main()
             .hint(Hint::Urgency(urgency))
             .show();
     }
+
     Notification::new()
         .summary("Category:email")
-        .body("this has nothing to do with emails.")
+        .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
         .icon("thunderbird")
         .appname("thunderbird")
-        .hint(Hint::Category(Category::Email))
-        .hint(Hint::Transient(false))
+        .hint(Hint::Category("email".to_string()))
+        .hint(Hint::Resident(true))
         .show();
 
 }
