@@ -1,5 +1,6 @@
 extern crate notify_rust;
 use notify_rust::Notification;
+use notify_rust::NotificationHint;
 fn main()
 {
     // use it this way
@@ -10,13 +11,13 @@ fn main()
         .show();
 
 
-    //possible, but don't do this
-    Notification {
-        appname: "foobar".to_string(),
-        summary: "foobar".to_string(),
-        body: "foobar".to_string(),
-        ..Notification::new()
-    }.show();
+    ////possible, but don't do this
+    //Notification {
+    //    appname: "foobar".to_string(),
+    //    summary: "foobar".to_string(),
+    //    body: "foobar".to_string(),
+    //    ..Notification::new()
+    //}.show();
 
 
 }

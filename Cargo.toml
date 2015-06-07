@@ -3,8 +3,8 @@ name = "notify-rust"
 version = "0.0.5"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Desktop notifications, from rust."
-homepage = "https://github.com/hoodie/notify_send-rs"
-repository = "https://github.com/hoodie/notify_send-rs"
+homepage = "https://github.com/hoodie/notify-rust"
+repository = "https://github.com/hoodie/notify-rust"
 
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]

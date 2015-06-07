@@ -4,6 +4,7 @@
 //!
 //! # Example
 //! ```
+//!  use notify_rust::Notification;
 //! Notification::new()
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
@@ -12,9 +13,11 @@
 //! ```
 
 use std::env;
+use std::collections::HashSet;
+use std::borrow::Cow;
+
 extern crate dbus;
 use dbus::{Connection, BusType, Message, MessageItem};
-use std::collections::HashSet;
 
 pub mod server;
 
@@ -123,8 +126,6 @@ impl Notification
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification
     {
         self.hints.insert(hint);
-        self.pack_hints();
-        println!("{:?}", self.hints);
         self
     }
 
@@ -174,48 +175,55 @@ impl Notification
 
     fn pack_hints(&self) -> Vec<MessageItem>
     {
-        let mut hints = vec!();
-        for hint in self.hints.iter(){
-            let entry:(String,String) = match hint {
-                &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{}",  value)), // bool
-                &NotificationHint::Category(ref value)     => ("category".to_string(),        value.clone()),
-                &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
-              //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
-                &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),
-              //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_string(),       format!("{:?}",  value)),
-                &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{}",  value)), // bool
-                &NotificationHint::SoundFile(ref value)    => ("sound-file".to_string(),      value.clone()),
-                &NotificationHint::SoundName(ref value)    => ("sound-name".to_string(),      value.clone()),
-                &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{}",  value)),
-                &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{}",  value)),
-                &NotificationHint::X(value)                => ("x".to_string(),               format!("{}",  value)),
-                &NotificationHint::Y(value)                => ("y".to_string(),               format!("{}",  value)),
-                &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value)),
-                _                                          => ("Foo".to_string(),"bar".to_string())
-                //NotificationHint::Custom(key,value)      => (&key,&value)
-            };
+        println!("{} hints", self.hints.len());
+        if self.hints.len() > 0 {
+            let mut hints = vec![];
+            for hint in self.hints.iter(){
+                let entry:(String,String) = match hint {
+                    &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{}",  value)), // bool
+                    &NotificationHint::Category(ref value)     => ("category".to_string(),        value.clone()),
+                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
+                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
+                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),
+                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_string(),       format!("{:?}",  value)),
+                    &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{}",  value)), // bool
+                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_string(),      value.clone()),
+                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_string(),      value.clone()),
+                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{}",  value)),
+                    &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{}",  value)),
+                    &NotificationHint::X(value)                => ("x".to_string(),               format!("{}",  value)),
+                    &NotificationHint::Y(value)                => ("y".to_string(),               format!("{}",  value)),
+                    &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value)),
+                    _                                          => ("Foo".to_string(),"bar".to_string())
+                };
 
-            hints.push(
-                MessageItem::DictEntry(
-                    Box::new(MessageItem::Str(entry.0)),
-                    Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
-                    )
-                );
+                hints.push( MessageItem::DictEntry(
+                        Box::new(MessageItem::Str(entry.0)),
+                        Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
+                        ));
+            }
+            return hints;
         }
-        hints
+        return vec!(
+            MessageItem::DictEntry(
+                Box::new(MessageItem::Str("".to_string())),
+                Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
+                )
+            );
     }
 
     fn pack_actions(&self) -> Vec<MessageItem>
     {
+        println!("{} actions", self.actions.len());
         if self.actions.len() > 0 {
-        let mut actions = vec![];
-        for action in self.actions.iter()
-        {
-            actions.push(MessageItem::Str(action.to_string()))
+            let mut actions = vec![];
+            for action in self.actions.iter()
+            {
+                actions.push(MessageItem::Str(action.to_string()))
+            }
+            return actions;
         }
-        return actions;
-        }
-        return vec!( MessageItem::Str("".to_string()))
+        return vec![ MessageItem::Str("".to_string()) ]
     }
 
     /// Sends Notification to D-Bus.
@@ -223,6 +231,8 @@ impl Notification
     /// Returns id from D-Bus.
     pub fn show(&self) -> u32
     {
+        println!("{:?}",(self.pack_hints()));
+        println!("{:?}",(self.pack_actions()));
         //TODO catch this
         let mut message = Message::new_method_call(
             "org.freedesktop.Notifications",
@@ -238,10 +248,8 @@ impl Notification
            MessageItem::Str(self.summary.to_string()),      // summary (title)
            MessageItem::Str(self.body.to_string()),         // body
            MessageItem::new_array(self.pack_actions()),     // actions
-           MessageItem::new_array(                          // hints
-               self.pack_hints()
-           ),
-           MessageItem::Int32(self.timeout)                // timeout
+           MessageItem::new_array(self.pack_hints()),       // hints
+           MessageItem::Int32(self.timeout)                 // timeout
            ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
@@ -259,7 +267,6 @@ impl Notification
     /// Get list of all capabilities of the running Notification Server.
     pub fn get_capabilities() -> Vec<String>
     {
-        use std::borrow::Cow;
         let mut capabilities = vec![];
 
         let message = Message::new_method_call(
