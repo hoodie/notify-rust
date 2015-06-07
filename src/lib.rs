@@ -4,7 +4,7 @@
 //!
 //! # Example
 //! ```
-//!  use notify_rust::Notification;
+//! use notify_rust::Notification;
 //! Notification::new()
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
@@ -151,9 +151,20 @@ impl Notification
     /// >  Each odd element in the list is the localized string that will be displayed to the user.
     ///
     /// There is nothing fancy going on here yet.
+    /// **Carefull! This replaces the internal list of actions!**
     pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
     {
         self.actions = actions;
+        self
+    }
+
+    /// Add an action.
+    /// 
+    /// This adds a single action to the internal list of actions.
+    pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification
+    {
+        self.actions.push(identifier.to_string());
+        self.actions.push(label.to_string());
         self
     }
 

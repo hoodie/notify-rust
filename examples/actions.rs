@@ -8,8 +8,8 @@ fn main()
     // http://www.galago-project.org/specs/notification/0.9/x408.html#command-notify
 
     Notification::new()
-        .summary("Firefox Crashed")
-        .body("Just <b>kidding</b>, this is just the notify_rust example.")
+        .summary("Notification with actions")
+        .body("Here the actions where added at once.")
         .icon("firefox")
         .timeout(6000) //miliseconds
         .actions(
@@ -20,6 +20,16 @@ fn main()
             "Something Else".to_string()
             ])
         .show();
+
+    Notification::new()
+        .summary("Another notification with actions")
+        .body("Here each one was added separately.")
+        .icon("firefox")
+        .timeout(6000) //miliseconds
+        .action("action0", "Press me please")
+        .action("action1", "firefox")
+        .show();
+
 
 
 }
