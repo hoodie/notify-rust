@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "0.0.5"
+version = "0.0.6-dev"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Desktop notifications, from rust."
 homepage = "https://github.com/hoodie/notify-rust"

@@ -17,7 +17,7 @@ use std::collections::HashSet;
 use std::borrow::Cow;
 
 extern crate dbus;
-use dbus::{Connection, BusType, Message, MessageItem};
+use dbus::{Connection, BusType, Message, MessageItem, TypeSig};
 
 pub mod server;
 
@@ -175,7 +175,6 @@ impl Notification
 
     fn pack_hints(&self) -> MessageItem
     {
-        println!("{} hints", self.hints.len());
         if self.hints.len() > 0 {
             let mut hints = vec![];
             for hint in self.hints.iter(){
@@ -204,17 +203,13 @@ impl Notification
             }
             return MessageItem::new_array(hints);
         }
-        return MessageItem::new_array(vec![
-            MessageItem::DictEntry(
-                Box::new(MessageItem::Str("".to_string())),
-                Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
-                )
-            ]);
+
+        let sig = Cow::Borrowed("{sv}") as TypeSig;
+        return MessageItem::Array(vec![], sig);
     }
 
     fn pack_actions(&self) -> MessageItem
     {
-        println!("{} actions", self.actions.len());
         if self.actions.len() > 0 {
             let mut actions = vec![];
             for action in self.actions.iter()
@@ -223,7 +218,8 @@ impl Notification
             }
             return MessageItem::new_array(actions);
         }
-        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]);
+        let sig = Cow::Borrowed("s") as TypeSig;
+        return MessageItem::Array(vec![], sig);
     }
 
     /// Sends Notification to D-Bus.
@@ -231,8 +227,8 @@ impl Notification
     /// Returns id from D-Bus.
     pub fn show(&self) -> u32
     {
-        println!("{:?}",(self.pack_hints()));
-        println!("{:?}",(self.pack_actions()));
+        //println!("{} hints:    {:?}", self.hints.len() ,self.pack_hints());
+        //println!("{} actions:  {:?}", self.actions.len()/2 ,self.pack_actions());
         //TODO catch this
         let mut message = Message::new_method_call(
             "org.freedesktop.Notifications",
