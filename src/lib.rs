@@ -173,7 +173,7 @@ impl Notification
         }
     }
 
-    fn pack_hints(&self) -> Vec<MessageItem>
+    fn pack_hints(&self) -> MessageItem
     {
         println!("{} hints", self.hints.len());
         if self.hints.len() > 0 {
@@ -202,17 +202,17 @@ impl Notification
                         Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
                         ));
             }
-            return hints;
+            return MessageItem::new_array(hints);
         }
-        return vec!(
+        return MessageItem::new_array(vec![
             MessageItem::DictEntry(
                 Box::new(MessageItem::Str("".to_string())),
                 Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
                 )
-            );
+            ]);
     }
 
-    fn pack_actions(&self) -> Vec<MessageItem>
+    fn pack_actions(&self) -> MessageItem
     {
         println!("{} actions", self.actions.len());
         if self.actions.len() > 0 {
@@ -221,9 +221,9 @@ impl Notification
             {
                 actions.push(MessageItem::Str(action.to_string()))
             }
-            return actions;
+            return MessageItem::new_array(actions);
         }
-        return vec![ MessageItem::Str("".to_string()) ]
+        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]);
     }
 
     /// Sends Notification to D-Bus.
@@ -247,8 +247,8 @@ impl Notification
            MessageItem::Str(self.icon.to_string()),         // icon
            MessageItem::Str(self.summary.to_string()),      // summary (title)
            MessageItem::Str(self.body.to_string()),         // body
-           MessageItem::new_array(self.pack_actions()),     // actions
-           MessageItem::new_array(self.pack_hints()),       // hints
+                                  self.pack_actions() ,     // actions
+                                  self.pack_hints(),        // hints
            MessageItem::Int32(self.timeout)                 // timeout
            ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
