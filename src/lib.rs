@@ -204,8 +204,14 @@ impl Notification
             return MessageItem::new_array(hints);
         }
 
-        let sig = Cow::Borrowed("{sv}") as TypeSig;
-        return MessageItem::Array(vec![], sig);
+        // let sig = Cow::Borrowed("{sv}") as TypeSig;
+        // return MessageItem::Array(vec![], sig);
+        return MessageItem::new_array(vec![
+            MessageItem::DictEntry(
+                Box::new(MessageItem::Str("".to_string())),
+                Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
+                )
+            ]);
     }
 
     fn pack_actions(&self) -> MessageItem
@@ -218,8 +224,9 @@ impl Notification
             }
             return MessageItem::new_array(actions);
         }
-        let sig = Cow::Borrowed("s") as TypeSig;
-        return MessageItem::Array(vec![], sig);
+        //let sig = Cow::Borrowed("s") as TypeSig;
+        //return MessageItem::Array(vec![], sig);
+        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]);
     }
 
     /// Sends Notification to D-Bus.
