@@ -48,7 +48,7 @@ pub mod server;
 /// Executable Name
 ///
 /// Returns the name of the current executable, used as a default for `Notification.appname`.
-pub fn exe_name() -> String
+fn exe_name() -> String
 {
     let exe = env::current_exe().unwrap();
     exe.file_name().unwrap().to_str().unwrap().to_string()
