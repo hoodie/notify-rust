@@ -1,4 +1,4 @@
 [submodule "target/doc"]
 	path = target/doc
-	url = github:hoodie/notify-rust
+	url = git@github.com:hoodie/notify-rust
 	branch = gh-pages
