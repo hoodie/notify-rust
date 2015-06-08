@@ -1,10 +1,12 @@
 [package]
 name = "notify-rust"
-version = "0.0.6-dev"
+version = "0.0.6"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
-description = "Desktop notifications, from rust."
+description = "Show desktop notifications. Similar to libnotify, but pure rust."
 homepage = "https://github.com/hoodie/notify-rust"
 repository = "https://github.com/hoodie/notify-rust"
+documentation = "https://hoodie.github.io/notify-rust/"
+
 
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
