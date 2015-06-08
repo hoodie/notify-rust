@@ -11,7 +11,7 @@ The API shown below should be stable.
 ```toml
 #Cargo.toml
 [dependencies]
-notify-rust = "0.0.5"
+notify-rust = "*"
 ```
 ## Usage
 
