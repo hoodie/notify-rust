@@ -33,7 +33,6 @@
 //!     .hint(Hint::Category("email".to_string()))
 //!     .hint(Hint::Resident(true))
 //!     .show();
-
 //! ```
 
 use std::env;
@@ -71,6 +70,7 @@ pub struct Notification
     pub icon:    String,
     /// Checkout `NotificationHint`
     pub hints:   HashSet<NotificationHint>,
+    /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32
@@ -209,7 +209,7 @@ impl Notification
     }
 
     /// Add an action.
-    /// 
+    ///
     /// This adds a single action to the internal list of actions.
     pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification
     {
@@ -351,7 +351,4 @@ impl Notification
         return capabilities;
     }
 
-
 }
-
-
