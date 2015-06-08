@@ -55,13 +55,15 @@ fn main()
 
 
 }
-
 ```
+
+## Documentation
+http://hoodie.github.io/notify-rust/
 
 ## things to do
 
-* [ ] actions
-* [ ] hints
+* [x] actions
+* [x] hints
 * [ ] make use of returned id
 * [ ] GetCapabilities(), CloseNotification(), GetServerInformation()
 * [ ] become good enough to make this [list](https://wiki.archlinux.org/index.php/Desktop_notifications#Usage_in_programming)
