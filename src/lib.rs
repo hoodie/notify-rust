@@ -53,6 +53,15 @@ fn exe_name() -> String
     exe.file_name().unwrap().to_str().unwrap().to_string()
 }
 
+fn build_message(method_name:&str) -> Message
+{
+    Message::new_method_call(
+        "org.freedesktop.Notifications",
+        "/org/freedesktop/Notifications",
+        "org.freedesktop.Notifications",
+        method_name).unwrap()
+}
+
 /// Desktop Notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
@@ -64,7 +73,7 @@ pub struct Notification
     /// Single line to summarize the content.
     pub summary: String,
     /// Multiple lines possible, may support simple markup,
-    /// checkout `Notification::get_capabilities()` -> `body-markup` and `body-hyperlinks`.
+    /// checkout `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
     pub body:    String,
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
@@ -298,11 +307,7 @@ impl Notification
         //println!("{} hints:    {:?}", self.hints.len() ,self.pack_hints());
         //println!("{} actions:  {:?}", self.actions.len()/2 ,self.pack_actions());
         //TODO catch this
-        let mut message = Message::new_method_call(
-            "org.freedesktop.Notifications",
-            "/org/freedesktop/Notifications",
-            "org.freedesktop.Notifications",
-            "Notify").unwrap();
+        let mut message = build_message("Notify");
 
         //TODO implement hints and actions
         message.append_items(&[
@@ -327,28 +332,34 @@ impl Notification
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         self.show()
     }
+}
 
-    /// Get list of all capabilities of the running Notification Server.
-    pub fn get_capabilities() -> Vec<String>
-    {
-        let mut capabilities = vec![];
+/// Get list of all capabilities of the running Notification Server.
+pub fn get_capabilities() -> Vec<String>
+{
+    let mut capabilities = vec![];
 
-        let message = Message::new_method_call(
-            "org.freedesktop.Notifications",
-            "/org/freedesktop/Notifications",
-            "org.freedesktop.Notifications",
-            "GetCapabilities").unwrap();
-        let connection = Connection::get_private(BusType::Session).unwrap();
-        let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
+    let message = build_message("GetCapabilities");
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
 
-        if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
-            for item in items.iter(){
-                if let &MessageItem::Str(ref cap) = item{
-                    capabilities.push(cap.clone());
-                }
+    if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
+        for item in items.iter(){
+            if let &MessageItem::Str(ref cap) = item{
+                capabilities.push(cap.clone());
             }
         }
-        return capabilities;
     }
-
+    return capabilities;
 }
+
+/// Close a Notification given by id.
+pub fn close_notification(id:u32)
+{
+    let mut message = build_message("CloseNotification");
+    message.append_items(&[ MessageItem::UInt32(id) ]);
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    connection.send(message);
+}
+ 
+//pub fn get_server_information() -> (name:String, vendor:String, version:String, versionspec:String)
