@@ -123,6 +123,25 @@ impl Notification
         self
     }
 
+    /// Adds a hint.
+    ///
+    /// This method will add a hint to the internal hint hashset.
+    /// Hints must be of type NotificationHint.
+    ///
+    /// ```
+    /// use notify_rust::Notification;
+    /// use notify_rust::NotificationHint;
+    /// Notification::new()
+    ///     .summary("Category:email")
+    ///     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
+    ///     .icon("thunderbird")
+    ///     .appname("thunderbird")
+    ///     .hint(NotificationHint::Category("email".to_string()))
+    ///     .hint(NotificationHint::Resident(true))
+    ///     .show();
+    /// ```
+    ///
+    ///
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification
     {
         self.hints.insert(hint);
