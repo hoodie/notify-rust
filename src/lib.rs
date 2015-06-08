@@ -2,14 +2,38 @@
 //!
 //! Desktop notifications are popup messages generated to notify the user of certain events.
 //!
-//! # Example
+//! # Examples
 //! ```
+//! // Example 1
 //! use notify_rust::Notification;
+//! use notify_rust::NotificationHint as Hint;
+//!
 //! Notification::new()
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
 //!     .show();
+//!
+//! // Example 2
+//! Notification::new()
+//!     .summary("Another notification with actions")
+//!     .body("Here each one was added separately.")
+//!     .icon("firefox")
+//!     .timeout(6000) //miliseconds
+//!     .action("action0", "Press me please")
+//!     .action("action1", "firefox")
+//!     .show();
+//!
+//! // Example 3
+//! Notification::new()
+//!     .summary("Category:email")
+//!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
+//!     .icon("thunderbird")
+//!     .appname("thunderbird")
+//!     .hint(Hint::Category("email".to_string()))
+//!     .hint(Hint::Resident(true))
+//!     .show();
+
 //! ```
 
 use std::env;
@@ -36,12 +60,19 @@ pub fn exe_name() -> String
 
 pub struct Notification
 {
+    /// Filled by default with executable name.
     pub appname: String,
+    /// Single line to summarize the content.
     pub summary: String,
+    /// Multiple lines possible, may support simple markup,
+    /// checkout `Notification::get_capabilities()` -> `body-markup` and `body-hyperlinks`.
     pub body:    String,
+    /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
+    /// Checkout `NotificationHint`
     pub hints:   HashSet<NotificationHint>,
     pub actions: Vec<String>,
+    /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32
 }
 
@@ -133,7 +164,7 @@ impl Notification
     /// use notify_rust::NotificationHint;
     /// Notification::new()
     ///     .summary("Category:email")
-    ///     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
+    ///     .body("This should not go away until you acknoledge it.")
     ///     .icon("thunderbird")
     ///     .appname("thunderbird")
     ///     .hint(NotificationHint::Category("email".to_string()))
