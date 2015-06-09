@@ -1,6 +1,8 @@
 extern crate notify_rust;
 use notify_rust::Notification;
-fn main()
+
+#[test]
+fn actions_vec()
 {
     // Actions are sent over as a list of pairs.
     // Each even element in the list (starting at index 0) represents the identifier for the action.
@@ -20,7 +22,11 @@ fn main()
             "Something Else".to_string()
             ])
         .show();
+}
 
+#[test]
+fn action()
+{
     Notification::new()
         .summary("Another notification with actions")
         .body("Here each one was added separately.")
@@ -29,8 +35,6 @@ fn main()
         .action("action0", "Press me please")
         .action("action1", "firefox")
         .show();
-
-
 
 }
 

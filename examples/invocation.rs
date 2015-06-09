@@ -1,15 +1,15 @@
 extern crate notify_rust;
 use notify_rust::Notification;
-use notify_rust::NotificationHint;
 fn main()
 {
     // use it this way
-    Notification::new()
+    let id = Notification::new()
         .summary("Firefox Crashed")
         .body("Just <b>kidding</b>, this is just the notify_show example.")
         .icon("firefox")
         .show();
 
+    //notify_rust::close_notification(id);
 
     ////possible, but don't do this
     //Notification {
