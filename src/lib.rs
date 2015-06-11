@@ -40,7 +40,7 @@ use std::collections::HashSet;
 use std::borrow::Cow;
 
 extern crate dbus;
-use dbus::{Connection, BusType, Message, MessageItem, TypeSig};
+use dbus::{Connection, BusType, Message, MessageItem};
 
 pub mod server;
 
@@ -271,7 +271,9 @@ impl Notification
                         Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
                         ));
             }
-            return MessageItem::new_array(hints);
+            if let Ok(array) = MessageItem::new_array(hints){
+                return array;
+            }
         }
 
         // let sig = Cow::Borrowed("{sv}") as TypeSig;
@@ -281,7 +283,7 @@ impl Notification
                 Box::new(MessageItem::Str("".to_string())),
                 Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
                 )
-            ]);
+            ]).unwrap();
     }
 
     fn pack_actions(&self) -> MessageItem
@@ -292,11 +294,13 @@ impl Notification
             {
                 actions.push(MessageItem::Str(action.to_string()))
             }
-            return MessageItem::new_array(actions);
+            if let Ok(array) = MessageItem::new_array(actions){
+                return array;
+            }
         }
         //let sig = Cow::Borrowed("s") as TypeSig;
         //return MessageItem::Array(vec![], sig);
-        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]);
+        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]).unwrap();
     }
 
     /// Sends Notification to D-Bus.
@@ -354,6 +358,7 @@ pub fn get_capabilities() -> Vec<String>
 }
 
 /// Close a Notification given by id.
+#[allow(unused_must_use)]
 pub fn close_notification(id:u32)
 {
     let mut message = build_message("CloseNotification");
