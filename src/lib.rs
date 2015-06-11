@@ -85,6 +85,9 @@ pub struct Notification
     pub timeout: i32
 }
 
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
+pub enum NotificationUrgency{ Low = 0, Medium = 1, High = 2  }
+
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
 { // as found on https://developer.gnome.org/notification-spec/
@@ -101,7 +104,7 @@ pub enum NotificationHint
     Transient(bool),
     X(i32),
     Y(i32),
-    Urgency(i32), // 0, 1, 2
+    Urgency(NotificationUrgency),
     Custom(String,String)
 }
 
@@ -262,7 +265,7 @@ impl Notification
                     &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{}",  value)),
                     &NotificationHint::X(value)                => ("x".to_string(),               format!("{}",  value)),
                     &NotificationHint::Y(value)                => ("y".to_string(),               format!("{}",  value)),
-                    &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value)),
+                    &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value as u32)),
                     _                                          => ("Foo".to_string(),"bar".to_string())
                 };
 
@@ -308,14 +311,14 @@ impl Notification
 
         //TODO implement hints and actions
         message.append_items(&[
-           MessageItem::Str(self.appname.to_string()),      // appname
-           MessageItem::UInt32(0),                          // notification to update
-           MessageItem::Str(self.icon.to_string()),         // icon
-           MessageItem::Str(self.summary.to_string()),      // summary (title)
-           MessageItem::Str(self.body.to_string()),         // body
-                                  self.pack_actions() ,     // actions
-                                  self.pack_hints(),        // hints
-           MessageItem::Int32(self.timeout)                 // timeout
+           MessageItem::Str(  self.appname.to_string()), // appname
+           MessageItem::UInt32(0),                       // notification to update
+           MessageItem::Str(  self.icon.to_string()),    // icon
+           MessageItem::Str(  self.summary.to_string()), // summary (title)
+           MessageItem::Str(  self.body.to_string()),    // body
+                              self.pack_actions() ,      // actions
+                              self.pack_hints(),         // hints
+           MessageItem::Int32(self.timeout)              // timeout
            ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();

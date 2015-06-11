@@ -1,6 +1,7 @@
 extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
+use notify_rust::NotificationUrgency::*;
 
 #[test]
 fn urgency()
@@ -11,7 +12,7 @@ fn urgency()
             .summary(&format!("Urgency {}", urgency))
             .body("This notification uses hints")
             .icon("firefox")
-            .hint(Hint::Urgency(urgency))
+            .hint(Hint::Urgency(Low))
             .show();
     }
     }
