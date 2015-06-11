@@ -276,14 +276,8 @@ impl Notification
             }
         }
 
-        // let sig = Cow::Borrowed("{sv}") as TypeSig;
-        // return MessageItem::Array(vec![], sig);
-        return MessageItem::new_array(vec![
-            MessageItem::DictEntry(
-                Box::new(MessageItem::Str("".to_string())),
-                Box::new(MessageItem::Variant( Box::new(MessageItem::Str("".to_string()))))
-                )
-            ]).unwrap();
+        let sig = Cow::Borrowed("{sv}"); // cast to TypeSig makes rust1.0 and rust1.1 panic
+        return MessageItem::Array(vec![], sig);
     }
 
     fn pack_actions(&self) -> MessageItem
@@ -298,9 +292,8 @@ impl Notification
                 return array;
             }
         }
-        //let sig = Cow::Borrowed("s") as TypeSig;
-        //return MessageItem::Array(vec![], sig);
-        return MessageItem::new_array(vec![ MessageItem::Str("".to_string()) ]).unwrap();
+        let sig = Cow::Borrowed("s"); // cast to TypeSig makes rust1.0 and rust1.1 panic
+        return MessageItem::Array(vec![], sig);
     }
 
     /// Sends Notification to D-Bus.
@@ -366,5 +359,5 @@ pub fn close_notification(id:u32)
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.send(message);
 }
- 
+
 //pub fn get_server_information() -> (name:String, vendor:String, version:String, versionspec:String)
