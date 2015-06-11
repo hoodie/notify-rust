@@ -62,7 +62,7 @@ fn main()
 ## Documentation
 http://hoodie.github.io/notify-rust/
 
-## things to do
+## Things TODO
 
 * [x] actions
 * [x] hints
