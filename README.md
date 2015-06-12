@@ -68,7 +68,7 @@ http://hoodie.github.io/notify-rust/
 * [x] hints
 * [x] make use of returned id (can be used by `close_notification(id)`)
 * [ ] listen to signals: `ActionInvoke`
-* [ ] implement methods: `GetServerInformation()`
+* [x] implement methods: `GetServerInformation()`
 * [ ] become good enough to make this [list](https://wiki.archlinux.org/index.php/Desktop_notifications#Usage_in_programming)
 
 [check](http://www.galago-project.org/specs/notification/0.9/index.html)

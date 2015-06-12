@@ -363,4 +363,43 @@ pub fn close_notification(id:u32)
     connection.send(message);
 }
 
-//pub fn get_server_information() -> (name:String, vendor:String, version:String, versionspec:String)
+#[derive(Debug)]
+pub struct ServerInformation{
+    pub name:          String,
+    pub vendor:        String,
+    pub version:       String,
+    pub spec_version:  String
+}
+
+fn unwrap_message_string(item: Option<&MessageItem>) -> String
+{
+    match item{
+        Some(&MessageItem::Str(ref value)) => value.clone(),
+        _ => "".to_string()
+    }
+}
+
+/// Returns a struct containing ServerInformation.
+///
+/// This struct contains name, vendor, version and spec_version of the notification server
+/// running.
+pub fn get_server_information() -> ServerInformation
+{
+    let mut message = build_message("GetServerInformation");
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    let mut r = connection.send_with_reply_and_block(message,2000).unwrap();
+
+    let items=r.get_items();
+
+    let name         = unwrap_message_string(items.get(0));
+    let vendor       = unwrap_message_string(items.get(1));
+    let version      = unwrap_message_string(items.get(2));
+    let spec_version = unwrap_message_string(items.get(3));
+
+    ServerInformation{
+        name: name,
+        vendor: vendor,
+        version: version,
+        spec_version: spec_version,
+    }
+}
