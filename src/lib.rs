@@ -12,6 +12,7 @@
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
+//!     .timeout(6000) //miliseconds
 //!     .show();
 //!
 //! // Example 2
@@ -19,7 +20,6 @@
 //!     .summary("Another notification with actions")
 //!     .body("Here each one was added separately.")
 //!     .icon("firefox")
-//!     .timeout(6000) //miliseconds
 //!     .action("action0", "Press me please")
 //!     .action("action1", "firefox")
 //!     .show();
@@ -65,7 +65,6 @@ fn build_message(method_name:&str) -> Message
 /// Desktop Notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
-
 pub struct Notification
 {
     /// Filled by default with executable name.
@@ -363,6 +362,7 @@ pub fn close_notification(id:u32)
     connection.send(message);
 }
 
+/// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation{
     pub name:          String,
