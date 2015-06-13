@@ -13,54 +13,9 @@ The API shown below should be stable.
 [dependencies]
 notify-rust = "*"
 ```
-## Usage
 
-```rust
-extern crate notify_rust;
-use notify_rust::Notification;
-fn main()
-{
-    // use it this way
-    Notification::new()
-        .summary("this is the summary")
-        .body("this is the body")
-        .icon("firefox")
-        .timeout(6000) //miliseconds
-        .show();
-
-    // using format!()
-    Notification::new()
-        .summary("Chromium Crashed")
-        .appname("chromium")
-        .body(&format!("This is <b>{}</b>!<br/>", "a lie"))
-        .icon("chromium")
-        .timeout(6000) //miliseconds
-        .show();
-
-    // possible, if you like
-    let mut message = Notification::new();
-    message.summary("invocation type 2");
-    message.body("your <b>body</b> is a <u>wonderland</u>");
-    message.show();
-
-    // also possible, if you really really want to
-    Notification {
-        appname: "foobar".to_string(),
-        timeout: 20,
-        ..Notification::new()
-    }.show();
-
-
-
-    // can't see anything?
-    Notification::new().summary("this will also print to stdout").show_debug();
-
-
-}
-```
-
-## Documentation
-http://hoodie.github.io/notify-rust/
+## Usage & Documentation
+please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
 
 ## Things TODO
 

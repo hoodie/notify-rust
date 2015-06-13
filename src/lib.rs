@@ -385,7 +385,7 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String
 /// running.
 pub fn get_server_information() -> ServerInformation
 {
-    let mut message = build_message("GetServerInformation");
+    let message = build_message("GetServerInformation");
     let connection = Connection::get_private(BusType::Session).unwrap();
     let mut r = connection.send_with_reply_and_block(message,2000).unwrap();
 
