@@ -40,7 +40,7 @@ use std::collections::HashSet;
 use std::borrow::Cow;
 
 extern crate dbus;
-use dbus::{Connection, BusType, Message, MessageItem};
+use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
 
 pub mod server;
 
@@ -410,5 +410,22 @@ pub fn get_server_information() -> ServerInformation
 /// Blocking
 pub fn wait_for_action_signal()
 {
-    // sorry, but the sun was shining outside
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
+    for item in connection.iter(1000) {
+        match item {
+        ConnectionItem::Signal(s) => {
+            let (_, protocol, iface, member) = s.headers();
+            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
+                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
+                    println!("+++{:?}", s);
+                    break;
+                },
+                (_, _, _) => ()
+            }
+        }
+            _ => {},
+        }
+    }
+
 }
