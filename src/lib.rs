@@ -403,3 +403,12 @@ pub fn get_server_information() -> ServerInformation
         spec_version: spec_version,
     }
 }
+
+
+/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+///
+/// Blocking
+pub fn wait_for_action_signal()
+{
+    // sorry, but the sun was shining outside
+}
