@@ -9,8 +9,9 @@ fn main()
 
     let id = Notification::new()
         .summary("click me")
-        .action("default", "default")
-        .action("clicked", "click here")
+        //.action("default", "default")
+        //.action("clicked", "click here")
+        .invoke("default", {|| println!("This was given through the api")})
         .hint(Hint::Resident(true))
         .show();
 

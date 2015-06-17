@@ -37,6 +37,7 @@
 
 use std::env;
 use std::collections::HashSet;
+use std::collections::HashMap;
 use std::borrow::Cow;
 
 extern crate dbus;
@@ -81,7 +82,8 @@ pub struct Notification
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
-    pub timeout: i32
+    pub timeout: i32,
+    action_closures: HashMap<String,Box<Fn()>>
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -123,6 +125,7 @@ impl Notification
             icon:     String::new(),
             hints:   HashSet::new(),
             actions:  Vec::new(),
+            action_closures: HashMap::new(),
             timeout:  -1
         }
     }
@@ -229,6 +232,19 @@ impl Notification
         self
     }
 
+    /// Add an action label plus a closure to be called.
+    ///
+    /// This adds a single action to the internal list of actions, as well as a closure that will
+    /// be called when the action is invoked.
+    pub fn invoke<F: Fn()+'static>(&mut self, label:&str, closure:F)
+        -> &mut Notification
+    {
+        self.actions.push(label.to_string()); // identifier
+        self.actions.push(label.to_string()); // the actual displayed label
+        self.action_closures.insert(label.to_string(),Box::new(closure));
+        self
+    }
+
     /// Finalizes a Notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
@@ -241,6 +257,7 @@ impl Notification
             icon:     self.icon.clone(),
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
+            action_closures: HashMap::new(),
             timeout:  self.timeout.clone(),
         }
     }
