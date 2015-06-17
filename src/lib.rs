@@ -408,29 +408,45 @@ pub fn get_server_information() -> ServerInformation
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// Blocking
-/// TODO also return on NotificationClosed
 pub fn wait_for_action_signal(id:u32)
 {
+    println!("Waiting for signals from notification #{}", id);
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
     for item in connection.iter(1000) {
         match item {
         ConnectionItem::Signal(mut s) => {
             let (_, protocol, iface, member) = s.headers();
+            let items = s.get_items();
             match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap())
             {
+
+                // Action Invoked
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    let items = s.get_items();
                     match (&items[0], &items[1])
                     {
-                        (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) if nid == id =>
-                        {
+                        (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) if nid == id => {
                             println!("{id} That's mine! {action:?}", action=action, id=nid);
                             break;
                         },
                         (_,_) => ()
-
                     }
+                },
+
+
+                // Notification Closed
+                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
+                    match (&items[0], &items[1])
+                    {
+                        (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => {
+                            println!("My NotificationClosed: {:?}", s.get_items() );
+                            break;
+                    },
+                        (_,_) => {
+                            println!("some NotificationClosed: {:?}", s.get_items() );
+                        }
+                }
                 },
                 (_, _, _) => ()
             }
