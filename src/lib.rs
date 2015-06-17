@@ -408,49 +408,37 @@ pub fn get_server_information() -> ServerInformation
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// Blocking
-pub fn wait_for_action_signal(id:u32)
-{
-    println!("Waiting for signals from notification #{}", id);
+pub fn wait_for_action_signal<F>(id:u32, action:&str, func:F) where F: FnOnce() {
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
     for item in connection.iter(1000) {
         match item {
-        ConnectionItem::Signal(mut s) => {
-            let (_, protocol, iface, member) = s.headers();
-            let items = s.get_items();
-            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap())
-            {
+            ConnectionItem::Signal(mut s) => {
+                let (_, protocol, iface, member) = s.headers();
+                let items = s.get_items();
+                match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
 
-                // Action Invoked
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    match (&items[0], &items[1])
-                    {
-                        (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) if nid == id => {
-                            println!("{id} That's mine! {action:?}", action=action, id=nid);
-                            break;
-                        },
-                        (_,_) => ()
-                    }
-                },
-
-
-                // Notification Closed
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
-                    match (&items[0], &items[1])
-                    {
-                        (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => {
-                            println!("My NotificationClosed: {:?}", s.get_items() );
-                            break;
-                    },
-                        (_,_) => {
-                            println!("some NotificationClosed: {:?}", s.get_items() );
+                    // Action Invoked
+                    ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
+                        match (&items[0], &items[1]) {
+                            (&MessageItem::UInt32(nid), &MessageItem::Str(ref _action)) if nid == id => {
+                                        if action == _action {func();} break; },
+                            (_,_) => ()
                         }
+                    },
+
+
+                    // Notification Closed
+                    ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
+                        match (&items[0], &items[1]) {
+                            (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => { break; },
+                            (_,_) => { }
+                        }
+                    },
+                    (_, _, _) => ()
                 }
-                },
-                (_, _, _) => ()
             }
-        }
             _ => {},
         }
     }
