@@ -408,18 +408,29 @@ pub fn get_server_information() -> ServerInformation
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// Blocking
-pub fn wait_for_action_signal()
+/// TODO also return on NotificationClosed
+pub fn wait_for_action_signal(id:u32)
 {
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     for item in connection.iter(1000) {
         match item {
-        ConnectionItem::Signal(s) => {
+        ConnectionItem::Signal(mut s) => {
             let (_, protocol, iface, member) = s.headers();
-            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
+            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap())
+            {
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    println!("+++{:?}", s);
-                    break;
+                    let items = s.get_items();
+                    match (&items[0], &items[1])
+                    {
+                        (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) if nid == id =>
+                        {
+                            println!("{id} That's mine! {action:?}", action=action, id=nid);
+                            break;
+                        },
+                        (_,_) => ()
+
+                    }
                 },
                 (_, _, _) => ()
             }
