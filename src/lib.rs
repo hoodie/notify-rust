@@ -460,7 +460,7 @@ pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
                     // Notification Closed
                     ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
                         match (&items[0], &items[1]) {
-                            (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => { break; },
+                            (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => { func("__closed"); break; },
                             (_,_) => { }
                         }
                     },
