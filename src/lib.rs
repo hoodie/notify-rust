@@ -37,7 +37,6 @@
 
 use std::env;
 use std::collections::HashSet;
-use std::collections::HashMap;
 use std::borrow::Cow;
 
 extern crate dbus;
@@ -83,7 +82,6 @@ pub struct Notification
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32,
-    action_closures: HashMap<String,Box<Fn()>>
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -125,7 +123,6 @@ impl Notification
             icon:     String::new(),
             hints:   HashSet::new(),
             actions:  Vec::new(),
-            action_closures: HashMap::new(),
             timeout:  -1
         }
     }
@@ -232,19 +229,6 @@ impl Notification
         self
     }
 
-    /// Add an action label plus a closure to be called.
-    ///
-    /// This adds a single action to the internal list of actions, as well as a closure that will
-    /// be called when the action is invoked.
-    pub fn invoke<F: Fn()+'static>(&mut self, label:&str, closure:F)
-        -> &mut Notification
-    {
-        self.actions.push(label.to_string()); // identifier
-        self.actions.push(label.to_string()); // the actual displayed label
-        self.action_closures.insert(label.to_string(),Box::new(closure));
-        self
-    }
-
     /// Finalizes a Notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
@@ -257,7 +241,6 @@ impl Notification
             icon:     self.icon.clone(),
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
-            action_closures: HashMap::new(),
             timeout:  self.timeout.clone(),
         }
     }
@@ -348,6 +331,14 @@ impl Notification
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         self.show()
     }
+
+    pub fn show_and_wait_for_action<F>(&self, invokation_closure:F) -> u32 where F:FnOnce(&str)
+    {
+        println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
+        let id = self.show();
+        wait_for_action_signal(id, invokation_closure);
+        id
+    }
 }
 
 /// Get list of all capabilities of the running Notification Server.
@@ -425,7 +416,7 @@ pub fn get_server_information() -> ServerInformation
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// Blocking
-pub fn wait_for_action_signal<F>(id:u32, action:&str, func:F) where F: FnOnce() {
+pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
@@ -440,7 +431,7 @@ pub fn wait_for_action_signal<F>(id:u32, action:&str, func:F) where F: FnOnce() 
                     ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                         match (&items[0], &items[1]) {
                             (&MessageItem::UInt32(nid), &MessageItem::Str(ref _action)) if nid == id => {
-                                        if action == _action {func();} break; },
+                                        func(_action); break; },
                             (_,_) => ()
                         }
                     },
