@@ -332,6 +332,26 @@ impl Notification
         self.show()
     }
 
+    /// Wraps show() and blocks.
+    ///
+    /// This method takes a closure that takes an action name.
+    /// ## Example
+    /// ```
+    /// use notify_rust::Notification;
+    /// use notify_rust::NotificationHint as Hint;
+    /// Notification::new()
+    ///     .summary("click me")
+    ///     .action("default", "default")
+    ///     .action("clicked", "click here")
+    ///     .hint(Hint::Resident(true))
+    ///     .show_and_wait_for_action({|action|
+    ///         match action {
+    ///             "default" => {println!("so boring")},
+    ///             "clicked" => {println!("that was correct")},
+    ///             _ => ()
+    ///         }
+    ///     });
+    /// ```
     pub fn show_and_wait_for_action<F>(&self, invokation_closure:F) -> u32 where F:FnOnce(&str)
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
@@ -415,7 +435,7 @@ pub fn get_server_information() -> ServerInformation
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
-/// Blocking
+/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
