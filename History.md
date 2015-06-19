@@ -1,4 +1,10 @@
 
+0.0.8 / 2015-06-19
+==================
+
+  * added: can listen for ActionInvoked signals with `show_and_wait_for_action(Fn(actionname:&str))`
+  * added: `"__closed"` action that is 'invoked' when the Notification closes
+
 0.0.7 / 2015-06-13
 ==================
 
