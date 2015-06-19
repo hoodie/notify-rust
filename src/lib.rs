@@ -440,33 +440,27 @@ pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
     for item in connection.iter(1000) {
-        match item {
-            ConnectionItem::Signal(mut s) => {
-                let (_, protocol, iface, member) = s.headers();
-                let items = s.get_items();
-                match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
+        if let ConnectionItem::Signal(mut s) = item {
+            let (_, protocol, iface, member) = s.headers();
+            let items = s.get_items();
+            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
 
-                    // Action Invoked
-                    ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                        match (&items[0], &items[1]) {
-                            (&MessageItem::UInt32(nid), &MessageItem::Str(ref _action)) if nid == id => {
-                                        func(_action); break; },
-                            (_,_) => ()
-                        }
-                    },
+                // Action Invoked
+                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
+                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref _action)) = (&items[0], &items[1]) {
+                        if nid == id { func(_action); break; }
+                    }
+                },
 
 
-                    // Notification Closed
-                    ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
-                        match (&items[0], &items[1]) {
-                            (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) if nid == id => { func("__closed"); break; },
-                            (_,_) => { }
-                        }
-                    },
-                    (_, _, _) => ()
-                }
+                // Notification Closed
+                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
+                    if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
+                        if nid == id  { func("__closed"); break; }
+                    }
+                },
+                (_, _, _) => ()
             }
-            _ => {},
         }
     }
 
