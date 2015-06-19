@@ -354,7 +354,6 @@ impl Notification
     /// ```
     pub fn show_and_wait_for_action<F>(&self, invokation_closure:F) -> u32 where F:FnOnce(&str)
     {
-        println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         let id = self.show();
         wait_for_action_signal(id, invokation_closure);
         id
