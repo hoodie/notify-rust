@@ -30,7 +30,7 @@
 //!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
-//!     .hint(Hint::Category("email".to_string()))
+//!     .hint(Hint::Category("email".to_owned()))
 //!     .hint(Hint::Resident(true))
 //!     .show();
 //! ```
@@ -50,7 +50,7 @@ pub mod server;
 fn exe_name() -> String
 {
     let exe = env::current_exe().unwrap();
-    exe.file_name().unwrap().to_str().unwrap().to_string()
+    exe.file_name().unwrap().to_str().unwrap().to_owned()
 }
 
 fn build_message(method_name:&str) -> Message
@@ -121,7 +121,7 @@ impl Notification
             summary:  String::new(),
             body:     String::new(),
             icon:     String::new(),
-            hints:   HashSet::new(),
+            hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  -1
         }
@@ -130,7 +130,7 @@ impl Notification
     /// Overwrite the appname field used for Notification.
     pub fn appname(&mut self, appname:&str) -> &mut Notification
     {
-        self.appname = appname.to_string();
+        self.appname = appname.to_owned();
         self
     }
 
@@ -139,7 +139,7 @@ impl Notification
     /// Often acts as title of the notification. For more elaborate content use the `body` field.
     pub fn summary(&mut self, summary:&str) -> &mut Notification
     {
-        self.summary = summary.to_string();
+        self.summary = summary.to_owned();
         self
     }
 
@@ -150,7 +150,7 @@ impl Notification
     /// Simple html markup should be supported, depending on the server implementation.
     pub fn body(&mut self, body:&str) -> &mut Notification
     {
-        self.body = body.to_string();
+        self.body = body.to_owned();
         self
     }
 
@@ -161,7 +161,7 @@ impl Notification
     /// You can also use an absolute path to file.
     pub fn icon(&mut self, icon:&str) -> &mut Notification
     {
-        self.icon = icon.to_string();
+        self.icon = icon.to_owned();
         self
     }
 
@@ -178,7 +178,7 @@ impl Notification
     ///     .body("This should not go away until you acknoledge it.")
     ///     .icon("thunderbird")
     ///     .appname("thunderbird")
-    ///     .hint(NotificationHint::Category("email".to_string()))
+    ///     .hint(NotificationHint::Category("email".to_owned()))
     ///     .hint(NotificationHint::Resident(true))
     ///     .show();
     /// ```
@@ -224,8 +224,8 @@ impl Notification
     /// This adds a single action to the internal list of actions.
     pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification
     {
-        self.actions.push(identifier.to_string());
-        self.actions.push(label.to_string());
+        self.actions.push(identifier.to_owned());
+        self.actions.push(label.to_owned());
         self
     }
 
@@ -251,21 +251,21 @@ impl Notification
             let mut hints = vec![];
             for hint in self.hints.iter(){
                 let entry:(String,String) = match hint {
-                    &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_string(),    format!("{}",  value)), // bool
-                    &NotificationHint::Category(ref value)     => ("category".to_string(),        value.clone()),
-                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_string(),   value.clone()),
-                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_string(),      format!("{:?}",  value)),
-                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_string(),      value.clone()),
-                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_string(),       format!("{:?}",  value)),
-                    &NotificationHint::Resident(ref value)     => ("resident".to_string(),        format!("{}",  value)), // bool
-                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_string(),      value.clone()),
-                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_string(),      value.clone()),
-                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_string(),  format!("{}",  value)),
-                    &NotificationHint::Transient(value)        => ("transient".to_string(),       format!("{}",  value)),
-                    &NotificationHint::X(value)                => ("x".to_string(),               format!("{}",  value)),
-                    &NotificationHint::Y(value)                => ("y".to_string(),               format!("{}",  value)),
-                    &NotificationHint::Urgency(value)          => ("urgency".to_string(),         format!("{}",  value as u32)),
-                    _                                          => ("Foo".to_string(),"bar".to_string())
+                    &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_owned(),    format!("{}",  value)), // bool
+                    &NotificationHint::Category(ref value)     => ("category".to_owned(),        value.clone()),
+                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_owned(),   value.clone()),
+                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_owned(),      format!("{:?}",  value)),
+                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_owned(),      value.clone()),
+                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_owned(),       format!("{:?}",  value)),
+                    &NotificationHint::Resident(ref value)     => ("resident".to_owned(),        format!("{}",  value)), // bool
+                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_owned(),      value.clone()),
+                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_owned(),      value.clone()),
+                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_owned(),  format!("{}",  value)),
+                    &NotificationHint::Transient(value)        => ("transient".to_owned(),       format!("{}",  value)),
+                    &NotificationHint::X(value)                => ("x".to_owned(),               format!("{}",  value)),
+                    &NotificationHint::Y(value)                => ("y".to_owned(),               format!("{}",  value)),
+                    &NotificationHint::Urgency(value)          => ("urgency".to_owned(),         format!("{}",  value as u32)),
+                    _                                          => ("Foo".to_owned(),"bar".to_owned())
                 };
 
                 hints.push( MessageItem::DictEntry(
@@ -288,7 +288,7 @@ impl Notification
             let mut actions = vec![];
             for action in self.actions.iter()
             {
-                actions.push(MessageItem::Str(action.to_string()))
+                actions.push(MessageItem::Str(action.to_owned()))
             }
             if let Ok(array) = MessageItem::new_array(actions){
                 return array;
@@ -310,11 +310,11 @@ impl Notification
 
         //TODO implement hints and actions
         message.append_items(&[
-           MessageItem::Str(  self.appname.to_string()), // appname
+           MessageItem::Str(  self.appname.to_owned()), // appname
            MessageItem::UInt32(0),                       // notification to update
-           MessageItem::Str(  self.icon.to_string()),    // icon
-           MessageItem::Str(  self.summary.to_string()), // summary (title)
-           MessageItem::Str(  self.body.to_string()),    // body
+           MessageItem::Str(  self.icon.to_owned()),    // icon
+           MessageItem::Str(  self.summary.to_owned()), // summary (title)
+           MessageItem::Str(  self.body.to_owned()),    // body
                               self.pack_actions() ,      // actions
                               self.pack_hints(),         // hints
            MessageItem::Int32(self.timeout)              // timeout
@@ -402,7 +402,7 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String
 {
     match item{
         Some(&MessageItem::Str(ref value)) => value.clone(),
-        _ => "".to_string()
+        _ => "".to_owned()
     }
 }
 
