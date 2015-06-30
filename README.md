@@ -11,7 +11,7 @@ The API shown below should be stable.
 ```toml
 #Cargo.toml
 [dependencies]
-notify-rust = "0.8.0"
+notify-rust = "0.9.0"
 ```
 
 ## Usage & Documentation
@@ -24,6 +24,7 @@ please see the [documentation](http://hoodie.github.io/notify-rust/) for current
 * [x] make use of returned id (can be used by `close_notification(id)`)
 * [x] implement methods: `GetServerInformation()`
 * [x] listen to signals: `ActionInvoke` (0.8.0)
+* [x] update notifications (0.9.0)
 * [ ] become good enough to make this [list](https://wiki.archlinux.org/index.php/Desktop_notifications#Usage_in_programming)
 
 [check](http://www.galago-project.org/specs/notification/0.9/index.html)

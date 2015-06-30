@@ -1,4 +1,9 @@
 
+0.9.0 / 2015-07-01
+==================
+
+  * added: updating notifications ( see examples/update.rs )
+
 0.0.8 / 2015-06-19
 ==================
 

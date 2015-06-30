@@ -82,6 +82,7 @@ pub struct Notification
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32,
+    pub id: u32
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -123,7 +124,8 @@ impl Notification
             icon:     String::new(),
             hints:    HashSet::new(),
             actions:  Vec::new(),
-            timeout:  -1
+            timeout:  -1,
+            id:  0
         }
     }
 
@@ -242,6 +244,7 @@ impl Notification
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
+            id:       self.id.clone(),
         }
     }
 
@@ -300,8 +303,26 @@ impl Notification
 
     /// Sends Notification to D-Bus.
     ///
-    /// Returns id from D-Bus.
-    pub fn show(&self) -> u32
+    /// Returns notification id, which can be used to close it using
+    /// `notify_rust::close_notification`.
+    pub fn show(&mut self) -> u32
+    {
+        self._show(0)
+    }
+
+    /// Sends Notification to D-Bus, again.
+    ///
+    /// Here the original notification is replaced. Watch out for different implementations of the
+    /// notification server! On plasma5 or instance, you should also change the appname, so the old
+    /// message is really replaced and not just amended. Xfce behaves well, all others have not
+    /// been tested by the developer.
+    pub fn update(&mut self) -> u32
+    {
+        let id = self.id.clone();
+        self._show(id)
+    }
+
+    fn _show(&mut self, id:u32) -> u32
     {
         //println!("{} hints:    {:?}", self.hints.len() ,self.pack_hints());
         //println!("{} actions:  {:?}", self.actions.len()/2 ,self.pack_actions());
@@ -311,7 +332,7 @@ impl Notification
         //TODO implement hints and actions
         message.append_items(&[
            MessageItem::Str(  self.appname.to_owned()), // appname
-           MessageItem::UInt32(0),                       // notification to update
+           MessageItem::UInt32(id),                       // notification to update
            MessageItem::Str(  self.icon.to_owned()),    // icon
            MessageItem::Str(  self.summary.to_owned()), // summary (title)
            MessageItem::Str(  self.body.to_owned()),    // body
@@ -321,12 +342,15 @@ impl Notification
            ]);
         let connection = Connection::get_private(BusType::Session).unwrap();
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
-        if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) { return *id }
+        if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
+            self.id = *id;
+            return *id
+        }
         else {return 0}
     }
 
     /// Wraps show() but prints notification to stdout.
-    pub fn show_debug(&self) -> u32
+    pub fn show_debug(&mut self) -> u32
     {
         println!("Notification:\n{}: ({}) {} \"{}\"\n", self.appname, self.icon, self.summary, self.body);
         self.show()
@@ -352,7 +376,7 @@ impl Notification
     ///         }
     ///     });
     /// ```
-    pub fn show_and_wait_for_action<F>(&self, invokation_closure:F) -> u32 where F:FnOnce(&str)
+    pub fn show_and_wait_for_action<F>(&mut self, invokation_closure:F) -> u32 where F:FnOnce(&str)
     {
         let id = self.show();
         wait_for_action_signal(id, invokation_closure);
