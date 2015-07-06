@@ -250,7 +250,7 @@ impl Notification
 
     fn pack_hints(&self) -> MessageItem
     {
-        if self.hints.len() > 0 {
+        if self.hints.is_empty() {
             let mut hints = vec![];
             for hint in self.hints.iter(){
                 let entry:(String,String) = match hint {
@@ -287,7 +287,7 @@ impl Notification
 
     fn pack_actions(&self) -> MessageItem
     {
-        if self.actions.len() > 0 {
+        if self.actions.is_empty() {
             let mut actions = vec![];
             for action in self.actions.iter()
             {
@@ -340,7 +340,7 @@ impl Notification
                               self.pack_hints(),         // hints
            MessageItem::Int32(self.timeout)              // timeout
            ]);
-        let connection = Connection::get_private(BusType::Session).unwrap();
+        let connection = Connection::get_private(BusType::Session).unwrap(); // test this against missing server
         let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
             self.id = *id;
