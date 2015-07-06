@@ -1,6 +1,8 @@
 # notify-rust
 
-[![Build Status](https://travis-ci.org/hoodie/notify-rust.svg?branch=master)](https://travis-ci.org/hoodie/notify-rust)
+[![Build Status](https://img.shields.io/travis/hoodie/notify-rust.svg)](https://travis-ci.org/hoodie/notify-rust)
+![license](https://img.shields.io/crates/l/notify-rust.svg)
+![version](https://img.shields.io/crates/v/notify-rust.svg)
 
 Shows desktop notifications.
 This implementation does not rely on libnotify, as it is using [dbus-rs](https://github.com/diwic/dbus-rs/).
