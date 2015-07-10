@@ -4,7 +4,7 @@
 //!
 //! # Examples
 //! ```
-//! // Example 1
+//! // Example 1 (Simple Notification)
 //! use notify_rust::Notification;
 //! use notify_rust::NotificationHint as Hint;
 //!
@@ -12,28 +12,38 @@
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
-//!     .timeout(6000) //miliseconds
+//!     .timeout(6000) //milliseconds
 //!     .show();
 //!
-//! // Example 2
-//! Notification::new()
-//!     .summary("Another notification with actions")
-//!     .body("Here each one was added separately.")
-//!     .icon("firefox")
-//!     .action("action0", "Press me please")
-//!     .action("action1", "firefox")
-//!     .show();
-//!
-//! // Example 3
+//! // Example 2 (Persistent Notification)
 //! Notification::new()
 //!     .summary("Category:email")
 //!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
 //!     .hint(Hint::Category("email".to_owned()))
-//!     .hint(Hint::Resident(true))
+//!     .hint(Hint::Resident(true)) // this is not supported by all implementations
+//!     .timeout(0) // this however is
 //!     .show();
+//!
+//! // Example 3 (Ask the user to do something)
+//! Notification::new()
+//!     .summary("click me")
+//!     .action("default", "default")
+//!     .action("clicked", "click here")
+//!     .hint(Hint::Resident(true))
+//!     .show_and_wait_for_action({|action|
+//!         match action {
+//!             "default" => {println!("so boring")},
+//!             "clicked" => {println!("that was correct")},
+//!             "__closed" => {println!("the notification was closed")}, // here "__closed" is a hardcoded keyword
+//!             _ => ()
+//!         }
+//!     });
+//!
 //! ```
+//!
+//! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
 use std::env;
 use std::collections::HashSet;
@@ -97,6 +107,7 @@ pub enum NotificationHint
     //ImageData(iiibiiay),
     ImagePath(String),
     //IconData(iiibiiay),
+    /// This does not work on all servers, however timeout=0 will do the job
     Resident(bool),
     SoundFile(String),
     SoundName(String),

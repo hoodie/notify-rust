@@ -5,6 +5,7 @@ use notify_rust::NotificationHint as Hint;
 
 fn main()
 {
+
     Notification::new()
         .summary("click me")
         .action("default", "default")
