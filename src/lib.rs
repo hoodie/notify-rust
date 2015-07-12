@@ -283,8 +283,8 @@ impl Notification
                 };
 
                 hints.push( MessageItem::DictEntry(
-                        Box::new(MessageItem::Str(entry.0)),
-                        Box::new(MessageItem::Variant( Box::new(MessageItem::Str(entry.1))))
+                        Box::new(entry.0.into()),
+                        Box::new(MessageItem::Variant( Box::new(entry.1.into()) ))
                         ));
             }
             if let Ok(array) = MessageItem::new_array(hints){
@@ -300,9 +300,8 @@ impl Notification
     {
         if self.actions.is_empty() {
             let mut actions = vec![];
-            for action in self.actions.iter()
-            {
-                actions.push(MessageItem::Str(action.to_owned()))
+            for action in self.actions.iter() {
+                actions.push(action.to_owned().into());
             }
             if let Ok(array) = MessageItem::new_array(actions){
                 return array;
@@ -342,17 +341,17 @@ impl Notification
 
         //TODO implement hints and actions
         message.append_items(&[
-           MessageItem::Str(  self.appname.to_owned()), // appname
-           MessageItem::UInt32(id),                       // notification to update
-           MessageItem::Str(  self.icon.to_owned()),    // icon
-           MessageItem::Str(  self.summary.to_owned()), // summary (title)
-           MessageItem::Str(  self.body.to_owned()),    // body
-                              self.pack_actions() ,      // actions
-                              self.pack_hints(),         // hints
-           MessageItem::Int32(self.timeout)              // timeout
+                             self.appname.to_owned().into(), // appname
+                             id.into(),                      // notification to update
+                             self.icon.to_owned().into(),    // icon
+                             self.summary.to_owned().into(), // summary (title)
+                             self.body.to_owned().into(),    // body
+                             self.pack_actions().into(),     // actions
+                             self.pack_hints().into(),       // hints
+                             self.timeout.into()             // timeout
            ]);
         let connection = Connection::get_private(BusType::Session).unwrap(); // test this against missing server
-        let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
+        let r = connection.send_with_reply_and_block(message, 2000).unwrap();
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
             self.id = *id;
             return *id
@@ -402,7 +401,7 @@ pub fn get_capabilities() -> Vec<String>
 
     let message = build_message("GetCapabilities");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    let mut r = connection.send_with_reply_and_block(message, 2000).unwrap();
+    let r = connection.send_with_reply_and_block(message, 2000).unwrap();
 
     if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
         for item in items.iter(){
@@ -419,7 +418,7 @@ pub fn get_capabilities() -> Vec<String>
 pub fn close_notification(id:u32)
 {
     let mut message = build_message("CloseNotification");
-    message.append_items(&[ MessageItem::UInt32(id) ]);
+    message.append_items(&[ id.into() ]);
     let connection = Connection::get_private(BusType::Session).unwrap();
     connection.send(message);
 }
@@ -449,7 +448,7 @@ pub fn get_server_information() -> ServerInformation
 {
     let message = build_message("GetServerInformation");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    let mut r = connection.send_with_reply_and_block(message,2000).unwrap();
+    let r = connection.send_with_reply_and_block(message,2000).unwrap();
 
     let items=r.get_items();
 
@@ -475,7 +474,7 @@ pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
     for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(mut s) = item {
+        if let ConnectionItem::Signal(s) = item {
             let (_, protocol, iface, member) = s.headers();
             let items = s.get_items();
             match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
