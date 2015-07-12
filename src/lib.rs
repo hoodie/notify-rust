@@ -92,6 +92,7 @@ pub struct Notification
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32,
+    pub urgency: NotificationUrgency,
     pub id: u32
 }
 
@@ -136,6 +137,7 @@ impl Notification
             hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  -1,
+            urgency:  NotificationUrgency::Medium,
             id:  0
         }
     }
@@ -216,6 +218,15 @@ impl Notification
         self
     }
 
+    /// Set the `urgency`.
+    ///
+    /// Pick between Medium, Low and High.
+    pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification
+    {
+        self.urgency = urgency;
+        self
+    }
+
     /// Set `actions`.
     ///
     /// To quote http://www.galago-project.org/specs/notification/0.9/x408.html#command-notify
@@ -255,6 +266,7 @@ impl Notification
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
+            urgency:  self.urgency.clone(),
             id:       self.id.clone(),
         }
     }
