@@ -374,11 +374,12 @@ impl Notification
     /// Wraps show() but prints notification to stdout.
     pub fn show_debug(&mut self) -> u32
     {
-        println!("Notification:\n{appname}/{urgency:?}: ({icon}) {summary:?} {body:?}\n",
+        println!("Notification:\n{appname}/{urgency:?}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
             urgency = self.urgency,
             summary = self.summary,
             body    = self.body,
+            hints   = self.hints,
             icon    = self.icon,);
         self.show()
     }
