@@ -273,7 +273,7 @@ impl Notification
 
     fn pack_hints(&self) -> MessageItem
     {
-        if self.hints.is_empty() {
+        if !self.hints.is_empty() {
             let mut hints = vec![];
             for hint in self.hints.iter(){
                 let entry:(String,String) = match hint {
@@ -310,7 +310,7 @@ impl Notification
 
     fn pack_actions(&self) -> MessageItem
     {
-        if self.actions.is_empty() {
+        if !self.actions.is_empty() {
             let mut actions = vec![];
             for action in self.actions.iter() {
                 actions.push(action.to_owned().into());
@@ -346,12 +346,9 @@ impl Notification
 
     fn _show(&mut self, id:u32) -> u32
     {
-        //println!("{} hints:    {:?}", self.hints.len() ,self.pack_hints());
-        //println!("{} actions:  {:?}", self.actions.len()/2 ,self.pack_actions());
         //TODO catch this
         let mut message = build_message("Notify");
 
-        //TODO implement hints and actions
         message.append_items(&[
                              self.appname.to_owned().into(), // appname
                              id.into(),                      // notification to update
