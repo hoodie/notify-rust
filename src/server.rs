@@ -5,6 +5,7 @@
 //!
 //! This server will not replace an already running notification server.
 //!
+
 extern crate dbus;
 
 use std::borrow::Cow;
@@ -13,6 +14,7 @@ use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};
 use dbus::obj::{ObjectPath, Argument, Method, Interface};
 
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
+pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub struct NotificationServer
 {
@@ -49,9 +51,10 @@ impl NotificationServer
 
         let notify_listener = Interface::new(
             //{{{
-            vec!( Method::new(
-                    "Notify",
-                    vec!( Argument::new("app_name",    "s"),
+            vec![
+            Method::new( "Notify",
+
+                    vec![ Argument::new("app_name",    "s"),
                           Argument::new("replaces_id", "u"),
                           Argument::new("app_icon",    "s"),
                           Argument::new("summary",     "s"),
@@ -59,10 +62,9 @@ impl NotificationServer
                           Argument::new("actions",    "as"),
                           Argument::new("hints",   "a{sv}"),
                           Argument::new("timeout",     "i")
-                        ),
+                        ],
 
-                        // No input arguments
-                        vec!(Argument::new("arg_0", "u")), //out_args
+                        vec![Argument::new("arg_0", "u")], //out_args
 
                         // Callback
                         Box::new(move |msg| {
@@ -80,10 +82,44 @@ impl NotificationServer
                             self.counter += 1;
                             Ok(vec!(MessageItem::Int32(42)))
                         })
-                )
-            ),
-            vec!(),
-            vec!() // No properties or signals
+                ),
+
+                Method::new( "GetCapabilities",
+
+                    vec![], //No input arguments
+                    vec![Argument::new("caps", "{s}")],
+                    Box::new(|_msg|
+                             Ok( vec![ MessageItem::new_array(
+                                         vec![
+                                         "body".to_owned().into(),
+                                         ]
+                                       ).unwrap()
+                                     ]
+                               )
+                             )
+                    ),
+
+                Method::new(
+                    "GetServerInformation",
+                    // No input arguments
+                    vec![],
+                    vec![
+                        Argument::new("name", "s"),
+                        Argument::new("vendor", "s"),
+                        Argument::new("version", "s"),
+                        Argument::new("spec_version", "s"),
+                         ],
+                    Box::new(|_msg|
+                             Ok( vec![ "notify-rust".to_owned().into(),
+                                       "notify-rust".to_owned().into(),
+                                       VERSION.to_owned().into(),
+                                       "1.1".to_owned().into() ]
+                               ))
+                    )
+            ],
+
+            vec![],
+            vec![] // No properties or signals
             //}}}
             );
 
@@ -92,7 +128,7 @@ impl NotificationServer
 
         for n in connection.iter(10) {
             match n {
-                ConnectionItem::MethodCall(mut m) => 
+                ConnectionItem::MethodCall(mut m) =>
                     if objpath.handle_message(&mut m).is_none() {
                         connection.send(Message::new_error(&m, DBUS_ERROR_FAILED, "Object path not found").unwrap()).unwrap();
                     }
