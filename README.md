@@ -19,16 +19,31 @@ notify-rust = "1.0"
 ## Usage & Documentation
 please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
 
-## Things TODO
+### Commandline tool
+Checkout ./notify-cli, it exposes most of the functionality of the lib to the commandline.
 
-* [x] actions
-* [x] hints
-* [x] make use of returned id (can be used by `close_notification(id)`)
-* [x] implement methods: `GetServerInformation()`
-* [x] listen to signals: `ActionInvoke` (0.8.0)
-* [x] update notifications (0.9.0)
+```
+$ ./target/debug/notify send --help
+notify-send 
+Shows a notification
 
-[check](http://www.galago-project.org/specs/notification/0.9/index.html)
-[out](https://developer.gnome.org/notification-spec/)
-[the](https://wiki.ubuntu.com/NotifyOSD)
-[specifications](https://wiki.archlinux.org/index.php/Desktop_notifications)
+USAGE:
+	notify send [FLAGS] [OPTIONS] [ARGS] <summary>
+
+FLAGS:
+    -d, --debug      Also prints notification to stdout
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -a, --app-name <app-name>          Set a specific app-name manually.
+    -c, --category <category>          Set a category.
+    -t, --expire-time <expire-time>    Time until expiration in milliseconds. 0 means forever.
+    -i, --icon <icon>                  Icon of notification.
+    -u, --urgency <urgency>            How urgent is it. [values: high low normal]
+
+ARGS:
+    summary    Title of the Notification.
+    body       Message body
+
+```

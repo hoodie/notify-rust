@@ -1,0 +1,14 @@
+[package]
+name = "notify-rust-cli"
+version = "0.2.0"
+authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
+
+[[bin]]
+name = "notify"
+
+[dependencies.clap]
+version = "~1.1"
+features = [ "suggestions", "color" ]
+
+[dependencies.notify-rust]
+path = "../"
