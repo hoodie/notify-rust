@@ -69,7 +69,7 @@ fn build_message(method_name:&str) -> Message
         "org.freedesktop.Notifications",
         "/org/freedesktop/Notifications",
         "org.freedesktop.Notifications",
-        method_name).unwrap()
+        method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
 /// Desktop Notification.
@@ -359,8 +359,8 @@ impl Notification
                              self.pack_hints().into(),       // hints
                              self.timeout.into()             // timeout
            ]);
-        let connection = Connection::get_private(BusType::Session).unwrap(); // test this against missing server
-        let r = connection.send_with_reply_and_block(message, 2000).unwrap();
+        let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
+        let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message Notify.");
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
             self.id = *id;
             return *id
@@ -415,8 +415,8 @@ pub fn get_capabilities() -> Vec<String>
     let mut capabilities = vec![];
 
     let message = build_message("GetCapabilities");
-    let connection = Connection::get_private(BusType::Session).unwrap();
-    let r = connection.send_with_reply_and_block(message, 2000).unwrap();
+    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
+    let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message GetCapabilities.");
 
     if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
         for item in items.iter(){
@@ -434,7 +434,7 @@ pub fn close_notification(id:u32)
 {
     let mut message = build_message("CloseNotification");
     message.append_items(&[ id.into() ]);
-    let connection = Connection::get_private(BusType::Session).unwrap();
+    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
     connection.send(message);
 }
 
@@ -462,8 +462,8 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String
 pub fn get_server_information() -> ServerInformation
 {
     let message = build_message("GetServerInformation");
-    let connection = Connection::get_private(BusType::Session).unwrap();
-    let r = connection.send_with_reply_and_block(message,2000).unwrap();
+    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
+    let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message GetServerInformation.");
 
     let items=r.get_items();
 
@@ -485,7 +485,7 @@ pub fn get_server_information() -> ServerInformation
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
-    let connection = Connection::get_private(BusType::Session).unwrap();
+    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
     for item in connection.iter(1000) {
