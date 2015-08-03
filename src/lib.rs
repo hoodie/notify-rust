@@ -325,9 +325,8 @@ impl Notification
 
     /// Sends Notification to D-Bus.
     ///
-    /// Returns notification id, which can be used to close it using
-    /// `notify_rust::close_notification`.
-    pub fn show(&mut self) -> u32
+    /// Returns a handle to a notification
+    pub fn show(&mut self) -> NotificationHandle
     {
         self._show(0)
     }
@@ -341,10 +340,10 @@ impl Notification
     pub fn update(&mut self) -> u32
     {
         let id = self.id.clone();
-        self._show(id)
+        self._show(id).id
     }
 
-    fn _show(&mut self, id:u32) -> u32
+    fn _show(&mut self, id:u32) -> NotificationHandle
     {
         //TODO catch this
         let mut message = build_message("Notify");
@@ -363,13 +362,15 @@ impl Notification
         let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message Notify.");
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
             self.id = *id;
-            return *id
+            return NotificationHandle::new(*id, connection)
         }
-        else {return 0}
+        else {
+           return NotificationHandle::new(0, connection)
+        }
     }
 
     /// Wraps show() but prints notification to stdout.
-    pub fn show_debug(&mut self) -> u32
+    pub fn show_debug(&mut self) -> NotificationHandle
     {
         println!("Notification:\n{appname}/{urgency:?}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
@@ -401,11 +402,11 @@ impl Notification
     ///         }
     ///     });
     /// ```
-    pub fn show_and_wait_for_action<F>(&mut self, invokation_closure:F) -> u32 where F:FnOnce(&str)
+    pub fn show_and_wait_for_action<F>(&mut self, invokation_closure:F) -> NotificationHandle where F:FnOnce(&str)
     {
-        let id = self.show();
-        wait_for_action_signal(id, invokation_closure);
-        id
+        let handle = self.show();
+        wait_for_action_signal(&handle.connection, handle.id, invokation_closure);
+        handle
     }
 }
 
@@ -484,10 +485,10 @@ pub fn get_server_information() -> ServerInformation
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
-    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
+pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
+
     for item in connection.iter(1000) {
         if let ConnectionItem::Signal(s) = item {
             let (_, protocol, iface, member) = s.headers();
@@ -513,4 +514,20 @@ pub fn wait_for_action_signal<F>(id:u32, func:F) where F: FnOnce(&str) {
         }
     }
 
+}
+
+/// A handle to a shown notification
+pub struct NotificationHandle {
+    id: u32,
+    connection: Connection
+}
+
+impl NotificationHandle {
+    fn new(id: u32, connection: Connection) -> NotificationHandle {
+        NotificationHandle {
+            id: id,
+            connection: connection
+        }
+    }
+    // TODO: Move functionality like updating, closing, actions, etc. here
 }
