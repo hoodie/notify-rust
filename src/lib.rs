@@ -410,7 +410,27 @@ impl Notification
     }
 }
 
-/// Get list of all capabilities of the running Notification Server.
+/// A handle to a shown notification.
+///
+/// This keeps a connection alive to ensure actions work on certain desktops.
+pub struct NotificationHandle
+{
+    id: u32,
+    connection: Connection
+}
+
+impl NotificationHandle
+{
+    fn new(id: u32, connection: Connection) -> NotificationHandle {
+        NotificationHandle {
+            id: id,
+            connection: connection
+        }
+    }
+    // TODO: Move functionality like updating, closing, actions, etc. here
+}
+
+/// Get list of all capabilities of the running notification server.
 pub fn get_capabilities() -> Vec<String>
 {
     let mut capabilities = vec![];
@@ -441,7 +461,8 @@ pub fn close_notification(id:u32)
 
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
-pub struct ServerInformation{
+pub struct ServerInformation
+{
     pub name:          String,
     pub vendor:        String,
     pub version:       String,
@@ -482,10 +503,11 @@ pub fn get_server_information() -> ServerInformation
 }
 
 
-/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+/// Listens for the `ActionInvoked(UInt32, String)` signal.
 ///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
+/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`.
+pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str)
+{
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
 
@@ -516,18 +538,3 @@ pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) wher
 
 }
 
-/// A handle to a shown notification
-pub struct NotificationHandle {
-    id: u32,
-    connection: Connection
-}
-
-impl NotificationHandle {
-    fn new(id: u32, connection: Connection) -> NotificationHandle {
-        NotificationHandle {
-            id: id,
-            connection: connection
-        }
-    }
-    // TODO: Move functionality like updating, closing, actions, etc. here
-}
