@@ -72,7 +72,7 @@ fn build_message(method_name:&str) -> Message
         method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
-/// Desktop Notification.
+/// Desktop notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
 pub struct Notification
