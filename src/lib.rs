@@ -94,8 +94,7 @@ pub struct Notification
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32,
-    pub urgency: NotificationUrgency,
-    pub id: u32
+    pub urgency: NotificationUrgency
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -139,8 +138,7 @@ impl Notification
             hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  -1,
-            urgency:  NotificationUrgency::Medium,
-            id:  0
+            urgency:  NotificationUrgency::Medium
         }
     }
 
@@ -269,7 +267,6 @@ impl Notification
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
             urgency:  self.urgency.clone(),
-            id:       self.id.clone(),
         }
     }
 
@@ -335,20 +332,6 @@ impl Notification
         NotificationHandle::new(id, connection, self.clone())
     }
 
-    /// Sends Notification to D-Bus, again.
-    ///
-    /// Here the original notification is replaced. Watch out for different implementations of the
-    /// notification server! On plasma5 or instance, you should also change the appname, so the old
-    /// message is really replaced and not just amended. Xfce behaves well, all others have not
-    /// been tested by the developer.
-    pub fn update(&mut self) -> NotificationHandle
-    {
-        let id = self.id.clone();
-        let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
-        let new_id = self._show(id, &connection);
-        NotificationHandle::new(new_id, connection, self.clone())
-    }
-
     fn _show(&mut self, id:u32, connection: &Connection) -> u32
     {
         //TODO catch this
@@ -366,8 +349,7 @@ impl Notification
            ]);
         let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message Notify.");
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
-            self.id = *id;
-            return self.id
+            *id
         }
         else {
            return 0
@@ -385,31 +367,6 @@ impl Notification
             hints   = self.hints,
             icon    = self.icon,);
         self.show()
-    }
-
-    /// Wraps show() and blocks.
-    ///
-    /// This method takes a closure that takes an action name.
-    /// ## Example
-    /// ```
-    /// use notify_rust::Notification;
-    /// use notify_rust::NotificationHint as Hint;
-    /// Notification::new()
-    ///     .summary("click me")
-    ///     .action("default", "default")
-    ///     .action("clicked", "click here")
-    ///     .hint(Hint::Resident(true))
-    ///     .show_and_wait_for_action({|action|
-    ///         match action {
-    ///             "default" => {println!("so boring")},
-    ///             "clicked" => {println!("that was correct")},
-    ///             _ => ()
-    ///         }
-    ///     });
-    /// ```
-    pub fn show_and_wait_for_action<F>(&mut self, invokation_closure:F) where F: FnOnce(&str)
-    {
-        self.show().wait_for_action(invokation_closure)
     }
 }
 
@@ -513,16 +470,6 @@ pub fn get_capabilities() -> Vec<String>
     return capabilities;
 }
 
-/// Close a Notification given by id.
-#[allow(unused_must_use)]
-pub fn close_notification(id:u32)
-{
-    let mut message = build_message("CloseNotification");
-    message.append_items(&[ id.into() ]);
-    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
-    connection.send(message);
-}
-
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation
@@ -567,10 +514,8 @@ pub fn get_server_information() -> ServerInformation
 }
 
 
-/// Listens for the `ActionInvoked(UInt32, String)` signal.
-///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`.
-pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str)
+// Listens for the `ActionInvoked(UInt32, String)` signal.
+fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str)
 {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
