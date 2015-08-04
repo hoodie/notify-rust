@@ -32,9 +32,10 @@
 //!     .action("default", "default")
 //!     .action("clicked", "click here")
 //!     .hint(Hint::Resident(true))
-//!     .show_and_wait_for_action({|action|
+//!     .show()
+//!     .wait_for_action({|action|
 //!         match action {
-//!             "default" => {println!("so boring")},
+//!             "default" => {println!("you clicked \"default\"")},
 //!             "clicked" => {println!("that was correct")},
 //!             "__closed" => {println!("the notification was closed")}, // here "__closed" is a hardcoded keyword
 //!             _ => ()
@@ -546,4 +547,5 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
     }
 
 }
+
 
