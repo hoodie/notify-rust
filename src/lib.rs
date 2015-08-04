@@ -402,7 +402,7 @@ impl NotificationHandle
     {
         let mut message = build_message("CloseNotification");
         message.append_items(&[ self.id.into() ]);
-        self.connection.send(message);
+        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
     /// Replace the original notification with an updated version
