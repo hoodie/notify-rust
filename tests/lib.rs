@@ -4,11 +4,11 @@ use notify_rust::Notification;
 #[test]
 fn closing()
 {
-    let id = Notification::new()
+    Notification::new()
         .summary("You see me")
         .body("you don't see me!")
-        .show();
-    notify_rust::close_notification(id);
+        .show()
+        .close();
 }
 
 #[test]
