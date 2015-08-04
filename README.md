@@ -13,11 +13,11 @@ The API shown below should be stable.
 ```toml
 #Cargo.toml
 [dependencies]
-notify-rust = "1.0"
+notify-rust = "2.0"
 ```
 
 ## Usage & Documentation
-please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
+Please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
 
 ### Commandline tool
 Checkout ./notify-cli, it exposes most of the functionality of the lib to the commandline.

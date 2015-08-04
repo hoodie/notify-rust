@@ -1,3 +1,20 @@
+2.0.0 / 2015-08-4
+==================
+* breaking change: changed API of actions
+
+1.1.0 / 2015-08-3
+==================
+* changed: introduced NotificationHandles instead of integer IDs
+
+1.0.1 / 2015-07-19
+==================
+* fixed little refactoring hickup
+
+1.0.0 / 2015-07-13
+==================
+* added: show_debug()
+* stabilization
+
 
 0.9.0 / 2015-07-01
 ==================
