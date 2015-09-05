@@ -134,7 +134,7 @@ impl NotificationServer
                     }
                 ,
                 ConnectionItem::Signal(_m) => { /*println!("Signal: {:?}", _m);*/ },
-                ConnectionItem::Nothing => (),
+                _ => (),
 
             }
         }
