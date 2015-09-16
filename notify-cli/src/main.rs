@@ -70,6 +70,7 @@ fn main() {
                         .subcommand(SubCommand::with_name("server")
                                     .about("Starts a little notification server for testing")
                                     )
+                        .arg_required_else_help(true)
 
                         .get_matches();
 
@@ -159,6 +160,5 @@ fn main() {
         } else {
             notification.show();
         }
-
     }
 }
