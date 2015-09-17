@@ -11,7 +11,6 @@ fn main()
         .show();
 
     urgency();
-
 }
 
 fn urgency()

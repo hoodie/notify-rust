@@ -55,6 +55,8 @@ extern crate dbus;
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
 
 pub mod server;
+pub mod hints;
+pub use hints::NotificationHint;
 
 /// Executable Name
 ///
@@ -77,7 +79,7 @@ fn build_message(method_name:&str) -> Message
 /// Desktop notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
-#[derive(Clone)]
+#[derive(Debug,Clone)]
 pub struct Notification
 {
     /// Filled by default with executable name.
@@ -100,27 +102,6 @@ pub struct Notification
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum NotificationUrgency{ Low = 0, Medium = 1, High = 2  }
-
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub enum NotificationHint
-{ // as found on https://developer.gnome.org/notification-spec/
-    ActionIcons(bool),
-    Category(String),
-    DesktopEntry(String),
-    //ImageData(iiibiiay),
-    ImagePath(String),
-    //IconData(iiibiiay),
-    /// This does not work on all servers, however timeout=0 will do the job
-    Resident(bool),
-    SoundFile(String),
-    SoundName(String),
-    SuppressSound(bool),
-    Transient(bool),
-    X(i32),
-    Y(i32),
-    Urgency(NotificationUrgency),
-    Custom(String,String)
-}
 
 impl Notification
 {
@@ -274,31 +255,8 @@ impl Notification
     fn pack_hints(&self) -> MessageItem
     {
         if !self.hints.is_empty() {
-            let mut hints = vec![];
-            for hint in self.hints.iter(){
-                let entry:(String,String) = match hint {
-                    &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_owned(),    format!("{}",  value)), // bool
-                    &NotificationHint::Category(ref value)     => ("category".to_owned(),        value.clone()),
-                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_owned(),   value.clone()),
-                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_owned(),      format!("{:?}",  value)),
-                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_owned(),      value.clone()),
-                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_owned(),       format!("{:?}",  value)),
-                    &NotificationHint::Resident(ref value)     => ("resident".to_owned(),        format!("{}",  value)), // bool
-                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_owned(),      value.clone()),
-                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_owned(),      value.clone()),
-                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_owned(),  format!("{}",  value)),
-                    &NotificationHint::Transient(value)        => ("transient".to_owned(),       format!("{}",  value)),
-                    &NotificationHint::X(value)                => ("x".to_owned(),               format!("{}",  value)),
-                    &NotificationHint::Y(value)                => ("y".to_owned(),               format!("{}",  value)),
-                    &NotificationHint::Urgency(value)          => ("urgency".to_owned(),         format!("{}",  value as u32)),
-                    _                                          => ("Foo".to_owned(),"bar".to_owned())
-                };
+            let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into() ).collect();
 
-                hints.push( MessageItem::DictEntry(
-                        Box::new(entry.0.into()),
-                        Box::new(MessageItem::Variant( Box::new(entry.1.into()) ))
-                        ));
-            }
             if let Ok(array) = MessageItem::new_array(hints){
                 return array;
             }
@@ -348,7 +306,7 @@ impl Notification
                              self.pack_hints().into(),       // hints
                              self.timeout.into()             // timeout
            ]);
-        let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message Notify.");
+        let r = connection.send_with_reply_and_block(message, 2000).unwrap();//.ok().expect("Unable to send message Notify.");
         if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
             *id
         }
