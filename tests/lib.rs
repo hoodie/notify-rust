@@ -8,6 +8,7 @@ fn closing()
         .summary("You see me")
         .body("you don't see me!")
         .show()
+        .unwrap()
         .close();
 }
 
@@ -45,7 +46,7 @@ fn burst()
 #[test]
 fn get_capabilities()
 {
-    let capabilities:Vec<String> = notify_rust::get_capabilities();
+    let capabilities:Vec<String> = notify_rust::get_capabilities().unwrap();
     for capability in capabilities{
         Notification::new().summary("capability").body(&format!("{}", capability)).show();
     }

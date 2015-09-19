@@ -19,11 +19,11 @@ pub enum NotificationHint
     X(i32),
     Y(i32),
     Urgency(NotificationUrgency),
-    Custom(String,String)
+    Custom(String,String),
+    Invalid
 }
 
-impl<'a> From<&'a NotificationHint> for MessageItem
-{
+impl<'a> From<&'a NotificationHint> for MessageItem {
     fn from(hint: &NotificationHint) -> MessageItem
     {
         let hint:(String,String) = match hint {
@@ -48,5 +48,44 @@ impl<'a> From<&'a NotificationHint> for MessageItem
             Box::new(hint.0.into()),
             Box::new(MessageItem::Variant( Box::new(hint.1.into()) ))
             )
+    }
+}
+
+    fn unwrap_message_str(item: &MessageItem) -> String {
+        match item{
+            &MessageItem::Str(ref value) => value.to_owned(),
+            &MessageItem::Variant(ref value) => match item{
+                &MessageItem::Str(ref value) => value.to_owned(),
+                _ => "".to_owned()
+            },
+            _ => "".to_owned()
+        }
+    }
+
+impl<'a> From<&'a MessageItem> for NotificationHint {
+
+    fn from (item: &MessageItem) -> NotificationHint
+    {
+        match item{
+            &MessageItem::DictEntry(box ref key, box ref value) => NotificationHint::Custom(unwrap_message_str(&key), unwrap_message_str(&value)),
+            _ => NotificationHint::Invalid
+        }
+    }
+
+}
+
+#[cfg(test)]
+mod test{
+    use super::*;
+    use dbus::*;
+
+    #[test]
+    fn hint_to_item()
+    {
+        let hint = &NotificationHint::Custom("foo".into(), "bar".into());
+        let item:MessageItem = hint.into();
+        //let hint : NotificationHint = item.into();
+        println!("{:?}", hint);
+        println!("{:?}", item);
     }
 }

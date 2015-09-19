@@ -46,13 +46,15 @@
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
+#![feature(box_syntax, box_patterns)]
+
 use std::env;
 use std::collections::HashSet;
 use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
 
 extern crate dbus;
-use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
+use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem, Error};
 
 pub mod server;
 pub mod hints;
@@ -63,8 +65,8 @@ pub use hints::NotificationHint;
 /// Returns the name of the current executable, used as a default for `Notification.appname`.
 fn exe_name() -> String
 {
-    let exe = env::current_exe().unwrap();
-    exe.file_name().unwrap().to_str().unwrap().to_owned()
+    env::current_exe().unwrap()
+    .file_name().unwrap().to_str().unwrap().to_owned()
 }
 
 fn build_message(method_name:&str) -> Message
@@ -284,14 +286,14 @@ impl Notification
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
-    pub fn show(&mut self) -> NotificationHandle
+    pub fn show(&mut self) -> Result<NotificationHandle, Error>
     {
         let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
-        let id = self._show(0, &connection);
-        NotificationHandle::new(id, connection, self.clone())
+        let id = try!(self._show(0, &connection));
+        Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
-    fn _show(&mut self, id:u32, connection: &Connection) -> u32
+    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error>
     {
         //TODO catch this
         let mut message = build_message("Notify");
@@ -305,18 +307,18 @@ impl Notification
                              self.pack_actions().into(),     // actions
                              self.pack_hints().into(),       // hints
                              self.timeout.into()             // timeout
-           ]);
-        let r = connection.send_with_reply_and_block(message, 2000).unwrap();//.ok().expect("Unable to send message Notify.");
-        if let Some(&MessageItem::UInt32(ref id)) = r.get_items().get(0) {
-            *id
-        }
-        else {
-           return 0
+        ]);
+
+        let reply = try!(connection.send_with_reply_and_block(message, 2000));
+
+        match  reply.get_items().get(0) {
+            Some(&MessageItem::UInt32(ref id)) => Ok(*id),
+            _ => Ok(0)
         }
     }
 
     /// Wraps show() but prints notification to stdout.
-    pub fn show_debug(&mut self) -> NotificationHandle
+    pub fn show_debug(&mut self) -> Result<NotificationHandle, Error>
     {
         println!("Notification:\n{appname}/{urgency:?}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
@@ -386,8 +388,9 @@ impl NotificationHandle
     /// notification server! On plasma5 or instance, you should also change the appname, so the old
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
-    pub fn update(&mut self) {
-        self.id = self.notification._show(self.id, &self.connection);
+    pub fn update(&mut self) 
+    {
+        self.id = self.notification._show(self.id, &self.connection).unwrap();
     }
 }
 
@@ -411,22 +414,22 @@ impl DerefMut for NotificationHandle
 }
 
 /// Get list of all capabilities of the running notification server.
-pub fn get_capabilities() -> Vec<String>
+pub fn get_capabilities() -> Result<Vec<String>, Error>
 {
     let mut capabilities = vec![];
 
-    let message = build_message("GetCapabilities");
-    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
-    let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message GetCapabilities.");
+    let message    = build_message("GetCapabilities");
+    let connection = try!(Connection::get_private(BusType::Session));
+    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
 
-    if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = r.get_items().get(0) {
+    if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
         for item in items.iter(){
             if let &MessageItem::Str(ref cap) = item{
                 capabilities.push(cap.clone());
             }
         }
     }
-    return capabilities;
+    return Ok(capabilities);
 }
 
 /// Return value of `get_server_information()`.
@@ -442,7 +445,7 @@ pub struct ServerInformation
 fn unwrap_message_string(item: Option<&MessageItem>) -> String
 {
     match item{
-        Some(&MessageItem::Str(ref value)) => value.clone(),
+        Some(&MessageItem::Str(ref value)) => value.to_owned(),
         _ => "".to_owned()
     }
 }
@@ -451,25 +454,20 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String
 ///
 /// This struct contains name, vendor, version and spec_version of the notification server
 /// running.
-pub fn get_server_information() -> ServerInformation
+pub fn get_server_information() -> Result<ServerInformation, Error>
 {
-    let message = build_message("GetServerInformation");
-    let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
-    let r = connection.send_with_reply_and_block(message, 2000).ok().expect("Unable to send message GetServerInformation.");
+    let message    = build_message("GetServerInformation");
+    let connection = try!(Connection::get_private(BusType::Session));
+    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
 
-    let items=r.get_items();
+    let items = reply.get_items();
 
-    let name         = unwrap_message_string(items.get(0));
-    let vendor       = unwrap_message_string(items.get(1));
-    let version      = unwrap_message_string(items.get(2));
-    let spec_version = unwrap_message_string(items.get(3));
-
-    ServerInformation{
-        name: name,
-        vendor: vendor,
-        version: version,
-        spec_version: spec_version,
-    }
+    Ok( ServerInformation{
+        name:          unwrap_message_string(items.get(0)),
+        vendor:        unwrap_message_string(items.get(1)),
+        version:       unwrap_message_string(items.get(2)),
+        spec_version:  unwrap_message_string(items.get(3))
+    })
 }
 
 
@@ -503,7 +501,6 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
             }
         }
     }
-
 }
 
 

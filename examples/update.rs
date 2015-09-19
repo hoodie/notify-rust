@@ -6,7 +6,8 @@ fn main()
         .summary("Firefox Crashed")
         .body("Just <b>kidding</b>, this is just the notify_show example.")
         .icon("firefox")
-        .show();
+        .show()
+        .unwrap();
 
     std::thread::sleep_ms(1_500);
 

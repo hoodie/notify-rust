@@ -11,6 +11,7 @@ fn main()
         .action("clicked", "click here")
         .hint(Hint::Resident(true))
         .show()
+        .unwrap()
         .wait_for_action({|action|
             match action {
                 "default" => {println!("so boring")},

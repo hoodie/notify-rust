@@ -8,7 +8,7 @@ fn main()
         .summary("Don't Mind me")
         .hint(NotificationHint::Transient(true))
         .body("I'll be gone soon enough.\nSorry for the inconvenience.")
-        .show()
+        .show().unwrap()
         .wait_for_action({|action|
             match action {
                 "__closed" => {println!("the notification was closed")}, // here "__closed" is a hardcoded keyword
