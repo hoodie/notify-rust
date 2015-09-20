@@ -1,3 +1,4 @@
+#![allow(unused_must_use)]
 extern crate notify_rust;
 use std::thread;
 
@@ -8,11 +9,7 @@ fn main()
 {
     let mut server = NotificationServer::new();
     thread::spawn(move||{
-        server.start(
-            |appname, _id, icon, summary, body, actions, hints, counter | 
-            println!("[{counter}]  ({icon}) appname: {appname:?}\nsummary: {summary}\nbody:    {body}\nactions:     {actions}\nhints:     {hints}\n",
-            appname = appname, icon = icon, summary = summary, body = body, actions = actions, hints = hints, counter = counter)
-            );
+        server.start( |notification| println!("{:#?}", notification))
     });
 
     println!("Press enter to exit.\n");

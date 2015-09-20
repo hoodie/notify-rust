@@ -8,10 +8,13 @@
 
 extern crate dbus;
 
-use std::borrow::Cow;
+use std::collections::HashSet;
 
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};
 use dbus::obj::{ObjectPath, Argument, Method, Interface};
+
+use super::{Notification,NotificationUrgency,NotificationHint};
+use util::*;
 
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -28,20 +31,9 @@ impl NotificationServer
         NotificationServer{counter:0}
     }
 
-    fn unwrap_message_string(&self,item: Option<&MessageItem>) -> String {
-        match item{
-            Some(&MessageItem::Str(ref value)) => value.clone(),
-            Some(&MessageItem::Array(ref items, Cow::Borrowed("{sv}"))) => format!("DICT   {:?}", items),
-            Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) => format!("ARRAY  {:?}", items),
-            Some(&MessageItem::Array(ref items, ref sig )) => format!("{sig:?} {items:?}", items=items, sig=sig),
-            _ => "".to_owned()
-        }
-    }
-
-
     //fn handle_notification
     pub fn start<F>(&mut self, closure: F)
-        where F: Fn(&str, &str, &str, &str, &str, &str, &str, &u32)
+        where F: Fn(&Notification)
     {
         let connection = Connection::get_private(BusType::Session).unwrap();
         connection.release_name("org.freedesktop.Notifications").unwrap();
@@ -54,69 +46,84 @@ impl NotificationServer
             vec![
             Method::new( "Notify",
 
-                    vec![ Argument::new("app_name",    "s"),
-                          Argument::new("replaces_id", "u"),
-                          Argument::new("app_icon",    "s"),
-                          Argument::new("summary",     "s"),
-                          Argument::new("body",        "s"),
-                          Argument::new("actions",    "as"),
-                          Argument::new("hints",   "a{sv}"),
-                          Argument::new("timeout",     "i")
-                        ],
-
-                        vec![Argument::new("arg_0", "u")], //out_args
-
-                        // Callback
-                        Box::new(move |msg| {
-                            let appname = self.unwrap_message_string(msg.get_items().get(0));
-                            let id      = self.unwrap_message_string(msg.get_items().get(1));
-                            let icon    = self.unwrap_message_string(msg.get_items().get(2));
-                            let summary = self.unwrap_message_string(msg.get_items().get(3));
-                            let body    = self.unwrap_message_string(msg.get_items().get(4));
-                            let actions = self.unwrap_message_string(msg.get_items().get(5));
-                            let hints   = self.unwrap_message_string(msg.get_items().get(6));
-                            let counter = self.counter;
-
-                            closure(&appname, &id, &icon, &summary, &body, &actions, &hints, &counter);
-
-                            self.counter += 1;
-                            Ok(vec!(MessageItem::Int32(42)))
-                        })
-                ),
-
-                Method::new( "GetCapabilities",
-
-                    vec![], //No input arguments
-                    vec![Argument::new("caps", "{s}")],
-                    Box::new(|_msg|
-                             Ok( vec![ MessageItem::new_array(
-                                         vec![
-                                         "body".to_owned().into(),
-                                         ]
-                                       ).unwrap()
-                                     ]
-                               )
-                             )
-                    ),
-
-                Method::new(
-                    "GetServerInformation",
-                    // No input arguments
-                    vec![],
-                    vec![
-                        Argument::new("name", "s"),
-                        Argument::new("vendor", "s"),
-                        Argument::new("version", "s"),
-                        Argument::new("spec_version", "s"),
+                         vec![ Argument::new("app_name",    "s"),
+                         Argument::new("replaces_id", "u"),
+                         Argument::new("app_icon",    "s"),
+                         Argument::new("summary",     "s"),
+                         Argument::new("body",        "s"),
+                         Argument::new("actions",    "as"),
+                         Argument::new("hints",   "a{sv}"),
+                         Argument::new("timeout",     "i")
                          ],
-                    Box::new(|_msg|
-                             Ok( vec![ "notify-rust".to_owned().into(),
-                                       "notify-rust".to_owned().into(),
-                                       VERSION.to_owned().into(),
-                                       "1.1".to_owned().into() ]
-                               ))
-                    )
-            ],
+
+                         vec![Argument::new("arg_0", "u")], //out_args
+
+                         // Callback
+                         Box::new(move |msg| {
+
+                             let counter = self.counter;
+
+                             // TODO this must be prettier!
+                             let hint_items = msg.get_items().get(6).unwrap().clone();
+                             let hint_items:&Vec<MessageItem> = hint_items.inner().unwrap();
+                             let hints = hint_items.iter().map(|item|item.into()).collect::<HashSet<NotificationHint>>();
+
+                             let action_items = msg.get_items().get(5).unwrap().clone();
+                             let action_items:&Vec<MessageItem> = action_items.inner().unwrap();
+                             let actions:Vec<String> = action_items.iter().map(|action|action.inner::<&String>().unwrap().to_owned()).collect();
+
+                             let notification = Notification{
+                                 appname: unwrap_message_str(msg.get_items().get(0).unwrap()),
+                                 summary: unwrap_message_string(msg.get_items().get(3)),
+                                 body:    unwrap_message_string(msg.get_items().get(4)),
+                                 icon:    unwrap_message_string(msg.get_items().get(2)),
+                                 timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
+                                 hints:   hints,
+                                 actions: actions,
+                             //    urgency: NotificationUrgency::Medium //TODO
+                                 ..Notification::new()
+                             };
+
+                             closure(&notification); // send id and counter extra
+
+                             self.counter += 1;
+                             Ok(vec!(MessageItem::Int32(42)))
+                         })
+        ),
+
+        Method::new( "GetCapabilities",
+
+                     vec![], //No input arguments
+                     vec![Argument::new("caps", "{s}")],
+                     Box::new(|_msg|
+                              Ok( vec![ MessageItem::new_array(
+                                      vec![
+                                      "body".to_owned().into(),
+                                      ]
+                                      ).unwrap()
+                              ]
+                              )
+                             )
+                   ),
+
+                   Method::new(
+                       "GetServerInformation",
+                       // No input arguments
+                       vec![],
+                       vec![
+                       Argument::new("name", "s"),
+                       Argument::new("vendor", "s"),
+                       Argument::new("version", "s"),
+                       Argument::new("spec_version", "s"),
+                       ],
+                       Box::new(|_msg|
+                                Ok( vec![ "notify-rust".to_owned().into(),
+                                "notify-rust".to_owned().into(),
+                                VERSION.to_owned().into(),
+                                "1.1".to_owned().into() ]
+                                ))
+                       )
+                       ],
 
             vec![],
             vec![] // No properties or signals

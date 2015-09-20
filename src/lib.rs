@@ -46,8 +46,6 @@
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
-#![feature(box_syntax, box_patterns)]
-
 use std::env;
 use std::collections::HashSet;
 use std::borrow::Cow;
@@ -56,6 +54,7 @@ use std::ops::{Deref,DerefMut};
 extern crate dbus;
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem, Error};
 
+mod util;
 pub mod server;
 pub mod hints;
 pub use hints::NotificationHint;
