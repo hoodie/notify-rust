@@ -13,7 +13,7 @@ use std::collections::HashSet;
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};
 use dbus::obj::{ObjectPath, Argument, Method, Interface};
 
-use super::{Notification,NotificationUrgency,NotificationHint};
+use super::{Notification,NotificationHint};
 use util::*;
 
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
@@ -80,7 +80,6 @@ impl NotificationServer
                                  timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
                                  hints:   hints,
                                  actions: actions,
-                             //    urgency: NotificationUrgency::Medium //TODO
                                  ..Notification::new()
                              };
 

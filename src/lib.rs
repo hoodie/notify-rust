@@ -98,7 +98,6 @@ pub struct Notification
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: i32,
-    pub urgency: NotificationUrgency
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -121,7 +120,6 @@ impl Notification
             hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  -1,
-            urgency:  NotificationUrgency::Medium
         }
     }
 
@@ -206,7 +204,7 @@ impl Notification
     /// Pick between Medium, Low and High.
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification
     {
-        self.urgency = urgency;
+        self.hint( NotificationHint::Urgency( urgency ));
         self
     }
 
@@ -249,7 +247,6 @@ impl Notification
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
-            urgency:  self.urgency.clone(),
         }
     }
 
@@ -319,9 +316,8 @@ impl Notification
     /// Wraps show() but prints notification to stdout.
     pub fn show_debug(&mut self) -> Result<NotificationHandle, Error>
     {
-        println!("Notification:\n{appname}/{urgency:?}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
+        println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
-            urgency = self.urgency,
             summary = self.summary,
             body    = self.body,
             hints   = self.hints,

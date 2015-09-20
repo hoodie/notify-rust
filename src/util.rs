@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use dbus::{Message,MessageItem};
+use dbus::MessageItem;
 
 //TODO get rid of the util functions
 
