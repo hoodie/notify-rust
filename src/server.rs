@@ -9,6 +9,7 @@
 extern crate dbus;
 
 use std::collections::HashSet;
+use std::cell::Cell;
 
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};
 use dbus::obj::{ObjectPath, Argument, Method, Interface};
@@ -19,17 +20,27 @@ use util::*;
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-pub struct NotificationServer
-{
-    pub counter: u32
+pub struct NotificationServer {
+    pub counter: Cell<u32>,
+    pub stop: Cell<bool>
 }
 
 impl NotificationServer
 {
+    fn count_up(&self)
+    {
+        self.counter.set( self.counter.get() + 1);
+    }
+
     pub fn new() -> NotificationServer
     {
-        NotificationServer{counter:0}
+        NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
     }
+
+    //pub fn notify_mothod<F>(&mut self, closure: F)
+    //    -> Method
+    //    where F: Fn(&Notification)
+    //{
 
     //fn handle_notification
     pub fn start<F>(&mut self, closure: F)
@@ -41,95 +52,98 @@ impl NotificationServer
         let mut objpath = ObjectPath::new(&connection, "/org/freedesktop/Notifications", false);
         connection.register_object_path( "/org/freedesktop/Notifications").ok().expect("could not register object path");
 
-        let notify_listener = Interface::new(
-            //{{{
+        let server_interface = Interface::new(
             vec![
-            Method::new( "Notify",
+                Method::new("Notify",
+                            vec![   Argument::new("app_name",    "s"),
+                                    Argument::new("replaces_id", "u"),
+                                    Argument::new("app_icon",    "s"),
+                                    Argument::new("summary",     "s"),
+                                    Argument::new("body",        "s"),
+                                    Argument::new("actions",    "as"),
+                                    Argument::new("hints",   "a{sv}"),
+                                    Argument::new("timeout",     "i")
+                            ],
 
-                         vec![ Argument::new("app_name",    "s"),
-                         Argument::new("replaces_id", "u"),
-                         Argument::new("app_icon",    "s"),
-                         Argument::new("summary",     "s"),
-                         Argument::new("body",        "s"),
-                         Argument::new("actions",    "as"),
-                         Argument::new("hints",   "a{sv}"),
-                         Argument::new("timeout",     "i")
-                         ],
+                            vec![Argument::new("arg_0", "u")], //out_args
 
-                         vec![Argument::new("arg_0", "u")], //out_args
+                            // Callback
+                            Box::new(|msg| {
 
-                         // Callback
-                         Box::new(move |msg| {
+                                // TODO this must be prettier!
+                                let hint_items = msg.get_items().get(6).unwrap().clone();
+                                let hint_items:&Vec<MessageItem> = hint_items.inner().unwrap();
+                                let hints = hint_items.iter().map(|item|item.into()).collect::<HashSet<NotificationHint>>();
 
-                             let counter = self.counter;
+                                let action_items = msg.get_items().get(5).unwrap().clone();
+                                let action_items:&Vec<MessageItem> = action_items.inner().unwrap();
+                                let actions:Vec<String> = action_items.iter().map(|action|action.inner::<&String>().unwrap().to_owned()).collect();
 
-                             // TODO this must be prettier!
-                             let hint_items = msg.get_items().get(6).unwrap().clone();
-                             let hint_items:&Vec<MessageItem> = hint_items.inner().unwrap();
-                             let hints = hint_items.iter().map(|item|item.into()).collect::<HashSet<NotificationHint>>();
+                                let notification = Notification{
+                                    appname: unwrap_message_str(msg.get_items().get(0).unwrap()),
+                                    summary: unwrap_message_string(msg.get_items().get(3)),
+                                    body:    unwrap_message_string(msg.get_items().get(4)),
+                                    icon:    unwrap_message_string(msg.get_items().get(2)),
+                                    timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
+                                    hints:   hints,
+                                    actions: actions,
+                                    id: Some(self.counter.get())
+                                };
 
-                             let action_items = msg.get_items().get(5).unwrap().clone();
-                             let action_items:&Vec<MessageItem> = action_items.inner().unwrap();
-                             let actions:Vec<String> = action_items.iter().map(|action|action.inner::<&String>().unwrap().to_owned()).collect();
+                                closure(&notification); // send id and counter extra
 
-                             let notification = Notification{
-                                 appname: unwrap_message_str(msg.get_items().get(0).unwrap()),
-                                 summary: unwrap_message_string(msg.get_items().get(3)),
-                                 body:    unwrap_message_string(msg.get_items().get(4)),
-                                 icon:    unwrap_message_string(msg.get_items().get(2)),
-                                 timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
-                                 hints:   hints,
-                                 actions: actions,
-                                 ..Notification::new()
-                             };
+                                self.count_up();
+                                Ok(vec!(MessageItem::Int32(42)))
+                             })
+                ),
 
-                             closure(&notification); // send id and counter extra
+                Method::new("CloseNotification",
+                            vec![Argument::new("id", "u")], //No input arguments
+                            vec![],
+                            //MessageItem::new_array( vec![ "body".into(), ]).unwrap()
+                            Box::new(|_msg| {
+                                println!("{:?}", _msg);
+                                Ok( vec![])}
+                                )
+                           ),
 
-                             self.counter += 1;
-                             Ok(vec!(MessageItem::Int32(42)))
-                         })
-        ),
+                Method::new("Stop",
+                            vec![], //No input arguments
+                            vec![],
+                            //MessageItem::new_array( vec![ "body".into(), ]).unwrap()
+                            Box::new(|_msg| {
+                                self.stop.set(true);
+                                Ok( vec![])}
+                                )
+                           ),
 
-        Method::new( "GetCapabilities",
+                Method::new("GetCapabilities",
+                             vec![], //No input arguments
+                             vec![Argument::new("caps", "{s}")],
+                             Box::new(|_msg| Ok( vec![
+                                     MessageItem::new_array( vec![ "body".into(), ]).unwrap()
+                             ]))
+                ),
 
-                     vec![], //No input arguments
-                     vec![Argument::new("caps", "{s}")],
-                     Box::new(|_msg|
-                              Ok( vec![ MessageItem::new_array(
-                                      vec![
-                                      "body".to_owned().into(),
-                                      ]
-                                      ).unwrap()
-                              ]
-                              )
-                             )
-                   ),
+                Method::new("GetServerInformation",
+                            vec![], // No input arguments
+                            vec![
+                                Argument::new("name", "s"),
+                                Argument::new("vendor", "s"),
+                                Argument::new("version", "s"),
+                                Argument::new("spec_version", "s"),
+                            ],
+                            Box::new(|_msg| Ok( vec![
+                                        "notify-rust daemon".into(), "notify-rust".into(), VERSION.into(), "1.1".into()
+                            ]))
+                )
+            ],
 
-                   Method::new(
-                       "GetServerInformation",
-                       // No input arguments
-                       vec![],
-                       vec![
-                       Argument::new("name", "s"),
-                       Argument::new("vendor", "s"),
-                       Argument::new("version", "s"),
-                       Argument::new("spec_version", "s"),
-                       ],
-                       Box::new(|_msg|
-                                Ok( vec![ "notify-rust".to_owned().into(),
-                                "notify-rust".to_owned().into(),
-                                VERSION.to_owned().into(),
-                                "1.1".to_owned().into() ]
-                                ))
-                       )
-                       ],
+            vec![], // no properties
+            vec![]  // no signals
+        );
 
-            vec![],
-            vec![] // No properties or signals
-            //}}}
-            );
-
-        objpath.insert_interface("org.freedesktop.Notifications", notify_listener);
+        objpath.insert_interface("org.freedesktop.Notifications", server_interface);
         //objpath.set_registered(true).unwrap();
 
         for n in connection.iter(10) {
@@ -141,7 +155,10 @@ impl NotificationServer
                 ,
                 ConnectionItem::Signal(_m) => { /*println!("Signal: {:?}", _m);*/ },
                 _ => (),
-
+            }
+            if self.stop.get() {
+                println!("stopping server");
+                break;
             }
         }
     }

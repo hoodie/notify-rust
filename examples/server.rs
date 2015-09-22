@@ -2,7 +2,7 @@
 extern crate notify_rust;
 use std::thread;
 
-use notify_rust::Notification;
+use notify_rust::{Notification,stop_server};
 use notify_rust::server::NotificationServer;
 
 fn main()
@@ -20,6 +20,8 @@ fn main()
         .summary("Notification Logger")
         .body("If you can read this in the console, the server works fine.")
         .show();
+
+    stop_server::stop_server();
 
     let mut _devnull = String::new();
     let _ = std::io::stdin().read_line(&mut _devnull);

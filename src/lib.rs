@@ -97,7 +97,9 @@ pub struct Notification
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
-    pub timeout: i32,
+    pub timeout: i32, //TODO make me u32
+    /// Only to be used on the receive end. Use Notification hand for updating.
+    id: Option<u32>
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
@@ -119,7 +121,8 @@ impl Notification
             icon:     String::new(),
             hints:    HashSet::new(),
             actions:  Vec::new(),
-            timeout:  -1,
+            timeout:  -1, //TODO change me to 0
+            id:       None
         }
     }
 
@@ -247,6 +250,7 @@ impl Notification
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
             timeout:  self.timeout.clone(),
+            id:       self.id.clone()
         }
     }
 
@@ -383,7 +387,7 @@ impl NotificationHandle
     /// notification server! On plasma5 or instance, you should also change the appname, so the old
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
-    pub fn update(&mut self) 
+    pub fn update(&mut self)
     {
         self.id = self.notification._show(self.id, &self.connection).unwrap();
     }
@@ -463,6 +467,16 @@ pub fn get_server_information() -> Result<ServerInformation, Error>
         version:       unwrap_message_string(items.get(2)),
         spec_version:  unwrap_message_string(items.get(3))
     })
+}
+
+/// Strictly internal.
+/// The Notificationserver implemented here exposes a "Stop" function.
+/// stops the notification server
+pub fn stop_server()
+{
+    let message    = build_message("Stop");
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    let _reply     = connection.send_with_reply_and_block(message, 2000).unwrap();
 }
 
 
