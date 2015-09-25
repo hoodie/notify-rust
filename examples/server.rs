@@ -1,28 +1,22 @@
-#![allow(unused_must_use)]
 extern crate notify_rust;
 use std::thread;
 
-use notify_rust::{Notification,stop_server};
+use notify_rust::Notification;
 use notify_rust::server::NotificationServer;
 
 fn main()
 {
     let mut server = NotificationServer::new();
-    thread::spawn(move||{
-        server.start( |notification| println!("{:#?}", notification))
-    });
+    thread::spawn(move||{ server.start( |notification| println!("{:#?}", notification)) });
 
-    println!("Press enter to exit.\n");
-
-    std::thread::sleep_ms(1_000);
+    std::thread::sleep_ms(500);
 
     Notification::new()
         .summary("Notification Logger")
         .body("If you can read this in the console, the server works fine.")
-        .show();
+        .show().unwrap();
 
-    stop_server::stop_server();
-
+    println!("Press enter to exit.\n");
     let mut _devnull = String::new();
     let _ = std::io::stdin().read_line(&mut _devnull);
     println!("Thank you for choosing notify-rust.");

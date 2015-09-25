@@ -1,6 +1,47 @@
 #![allow(unused_must_use)]
 extern crate notify_rust;
-use notify_rust::Notification;
+
+#[cfg(test)]
+mod realworld{
+
+use notify_rust::*;
+use notify_rust::NotificationHint as Hint;
+use notify_rust::NotificationUrgency::*;
+
+#[test]
+fn burst()
+{
+    for msg in [
+        "These should each",
+        "come in their own pop up.",
+        "If they don't than",
+        "I will have to complain about it."
+    ].iter(){
+        assert!(
+        Notification::new()
+            .summary("burst")
+            .appname(&format!("{}", msg))
+            .body(&format!("{}", msg))
+            .icon("media-floppy")
+            .show()
+            .is_ok());
+    }
+
+    for msg in [
+        "These may be grouped",
+        "together by the server.",
+        "that is because the all have the same",
+        "appname."
+    ].iter(){
+        assert!(
+        Notification::new()
+            .summary("merged burst")
+            .body(&format!("{}", msg))
+            .icon("applications-toys")
+            .show()
+            .is_ok());
+    }
+}
 
 #[test]
 fn closing()
@@ -14,42 +55,11 @@ fn closing()
 }
 
 #[test]
-fn burst()
+fn capabilities()
 {
-    for msg in [
-        "These should each",
-        "come in their own pop up.",
-        "If they don't than",
-        "I will have to complain about it."
-    ].iter(){
-        Notification::new()
-            .summary("burst")
-            .appname(&format!("{}", msg))
-            .body(&format!("{}", msg))
-            .icon("media-floppy")
-            .show();
-    }
-
-    for msg in [
-        "These may be grouped",
-        "together by the server.",
-        "that is because the all have the same",
-        "appname."
-    ].iter(){
-        Notification::new()
-            .summary("merged burst")
-            .body(&format!("{}", msg))
-            .icon("applications-toys")
-            .show();
-    }
-}
-
-#[test]
-fn get_capabilities()
-{
-    let capabilities:Vec<String> = notify_rust::get_capabilities().unwrap();
+    let capabilities:Vec<String> = get_capabilities().unwrap();
     for capability in capabilities{
-        Notification::new().summary("capability").body(&format!("{}", capability)).show();
+        assert!(Notification::new().summary("capability").body(&format!("{}", capability)).show().is_ok());
     }
 }
 
@@ -83,24 +93,67 @@ fn build_pattern()
 #[test]
 fn init()
 {
-
-    Notification {
-        //appname: "foobar".to_string(),
-        summary: "invocation type 1".to_string(),
-        body: Notification::new().appname,
-        timeout: 20,
-        ..Notification::new()
-    }.show();
-
     let mut message = Notification::new();
     message.summary("invocation type 2");
     message.body("your <b>body</b> is a <u>wonderland</u>");
-    message.show();
+    message.show().unwrap();
 
     Notification::new()
         .summary("this is the summary")
         .summary("invocation type 3")
         .body("this is the body\nnewline<br/>linebreak")
-        .show();
+        .show().unwrap();
+}
+
+#[test]
+fn urgency()
+{
+    // use it this way
+    for urgency in [
+        Hint::Urgency(Low),
+        Hint::Urgency(Medium),
+        Hint::Urgency(High)
+    ].iter(){
+        assert!(
+        Notification::new()
+            .summary(&format!("Urgency {:?}", urgency))
+            .hint(urgency.clone())
+            .show().is_ok());
+    }
+}
+
+#[test]
+fn category()
+{
+    assert!(
+    Notification::new()
+        .appname("thunderbird")
+        .summary("Category:email")
+        .icon("thunderbird")
+        .hint(Hint::Category("email".to_string()))
+        .show().is_ok());
+}
+
+#[test]
+fn persistent() {
+
+    assert!(
+    Notification::new()
+        .summary("Incoming Call: Your Mom!")
+        .body("Resident:True")
+        .icon("call-start")
+        .hint(Hint::Resident(true))
+        .show().is_ok());
+
+    assert!(
+    Notification::new()
+        .summary("Incoming Call: Your Mom!")
+        .body("Resident:False, but Timeout=0")
+        .icon("call-start")
+        .hint(Hint::Resident(false))
+        .timeout(0)
+        .show().is_ok());
+
+}
 
 }

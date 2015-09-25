@@ -2,8 +2,7 @@
 extern crate notify_rust;
 use notify_rust::Notification;
 
-#[test]
-fn formatting()
+fn main()
 {
 
     Notification::new()
