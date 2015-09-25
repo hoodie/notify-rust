@@ -33,6 +33,7 @@
 //!     .action("clicked", "click here")
 //!     .hint(Hint::Resident(true))
 //!     .show()
+//!     .unwrap()
 //!     .wait_for_action({|action|
 //!         match action {
 //!             "default" => {println!("you clicked \"default\"")},
@@ -373,7 +374,7 @@ impl NotificationHandle
     /// let mut notification = Notification::new()
     ///     .summary("Foo")
     ///     .body("foo demo")
-    ///     .show();
+    ///     .show().unwrap();
     ///
     /// std::thread::sleep_ms(1_500);
     ///
