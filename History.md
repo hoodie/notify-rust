@@ -1,20 +1,40 @@
-2.0.0 / 2015-08-4
-==================
-* breaking change: changed API of actions
 
-1.1.0 / 2015-08-3
+2.1.0 / 2015-09-27
 ==================
-* changed: introduced NotificationHandles instead of integer IDs
+
+  * fixed: Hint Types are not only strings
+
+2.0.0 / 2015-08-04
+==================
+
+  * fixed: example code to match new api
+  * added: Implemented update, close, etc. for NotificationHandle
+  * removed: old API
+  * update: examples and tests
+  * Set transient hint in `wait_for_closing` example
+
+
+1.1.0 / 2015-08-03
+==================
+
+  * added: `NotificationHandle` to keep dbus connections alive
+  * added: notify-cli as child project
+  * added: GetCapabilities() and `GetServerinformation()` to server
+  * added: a few possible panic messages
+  * small refactoring
 
 1.0.1 / 2015-07-19
 ==================
-* fixed little refactoring hickup
 
-1.0.0 / 2015-07-13
+  * fixed: actions and hints were not passed along
+
+1.0.0 / 2015-07-01
 ==================
-* added: show_debug()
-* stabilization
 
+  * added: hints to `show_debug()`
+  * added: urgency to `show_debug()`
+  * changed: building agains dbus v0.1.1
+  * improved: documentation
 
 0.9.0 / 2015-07-01
 ==================
@@ -61,7 +81,7 @@
   * added: further examples
   * added: documentation
   * moved: tests out of ./src
-  * added: NotificationServer (for testing only)
+  * added: `NotificationServer` (for testing only)
   * added: `Notification::actions()`
   * added: `Notification::get_capabilities()`
 
@@ -73,4 +93,3 @@
 0.0.3 / 2015-05-24
 ==================
   * dropped macro, using builder pattern from now on
-
