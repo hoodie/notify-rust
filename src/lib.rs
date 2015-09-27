@@ -13,7 +13,7 @@
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
 //!     .timeout(6000) //milliseconds
-//!     .show();
+//!     .show().unwrap();
 //!
 //! // Example 2 (Persistent Notification)
 //! Notification::new()
@@ -24,7 +24,7 @@
 //!     .hint(Hint::Category("email".to_owned()))
 //!     .hint(Hint::Resident(true)) // this is not supported by all implementations
 //!     .timeout(0) // this however is
-//!     .show();
+//!     .show().unwrap();
 //!
 //! // Example 3 (Ask the user to do something)
 //! Notification::new()
@@ -98,7 +98,9 @@ pub struct Notification
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
-    pub timeout: i32, //TODO make me u32
+    /// -1 -> expires according server default
+    /// 0 -> expires never
+    pub timeout: i32, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
     id: Option<u32>
 }
@@ -110,7 +112,7 @@ impl Notification
 {
     /// Constructs a new Notification.
     ///
-    /// Most fields are empty by default, only `appname` is prefilled with the name of the current
+    /// Most fields are empty by default, only `appname` is initialized with the name of the current
     /// executable.
     /// The appname is used by some desktop environments to group notifications.
     pub fn new() -> Notification
@@ -122,7 +124,7 @@ impl Notification
             icon:     String::new(),
             hints:    HashSet::new(),
             actions:  Vec::new(),
-            timeout:  -1, //TODO change me to 0
+            timeout:  -1,
             id:       None
         }
     }
@@ -156,7 +158,7 @@ impl Notification
 
     /// Set the `icon` field.
     ///
-    /// You can use commom icon names here, usually those in `/usr/share/icons`
+    /// You can use common icon names here, usually those in `/usr/share/icons`
     /// can all be used.
     /// You can also use an absolute path to file.
     pub fn icon(&mut self, icon:&str) -> &mut Notification
