@@ -16,13 +16,13 @@ fn main()
 
 fn urgency()
 {
-    // use it this way
-    for urgency in 0..3{
+
+    for urgency in [Low, Medium, High].iter(){
         Notification::new()
-            .summary(&format!("Urgency {}", urgency))
+            .summary(&format!("Urgency {:?}", *urgency))
             .body("This notification uses hints")
             .icon("firefox")
-            .hint(Hint::Urgency(Low))
+            .hint(Hint::Urgency(*urgency))
             .show();
     }
 }

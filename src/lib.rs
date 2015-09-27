@@ -276,28 +276,29 @@ impl Notification
         if !self.hints.is_empty() {
             let mut hints = vec![];
             for hint in self.hints.iter(){
-                let entry:(String,String) = match hint {
-                    &NotificationHint::ActionIcons(ref value)  => ("action-icons".to_owned(),    format!("{}",  value)), // bool
-                    &NotificationHint::Category(ref value)     => ("category".to_owned(),        value.clone()),
-                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_owned(),   value.clone()),
-                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_owned(),      format!("{:?}",  value)),
-                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_owned(),      value.clone()),
-                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_owned(),       format!("{:?}",  value)),
-                    &NotificationHint::Resident(ref value)     => ("resident".to_owned(),        format!("{}",  value)), // bool
-                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_owned(),      value.clone()),
-                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_owned(),      value.clone()),
-                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_owned(),  format!("{}",  value)),
-                    &NotificationHint::Transient(value)        => ("transient".to_owned(),       format!("{}",  value)),
-                    &NotificationHint::X(value)                => ("x".to_owned(),               format!("{}",  value)),
-                    &NotificationHint::Y(value)                => ("y".to_owned(),               format!("{}",  value)),
-                    &NotificationHint::Urgency(value)          => ("urgency".to_owned(),         format!("{}",  value as u32)),
-                    _                                          => ("Foo".to_owned(),"bar".to_owned())
-                };
+                let entry:(String,MessageItem) = match hint {
+                    &NotificationHint::ActionIcons(value)      => ("action-icons".to_owned(),    MessageItem::Bool(value)), // bool
+                    &NotificationHint::Category(ref value)     => ("category".to_owned(),        MessageItem::Str(value.clone())),
+                    &NotificationHint::DesktopEntry(ref value) => ("desktop-entry".to_owned(),   MessageItem::Str(value.clone())),
+                  //&NotificationHint::ImageData(iiibiiay)     => ("image-data".to_owned(),      MessageItem::Str(format!("{:?}",  value)),
+                    &NotificationHint::ImagePath(ref value)    => ("image-path".to_owned(),      MessageItem::Str(value.clone())),
+                  //&NotificationHint::IconData(iiibiiay)      => ("icon_data".to_owned(),       MessageItem::Str(format!("{:?}",  value)),
+                    &NotificationHint::Resident(value)         => ("resident".to_owned(),        MessageItem::Bool(value)), // bool
+                    &NotificationHint::SoundFile(ref value)    => ("sound-file".to_owned(),      MessageItem::Str(value.clone())),
+                    &NotificationHint::SoundName(ref value)    => ("sound-name".to_owned(),      MessageItem::Str(value.clone())),
+                    &NotificationHint::SuppressSound(value)    => ("suppress-sound".to_owned(),  MessageItem::Bool(value)),
+                    &NotificationHint::Transient(value)        => ("transient".to_owned(),       MessageItem::Bool(value)),
+                    &NotificationHint::X(value)                => ("x".to_owned(),               MessageItem::Int32(value)),
+                    &NotificationHint::Y(value)                => ("y".to_owned(),               MessageItem::Int32(value)),
+                    &NotificationHint::Urgency(value)          => ("urgency".to_owned(),         MessageItem::Byte(value as u8)),
+                   &NotificationHint::Custom(ref key, ref val) => (key            .to_owned(),   MessageItem::Str(val.to_owned ())),
+            };
 
-                hints.push( MessageItem::DictEntry(
-                        Box::new(entry.0.into()),
-                        Box::new(MessageItem::Variant( Box::new(entry.1.into()) ))
-                        ));
+            hints.push(MessageItem::DictEntry(
+                    Box::new(entry.0.into()),
+                    Box::new(MessageItem::Variant( Box::new(entry.1) ))
+                    )
+            );
             }
             if let Ok(array) = MessageItem::new_array(hints){
                 return array;
