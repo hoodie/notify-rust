@@ -111,8 +111,8 @@ fn urgency()
     // use it this way
     for urgency in [
         Hint::Urgency(Low),
-        Hint::Urgency(Medium),
-        Hint::Urgency(High)
+        Hint::Urgency(Normal),
+        Hint::Urgency(Critical)
     ].iter(){
         assert!(
         Notification::new()

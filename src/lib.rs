@@ -3,8 +3,8 @@
 //! Desktop notifications are popup messages generated to notify the user of certain events.
 //!
 //! # Examples
+//! ## Example 1 (Simple Notification)
 //! ```
-//! // Example 1 (Simple Notification)
 //! use notify_rust::Notification;
 //! use notify_rust::NotificationHint as Hint;
 //!
@@ -14,8 +14,10 @@
 //!     .icon("firefox")
 //!     .timeout(6000) //milliseconds
 //!     .show().unwrap();
+//! ```
 //!
-//! // Example 2 (Persistent Notification)
+//! ## Example 2 (Persistent Notification)
+//! ```
 //! Notification::new()
 //!     .summary("Category:email")
 //!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
@@ -25,8 +27,13 @@
 //!     .hint(Hint::Resident(true)) // this is not supported by all implementations
 //!     .timeout(0) // this however is
 //!     .show().unwrap();
+//! ```
 //!
-//! // Example 3 (Ask the user to do something)
+//! Careful! There are no checks whether you use hints twice.
+//! It is possible to set `urgency=Low` AND `urgency=Critical`, in which case the behavior of the server is undefined.
+//!
+//! ## Example 3 (Ask the user to do something)
+//! ```
 //! Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
@@ -38,7 +45,8 @@
 //!         match action {
 //!             "default" => {println!("you clicked \"default\"")},
 //!             "clicked" => {println!("that was correct")},
-//!             "__closed" => {println!("the notification was closed")}, // here "__closed" is a hardcoded keyword
+//!             // here "__closed" is a hardcoded keyword
+//!             "__closed" => {println!("the notification was closed")},
 //!             _ => ()
 //!         }
 //!     });
@@ -106,7 +114,7 @@ pub struct Notification
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{ Low = 0, Medium = 1, High = 2  }
+pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
 
 impl Notification
 {
