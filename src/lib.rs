@@ -86,6 +86,28 @@ fn build_message(method_name:&str) -> Message
         method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
+
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
+pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
+
+impl<'a> From<&'a str> for NotificationUrgency
+{
+    fn from(string:&'a str) -> NotificationUrgency
+    {
+        match string.to_lowercase().as_ref()
+        {
+            "low"      => NotificationUrgency::Low,
+            "lo"       => NotificationUrgency::Low,
+            "normal"   => NotificationUrgency::Normal,
+            "medium"   => NotificationUrgency::Normal,
+            "critical" => NotificationUrgency::Critical,
+            "high"     => NotificationUrgency::Critical,
+            "hi"       => NotificationUrgency::Critical,
+            _ => unimplemented!()
+        }
+    }
+}
+
 /// Desktop notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
@@ -112,9 +134,6 @@ pub struct Notification
     /// Only to be used on the receive end. Use Notification hand for updating.
     id: Option<u32>
 }
-
-#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
 
 impl Notification
 {
