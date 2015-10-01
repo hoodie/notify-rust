@@ -1,3 +1,15 @@
+//! NotificationHints allow to pass extra information to the server.
+//!
+//! Many of these are standardized by either:
+//!
+//! * http://www.galago-project.org/specs/notification/0.9/x344.html
+//! * https://developer.gnome.org/notification-spec/#hints
+//!
+//! Which of these are actually implemented depends strongly on the Notification server you talk to.
+//! Usually the `get_capabilities()` gives some clues, but the standards usually mention much more
+//! than is actually available.
+
+
 use dbus::{MessageItem};
 use super::NotificationUrgency;
 use util::*;
@@ -17,26 +29,53 @@ const X:&'static str              = "x";
 const Y:&'static str              = "y";
 const URGENCY:&'static str        = "urgency";
 
+/// All currently implemented NotificationHints that can be send.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
 { // as found on https://developer.gnome.org/notification-spec/
+    /// If true, server may interpret action identifiers as named icons and display those.
     ActionIcons(bool),
+
+    /// Check out:
+    ///
+    /// * http://www.galago-project.org/specs/notification/0.9/x211.html
+    /// * https://developer.gnome.org/notification-spec/#categories
     Category(String),
+
+    /// Name of the DesktopEntry representing the calling application. In case of "firefox.desktop"
+    /// use "firefox". May be used to retrieve the correct icon.
     DesktopEntry(String),
+    
+    // ///Not yet implemented
     //ImageData(iiibiiay),
-    ImagePath(String),
     //IconData(iiibiiay),
+    
+    /// Display the image at this path.
+    ImagePath(String),
+
     /// This does not work on all servers, however timeout=0 will do the job
     Resident(bool),
+
+    /// Play the sound at this path.
     SoundFile(String),
+
+    /// 	A themeable named sound from the freedesktop.org [sound naming specification](http://0pointer.de/public/sound-naming-spec.html) to play when the notification pops up. Similar to icon-name, only for sounds. An example would be "message-new-instant".
     SoundName(String),
+
     SuppressSound(bool),
+
+    /// When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist. When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist.
     Transient(bool),
-    X(i32),
-    Y(i32),
+
+    X(i32), Y(i32),
+
     /// Pass me a NotificationUrgency, either Low, Normal or Critical
     Urgency(NotificationUrgency),
+
+    /// If you want to pass something entirely different.
     Custom(String,String),
+
+    /// Only used by this NotificationServer implementation
     Invalid // TODO find a better solution to this
 }
 
