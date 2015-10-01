@@ -2,7 +2,7 @@
 name = "notify-rust"
 version = "2.0.0"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>", "panicbit <panicbit@users.noreply.github.com>"]
-description = "Show desktop notifications. Similar to libnotify, but pure rust."
+description = "Show desktop notifications. Similar to libnotify, but pure rust with no gtk or Qt dependencies."
 homepage = "https://github.com/hoodie/notify-rust"
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://hoodie.github.io/notify-rust/"
@@ -13,4 +13,4 @@ keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
 readme = "README.md"
 
 [dependencies]
-dbus = "0.1.1"
+dbus = "0.1.2"

@@ -423,7 +423,7 @@ impl NotificationHandle
     }
 }
 
-// Required for DerefMut
+/// Required for DerefMut
 impl Deref for NotificationHandle
 {
     type Target = Notification;
@@ -433,7 +433,7 @@ impl Deref for NotificationHandle
     }
 }
 
-// Allow to easily modify notification properties
+/// Allow to easily modify notification properties
 impl DerefMut for NotificationHandle
 {
     fn deref_mut(&mut self) -> &mut Notification
