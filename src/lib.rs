@@ -18,6 +18,8 @@
 //!
 //! ## Example 2 (Persistent Notification)
 //! ```
+//! use notify_rust::Notification;
+//! use notify_rust::NotificationHint as Hint;
 //! Notification::new()
 //!     .summary("Category:email")
 //!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
@@ -34,6 +36,8 @@
 //!
 //! ## Example 3 (Ask the user to do something)
 //! ```
+//! use notify_rust::Notification;
+//! use notify_rust::NotificationHint as Hint;
 //! Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
@@ -68,45 +72,7 @@ pub mod server;
 pub mod hints;
 pub use hints::NotificationHint;
 
-/// Executable Name
-///
-/// Returns the name of the current executable, used as a default for `Notification.appname`.
-fn exe_name() -> String
-{
-    env::current_exe().unwrap()
-    .file_name().unwrap().to_str().unwrap().to_owned()
-}
 
-fn build_message(method_name:&str) -> Message
-{
-    Message::new_method_call(
-        "org.freedesktop.Notifications",
-        "/org/freedesktop/Notifications",
-        "org.freedesktop.Notifications",
-        method_name).expect(&format!("Error building message call {:?}.", method_name))
-}
-
-
-#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
-
-impl<'a> From<&'a str> for NotificationUrgency
-{
-    fn from(string:&'a str) -> NotificationUrgency
-    {
-        match string.to_lowercase().as_ref()
-        {
-            "low"      => NotificationUrgency::Low,
-            "lo"       => NotificationUrgency::Low,
-            "normal"   => NotificationUrgency::Normal,
-            "medium"   => NotificationUrgency::Normal,
-            "critical" => NotificationUrgency::Critical,
-            "high"     => NotificationUrgency::Critical,
-            "hi"       => NotificationUrgency::Critical,
-            _ => unimplemented!()
-        }
-    }
-}
 
 /// Desktop notification.
 ///
@@ -360,6 +326,9 @@ impl Notification
     }
 }
 
+
+
+
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
@@ -442,6 +411,50 @@ impl DerefMut for NotificationHandle
     }
 }
 
+
+
+
+/// Levels of Urgency.
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
+pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
+
+impl<'a> From<&'a str> for NotificationUrgency
+{
+    fn from(string:&'a str) -> NotificationUrgency
+    {
+        match string.to_lowercase().as_ref()
+        {
+            "low"      => NotificationUrgency::Low,
+            "lo"       => NotificationUrgency::Low,
+            "normal"   => NotificationUrgency::Normal,
+            "medium"   => NotificationUrgency::Normal,
+            "critical" => NotificationUrgency::Critical,
+            "high"     => NotificationUrgency::Critical,
+            "hi"       => NotificationUrgency::Critical,
+            _ => unimplemented!()
+        }
+    }
+}
+
+
+
+
+/// Return value of `get_server_information()`.
+#[derive(Debug)]
+pub struct ServerInformation
+{
+    pub name:          String,
+    pub vendor:        String,
+    pub version:       String,
+    pub spec_version:  String
+}
+
+
+
+
+// here be public functions
+
+
 /// Get list of all capabilities of the running notification server.
 pub fn get_capabilities() -> Result<Vec<String>, Error>
 {
@@ -459,24 +472,6 @@ pub fn get_capabilities() -> Result<Vec<String>, Error>
         }
     }
     return Ok(capabilities);
-}
-
-/// Return value of `get_server_information()`.
-#[derive(Debug)]
-pub struct ServerInformation
-{
-    pub name:          String,
-    pub vendor:        String,
-    pub version:       String,
-    pub spec_version:  String
-}
-
-fn unwrap_message_string(item: Option<&MessageItem>) -> String
-{
-    match item{
-        Some(&MessageItem::Str(ref value)) => value.to_owned(),
-        _ => "".to_owned()
-    }
 }
 
 /// Returns a struct containing ServerInformation.
@@ -508,6 +503,11 @@ pub fn stop_server()
     let connection = Connection::get_private(BusType::Session).unwrap();
     let _reply     = connection.send_with_reply_and_block(message, 2000).unwrap();
 }
+
+
+
+
+// here be non public functions
 
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
@@ -542,4 +542,27 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
     }
 }
 
+// Returns the name of the current executable, used as a default for `Notification.appname`.
+fn exe_name() -> String
+{
+    env::current_exe().unwrap()
+    .file_name().unwrap().to_str().unwrap().to_owned()
+}
+
+fn build_message(method_name:&str) -> Message
+{
+    Message::new_method_call(
+        "org.freedesktop.Notifications",
+        "/org/freedesktop/Notifications",
+        "org.freedesktop.Notifications",
+        method_name).expect(&format!("Error building message call {:?}.", method_name))
+}
+
+fn unwrap_message_string(item: Option<&MessageItem>) -> String
+{
+    match item{
+        Some(&MessageItem::Str(ref value)) => value.to_owned(),
+        _ => "".to_owned()
+    }
+}
 
