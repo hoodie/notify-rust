@@ -2,11 +2,13 @@ extern crate notify_rust;
 #[macro_use]
 extern crate clap;
 
+use std::io::Write;
+
 use notify_rust::Notification;
 use clap::{App, SubCommand, Arg};
 
 arg_enum!{
-pub enum NotificationUrgency{ Low, Medium, High }
+pub enum NotificationUrgency{Low, Normal, Critical}
 }
 
 fn main() {
@@ -92,7 +94,7 @@ fn main() {
         Notification::new()
             .summary("Notification Logger")
             .body("If you can read this in the console, the server works fine.")
-            .show();
+            .show().expect("Was not able to send initial test message");
 
         let mut _devnull = String::new();
         let _ = std::io::stdin().read_line(&mut _devnull);
@@ -103,8 +105,8 @@ fn main() {
 
     else if let Some(_matches) = matches.subcommand_matches("info")
     {
-        println!("server information:\n {:?}\n", notify_rust::get_server_information());
-        println!("capabilities:\n {:?}\n", notify_rust::get_capabilities());
+        println!("server information:\n {:?}\n", notify_rust::get_server_information().unwrap());
+        println!("capabilities:\n {:?}\n", notify_rust::get_capabilities().unwrap());
     }
 
 
@@ -145,16 +147,25 @@ fn main() {
             let urgency = value_t_or_exit!(matches.value_of("urgency"), NotificationUrgency);
             // TODO: somebody make this a cast, please!
             match urgency {
-                NotificationUrgency::Low => notification.urgency(notify_rust::NotificationUrgency::Low),
-                NotificationUrgency::Medium => notification.urgency(notify_rust::NotificationUrgency::Medium),
-                NotificationUrgency::High => notification.urgency(notify_rust::NotificationUrgency::High),
+                NotificationUrgency::Low      => notification.urgency(notify_rust::NotificationUrgency::Low),
+                NotificationUrgency::Normal   => notification.urgency(notify_rust::NotificationUrgency::Normal),
+                NotificationUrgency::Critical => notification.urgency(notify_rust::NotificationUrgency::Critical),
             };
         }
 
         if matches.is_present("debug"){
-            notification.show_debug();
+            if notification.show_debug().is_err()
+            {
+                writeln!(&mut std::io::stderr(),
+                "Sending this notification was not possible.");
+            }
+
         } else {
-            notification.show();
+            if notification.show().is_err()
+            {
+                writeln!(&mut std::io::stderr(),
+                "Sending this notification was not possible.");
+            }
         }
     }
 }
