@@ -1,4 +1,20 @@
 
+3.0.0 / 2015-10-01
+==================
+
+  * new: better error handling: `show()` now returns a result instead of panicking
+  * added: server deserializes notifications
+  * fixed: hint types other than just strings
+  * added: convenience from::<str>() for Urgency
+  * added: Urgency::from(&str) for convenience
+  * renamed urgencies: Low, Normal and Critical (as in both standards)
+  * Tidying up
+  * more documentation
+  * added: internal `stop_server()`
+  * fixed: urgency in example
+  * tiny things, better looking Rust
+
+
 2.1.0 / 2015-09-27
 ==================
 
