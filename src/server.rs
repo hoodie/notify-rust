@@ -20,8 +20,12 @@ use util::*;
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
+/// An **experimental** notification server.
+/// See [the module level documentation](index.html) for more.
 pub struct NotificationServer {
+    /// Counter for generating notification ids
     pub counter: Cell<u32>,
+    /// A flag that stops the server
     pub stop: Cell<bool>
 }
 
@@ -32,6 +36,7 @@ impl NotificationServer
         self.counter.set( self.counter.get() + 1);
     }
 
+    /// Create a new `NotificationServer` instance.
     pub fn new() -> NotificationServer
     {
         NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
@@ -43,6 +48,8 @@ impl NotificationServer
     //{
 
     //fn handle_notification
+
+    /// Start listening for incoming notifications
     pub fn start<F>(&mut self, closure: F)
         where F: Fn(&Notification)
     {
