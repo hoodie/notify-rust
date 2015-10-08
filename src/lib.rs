@@ -350,7 +350,8 @@ impl NotificationHandle
         }
     }
 
-
+    /// Waits for the user to act on a notification and then calls
+    /// `invokation_closure` with the name of the corresponding action.
     pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str)
     {
         wait_for_action_signal(&self.connection, self.id, invokation_closure);
