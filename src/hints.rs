@@ -62,12 +62,19 @@ pub enum NotificationHint
     /// 	A themeable named sound from the freedesktop.org [sound naming specification](http://0pointer.de/public/sound-naming-spec.html) to play when the notification pops up. Similar to icon-name, only for sounds. An example would be "message-new-instant".
     SoundName(String),
 
+    /// Suppress the notification sound.
     SuppressSound(bool),
 
     /// When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist. When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist.
     Transient(bool),
 
-    X(i32), Y(i32),
+    /// Lets the notification point to a certain 'x' position on the screen.
+    /// Requires `Y`.
+    X(i32),
+
+    /// Lets the notification point to a certain 'y' position on the screen.
+    /// Requires `X`.
+    Y(i32),
 
     /// Pass me a NotificationUrgency, either Low, Normal or Critical
     Urgency(NotificationUrgency),
@@ -81,6 +88,7 @@ pub enum NotificationHint
 
 impl NotificationHint
 {
+    /// Get the `bool` representation of this hint.
     pub fn as_bool(&self) -> Option<bool>
     {
         match self
@@ -92,6 +100,8 @@ impl NotificationHint
             _ => None
         }
     }
+
+    /// Get the `i32` representation of this hint.
     pub fn as_i32(&self) -> Option<i32>
     {
         match self
@@ -102,6 +112,7 @@ impl NotificationHint
         }
     }
 
+    /// Get the `&str` representation of this hint.
     pub fn as_str(&self) -> Option<&str>
     {
         match self
