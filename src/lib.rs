@@ -350,7 +350,8 @@ impl NotificationHandle
         }
     }
 
-
+    /// Waits for the user to act on a notification and then calls
+    /// `invokation_closure` with the name of the corresponding action.
     pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str)
     {
         wait_for_action_signal(&self.connection, self.id, invokation_closure);
@@ -416,7 +417,14 @@ impl DerefMut for NotificationHandle
 
 /// Levels of Urgency.
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
+pub enum NotificationUrgency{
+    /// The behaviour for `Low` urgency depends on the notification server.
+    Low = 0,
+    /// The behaviour for `Normal` urgency depends on the notification server.
+    Normal = 1,
+    /// A critical notification will not time out.
+    Critical = 2
+}
 
 impl<'a> From<&'a str> for NotificationUrgency
 {
@@ -443,9 +451,13 @@ impl<'a> From<&'a str> for NotificationUrgency
 #[derive(Debug)]
 pub struct ServerInformation
 {
+    /// The product name of the server.
     pub name:          String,
+    /// The vendor name.
     pub vendor:        String,
+    /// The server's version string.
     pub version:       String,
+    /// The specification version the server is compliant with.
     pub spec_version:  String
 }
 
