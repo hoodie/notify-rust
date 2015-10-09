@@ -417,7 +417,14 @@ impl DerefMut for NotificationHandle
 
 /// Levels of Urgency.
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{ Low = 0, Normal = 1, Critical = 2  }
+pub enum NotificationUrgency{
+    /// The behaviour for `Low` urgency depends on the notification server.
+    Low = 0,
+    /// The behaviour for `Normal` urgency depends on the notification server.
+    Normal = 1,
+    /// A critical notification will not time out.
+    Critical = 2
+}
 
 impl<'a> From<&'a str> for NotificationUrgency
 {
