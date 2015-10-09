@@ -451,9 +451,13 @@ impl<'a> From<&'a str> for NotificationUrgency
 #[derive(Debug)]
 pub struct ServerInformation
 {
+    /// The product name of the server.
     pub name:          String,
+    /// The vendor name.
     pub vendor:        String,
+    /// The server's version string.
     pub version:       String,
+    /// The specification version the server is compliant with.
     pub spec_version:  String
 }
 
