@@ -13,4 +13,4 @@ keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
 readme = "README.md"
 
 [dependencies]
-dbus = "0.1.2"
+dbus = "0.2"
