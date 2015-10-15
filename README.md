@@ -1,6 +1,5 @@
 # notify-rust
 
-[![Build Status](https://img.shields.io/travis/hoodie/notify-rust.svg)](https://travis-ci.org/hoodie/notify-rust)
 [![license](https://img.shields.io/crates/l/notify-rust.svg)](https://crates.io/crates/notify-rust/)
 [![version](https://img.shields.io/crates/v/notify-rust.svg)](https://crates.io/crates/notify-rust/)
 
@@ -13,9 +12,36 @@ The API shown below should be stable.
 ```toml
 #Cargo.toml
 [dependencies]
-notify-rust = "*" # see batch for current version
+notify-rust = "3.0"
 ```
 
+# Examples
+## Example 1 (Simple Notification)
+```rust
+use notify_rust::Notification;
+use notify_rust::NotificationHint as Hint;
+Notification::new()
+    .summary("Firefox News")
+    .body("This will almost look like a real firefox notification.")
+    .icon("firefox")
+    .timeout(6000) //milliseconds
+    .show().unwrap();
+```
+
+## Example 2 (Persistent Notification)
+```rust
+use notify_rust::Notification;
+use notify_rust::NotificationHint as Hint;
+Notification::new()
+    .summary("Category:email")
+    .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
+    .icon("thunderbird")
+    .appname("thunderbird")
+    .hint(Hint::Category("email".to_owned()))
+    .hint(Hint::Resident(true)) // this is not supported by all implementations
+    .timeout(0) // this however is
+    .show().unwrap();
+```
 ## Usage & Documentation
 Please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
 
