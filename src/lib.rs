@@ -574,7 +574,7 @@ fn build_message(method_name:&str) -> Message
         "org.freedesktop.Notifications",
         "/org/freedesktop/Notifications",
         "org.freedesktop.Notifications",
-        method_name).expect(&format!("Error building message call {:?}.", method_name))
+        method_name).ok().expect(&format!("Error building message call {:?}.", method_name))
 }
 
 fn unwrap_message_string(item: Option<&MessageItem>) -> String

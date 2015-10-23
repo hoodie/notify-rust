@@ -94,7 +94,7 @@ fn main() {
         Notification::new()
             .summary("Notification Logger")
             .body("If you can read this in the console, the server works fine.")
-            .show().expect("Was not able to send initial test message");
+            .show().ok().expect("Was not able to send initial test message");
 
         let mut _devnull = String::new();
         let _ = std::io::stdin().read_line(&mut _devnull);
