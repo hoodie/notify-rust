@@ -1,12 +1,11 @@
 [package]
 name = "notify-rust"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>", "panicbit <panicbit@users.noreply.github.com>"]
 description = "Show desktop notifications. Similar to libnotify, but pure rust with no gtk or Qt dependencies."
 homepage = "https://github.com/hoodie/notify-rust"
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://hoodie.github.io/notify-rust/"
-
 
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
@@ -14,3 +13,10 @@ readme = "README.md"
 
 [dependencies]
 dbus = "0.2"
+
+[[bin]]
+name = "notify"
+
+[dependencies.clap]
+version = "~1.4"
+features = [ "suggestions", "color" ]

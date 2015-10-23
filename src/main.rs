@@ -157,14 +157,14 @@ fn main() {
             if notification.show_debug().is_err()
             {
                 writeln!(&mut std::io::stderr(),
-                "Sending this notification was not possible.");
+                "Sending this notification was not possible.").unwrap();
             }
 
         } else {
             if notification.show().is_err()
             {
                 writeln!(&mut std::io::stderr(),
-                "Sending this notification was not possible.");
+                "Sending this notification was not possible.").unwrap();
             }
         }
     }

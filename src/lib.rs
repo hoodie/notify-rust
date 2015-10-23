@@ -4,10 +4,9 @@
 //!
 //! # Examples
 //! ## Example 1 (Simple Notification)
-//! ```
-//! use notify_rust::Notification;
-//! use notify_rust::NotificationHint as Hint;
-//!
+//! ```no_run
+//! # use notify_rust::Notification;
+//! # use notify_rust::NotificationHint as Hint;
 //! Notification::new()
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
@@ -17,9 +16,9 @@
 //! ```
 //!
 //! ## Example 2 (Persistent Notification)
-//! ```
-//! use notify_rust::Notification;
-//! use notify_rust::NotificationHint as Hint;
+//! ```no_run
+//! # use notify_rust::Notification;
+//! # use notify_rust::NotificationHint as Hint;
 //! Notification::new()
 //!     .summary("Category:email")
 //!     .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
@@ -35,9 +34,9 @@
 //! It is possible to set `urgency=Low` AND `urgency=Critical`, in which case the behavior of the server is undefined.
 //!
 //! ## Example 3 (Ask the user to do something)
-//! ```
-//! use notify_rust::Notification;
-//! use notify_rust::NotificationHint as Hint;
+//! ```no_run
+//! # use notify_rust::Notification;
+//! # use notify_rust::NotificationHint as Hint;
 //! Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
@@ -165,9 +164,9 @@ impl Notification
     /// This method will add a hint to the internal hint hashset.
     /// Hints must be of type NotificationHint.
     ///
-    /// ```
-    /// use notify_rust::Notification;
-    /// use notify_rust::NotificationHint;
+    /// ```no_run
+    /// # use notify_rust::Notification;
+    /// # use notify_rust::NotificationHint;
     /// Notification::new()
     ///     .summary("Category:email")
     ///     .body("This should not go away until you acknoledge it.")
@@ -284,7 +283,7 @@ impl Notification
     /// Returns a handle to a notification
     pub fn show(&mut self) -> Result<NotificationHandle, Error>
     {
-        let connection = Connection::get_private(BusType::Session).ok().expect("Unable to connect to Bus.");
+        let connection = try!(Connection::get_private(BusType::Session));
         let id = try!(self._show(0, &connection));
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
@@ -367,19 +366,18 @@ impl NotificationHandle
 
     /// Replace the original notification with an updated version
     /// ## Example
-    /// ```
-    /// use notify_rust::Notification;
-    ///
+    /// ```no_run
+    /// # use notify_rust::Notification;
     /// let mut notification = Notification::new()
-    ///     .summary("Foo")
-    ///     .body("foo demo")
+    ///     .summary("Latest News")
+    ///     .body("Bayern Dortmund 3:2")
     ///     .show().unwrap();
     ///
     /// std::thread::sleep_ms(1_500);
     ///
     /// notification
-    ///     .summary("Bar")
-    ///     .body("bar demo");
+    ///     .summary("Latest News (Correction)")
+    ///     .body("Bayern Dortmund 3:3");
     ///
     /// notification.update();
     /// ```
@@ -518,6 +516,14 @@ pub fn stop_server()
 
 
 
+/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+///
+/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
+pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
+    let connection = Connection::get_private(BusType::Session).unwrap();
+    wait_for_action_signal(&connection, id, func);
+}
+
 
 // here be non public functions
 
@@ -525,6 +531,7 @@ pub fn stop_server()
 // Listens for the `ActionInvoked(UInt32, String)` signal.
 fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str)
 {
+    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
 
