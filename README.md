@@ -19,12 +19,10 @@ notify-rust = "3.0"
 ## Example 1 (Simple Notification)
 ```rust
 use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
 Notification::new()
     .summary("Firefox News")
     .body("This will almost look like a real firefox notification.")
     .icon("firefox")
-    .timeout(6000) //milliseconds
     .show().unwrap();
 ```
 
