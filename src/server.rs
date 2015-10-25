@@ -6,6 +6,7 @@
 //! This server will not replace an already running notification server.
 //!
 
+#![allow(missing_debug_implementations)]
 extern crate dbus;
 
 use std::collections::HashSet;
@@ -18,6 +19,7 @@ use super::{Notification,NotificationHint};
 use util::*;
 
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
+/// Version of the crate equals the version server.
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.

@@ -13,6 +13,11 @@ readme = "README.md"
 
 [dependencies]
 dbus = "0.2"
+clippy = {version = "0.0.21", optional = true}
+
+[features]
+default = []
+dev = ["clippy"]
 
 [[bin]]
 name = "notify"

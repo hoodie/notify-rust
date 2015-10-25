@@ -10,7 +10,7 @@
 //! than is actually available.
 
 
-use dbus::{MessageItem};
+use dbus::MessageItem;
 use super::NotificationUrgency;
 use util::*;
 

@@ -58,6 +58,18 @@
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
+#![deny(missing_docs,
+        missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts,
+        unsafe_code,
+        unstable_features,
+        unused_import_braces, unused_qualifications)]
+#![warn(missing_debug_implementations)]
+
+#![cfg_attr(feature = "dev", allow(unstable_features))]
+#![cfg_attr(feature = "dev", feature(plugin))]
+#![cfg_attr(feature = "dev", plugin(clippy))]
+
 use std::env;
 use std::collections::HashSet;
 use std::borrow::Cow;
@@ -331,6 +343,7 @@ impl Notification
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
+#[derive(Debug)]
 pub struct NotificationHandle
 {
     id: u32,
