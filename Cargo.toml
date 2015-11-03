@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>", "panicbit <panicbit@users.noreply.github.com>"]
 description = "Show desktop notifications. Similar to libnotify, but pure rust with no gtk or Qt dependencies."
 homepage = "https://github.com/hoodie/notify-rust"
@@ -13,15 +13,8 @@ readme = "README.md"
 
 [dependencies]
 dbus = "0.2"
-clippy = {version = "0.0.21", optional = true}
+clippy = {version = "0.0.22", optional = true}
 
 [features]
 default = []
 dev = ["clippy"]
-
-[[bin]]
-name = "notify"
-
-[dependencies.clap]
-version = "~1.4"
-features = [ "suggestions", "color" ]
