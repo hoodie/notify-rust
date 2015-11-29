@@ -31,16 +31,13 @@ pub struct NotificationServer {
     pub stop: Cell<bool>
 }
 
-impl NotificationServer
-{
-    fn count_up(&self)
-    {
+impl NotificationServer {
+    fn count_up(&self) {
         self.counter.set( self.counter.get() + 1);
     }
 
     /// Create a new `NotificationServer` instance.
-    pub fn new() -> NotificationServer
-    {
+    pub fn new() -> NotificationServer {
         NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
     }
 
@@ -52,9 +49,7 @@ impl NotificationServer
     //fn handle_notification
 
     /// Start listening for incoming notifications
-    pub fn start<F>(&mut self, closure: F)
-        where F: Fn(&Notification)
-    {
+    pub fn start<F>(&mut self, closure: F) where F: Fn(&Notification) {
         let connection = Connection::get_private(BusType::Session).unwrap();
         connection.release_name("org.freedesktop.Notifications").unwrap();
         connection.register_name("org.freedesktop.Notifications", NameFlag::ReplaceExisting as u32).ok().expect("Was not able to register name.");

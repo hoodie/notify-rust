@@ -90,8 +90,7 @@ pub use hints::NotificationHint;
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
 #[derive(Debug,Clone)]
-pub struct Notification
-{
+pub struct Notification {
     /// Filled by default with executable name.
     pub appname: String,
     /// Single line to summarize the content.
@@ -113,15 +112,13 @@ pub struct Notification
     id: Option<u32>
 }
 
-impl Notification
-{
+impl Notification {
     /// Constructs a new Notification.
     ///
     /// Most fields are empty by default, only `appname` is initialized with the name of the current
     /// executable.
     /// The appname is used by some desktop environments to group notifications.
-    pub fn new() -> Notification
-    {
+    pub fn new() -> Notification {
         Notification {
             appname:  exe_name(),
             summary:  String::new(),
@@ -135,8 +132,7 @@ impl Notification
     }
 
     /// Overwrite the appname field used for Notification.
-    pub fn appname(&mut self, appname:&str) -> &mut Notification
-    {
+    pub fn appname(&mut self, appname:&str) -> &mut Notification {
         self.appname = appname.to_owned();
         self
     }
@@ -144,8 +140,7 @@ impl Notification
     /// Set the `summary`.
     ///
     /// Often acts as title of the notification. For more elaborate content use the `body` field.
-    pub fn summary(&mut self, summary:&str) -> &mut Notification
-    {
+    pub fn summary(&mut self, summary:&str) -> &mut Notification {
         self.summary = summary.to_owned();
         self
     }
@@ -155,8 +150,7 @@ impl Notification
     /// Multiline textual content of the notification.
     /// Each line should be treated as a paragraph.
     /// Simple html markup should be supported, depending on the server implementation.
-    pub fn body(&mut self, body:&str) -> &mut Notification
-    {
+    pub fn body(&mut self, body:&str) -> &mut Notification {
         self.body = body.to_owned();
         self
     }
@@ -166,8 +160,7 @@ impl Notification
     /// You can use common icon names here, usually those in `/usr/share/icons`
     /// can all be used.
     /// You can also use an absolute path to file.
-    pub fn icon(&mut self, icon:&str) -> &mut Notification
-    {
+    pub fn icon(&mut self, icon:&str) -> &mut Notification {
         self.icon = icon.to_owned();
         self
     }
@@ -191,8 +184,7 @@ impl Notification
     /// ```
     ///
     ///
-    pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification
-    {
+    pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
     }
@@ -204,8 +196,7 @@ impl Notification
     /// According to [specification](https://developer.gnome.org/notification-spec/)
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
-    pub fn timeout(&mut self, timeout: i32) -> &mut Notification
-    {
+    pub fn timeout(&mut self, timeout: i32) -> &mut Notification {
         self.timeout = timeout;
         self
     }
@@ -213,8 +204,7 @@ impl Notification
     /// Set the `urgency`.
     ///
     /// Pick between Medium, Low and High.
-    pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification
-    {
+    pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint( NotificationHint::Urgency( urgency ));
         self
     }
@@ -229,8 +219,7 @@ impl Notification
     ///
     /// There is nothing fancy going on here yet.
     /// **Carefull! This replaces the internal list of actions!**
-    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification
-    {
+    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification {
         self.actions = actions;
         self
     }
@@ -238,8 +227,7 @@ impl Notification
     /// Add an action.
     ///
     /// This adds a single action to the internal list of actions.
-    pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification
-    {
+    pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
         self
@@ -248,8 +236,7 @@ impl Notification
     /// Finalizes a Notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
-    pub fn finalize(&self) -> Notification
-    {
+    pub fn finalize(&self) -> Notification {
         Notification {
             appname:  self.appname.clone(),
             summary:  self.summary.clone(),
@@ -262,8 +249,7 @@ impl Notification
         }
     }
 
-    fn pack_hints(&self) -> MessageItem
-    {
+    fn pack_hints(&self) -> MessageItem {
         if !self.hints.is_empty() {
             let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into() ).collect();
 
@@ -276,8 +262,7 @@ impl Notification
         return MessageItem::Array(vec![], sig);
     }
 
-    fn pack_actions(&self) -> MessageItem
-    {
+    fn pack_actions(&self) -> MessageItem {
         if !self.actions.is_empty() {
             let mut actions = vec![];
             for action in self.actions.iter() {
@@ -294,15 +279,13 @@ impl Notification
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
-    pub fn show(&mut self) -> Result<NotificationHandle, Error>
-    {
+    pub fn show(&mut self) -> Result<NotificationHandle, Error> {
         let connection = try!(Connection::get_private(BusType::Session));
         let id = try!(self._show(0, &connection));
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
-    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error>
-    {
+    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
         //TODO catch this
         let mut message = build_message("Notify");
 
@@ -326,8 +309,7 @@ impl Notification
     }
 
     /// Wraps show() but prints notification to stdout.
-    pub fn show_debug(&mut self) -> Result<NotificationHandle, Error>
-    {
+    pub fn show_debug(&mut self) -> Result<NotificationHandle, Error> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
             summary = self.summary,
@@ -345,17 +327,14 @@ impl Notification
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
-pub struct NotificationHandle
-{
+pub struct NotificationHandle {
     id: u32,
     connection: Connection,
     notification: Notification
 }
 
-impl NotificationHandle
-{
-    fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle
-    {
+impl NotificationHandle {
+    fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
             id: id,
             connection: connection,
@@ -365,14 +344,12 @@ impl NotificationHandle
 
     /// Waits for the user to act on a notification and then calls
     /// `invokation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str)
-    {
+    pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str) {
         wait_for_action_signal(&self.connection, self.id, invokation_closure);
     }
 
     /// Manually close the notification
-    pub fn close(self)
-    {
+    pub fn close(self) {
         let mut message = build_message("CloseNotification");
         message.append_items(&[ self.id.into() ]);
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
@@ -399,27 +376,22 @@ impl NotificationHandle
     /// notification server! On plasma5 or instance, you should also change the appname, so the old
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
-    pub fn update(&mut self)
-    {
+    pub fn update(&mut self) {
         self.id = self.notification._show(self.id, &self.connection).unwrap();
     }
 }
 
 /// Required for DerefMut
-impl Deref for NotificationHandle
-{
+impl Deref for NotificationHandle {
     type Target = Notification;
-    fn deref(&self) -> &Notification
-    {
+    fn deref(&self) -> &Notification {
         &self.notification
     }
 }
 
 /// Allow to easily modify notification properties
-impl DerefMut for NotificationHandle
-{
-    fn deref_mut(&mut self) -> &mut Notification
-    {
+impl DerefMut for NotificationHandle {
+    fn deref_mut(&mut self) -> &mut Notification {
         &mut self.notification
     }
 }
@@ -438,12 +410,9 @@ pub enum NotificationUrgency{
     Critical = 2
 }
 
-impl<'a> From<&'a str> for NotificationUrgency
-{
-    fn from(string:&'a str) -> NotificationUrgency
-    {
-        match string.to_lowercase().as_ref()
-        {
+impl<'a> From<&'a str> for NotificationUrgency {
+    fn from(string:&'a str) -> NotificationUrgency {
+        match string.to_lowercase().as_ref() {
             "low"      => NotificationUrgency::Low,
             "lo"       => NotificationUrgency::Low,
             "normal"   => NotificationUrgency::Normal,
@@ -461,8 +430,7 @@ impl<'a> From<&'a str> for NotificationUrgency
 
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
-pub struct ServerInformation
-{
+pub struct ServerInformation {
     /// The product name of the server.
     pub name:          String,
     /// The vendor name.
@@ -480,8 +448,7 @@ pub struct ServerInformation
 
 
 /// Get list of all capabilities of the running notification server.
-pub fn get_capabilities() -> Result<Vec<String>, Error>
-{
+pub fn get_capabilities() -> Result<Vec<String>, Error> {
     let mut capabilities = vec![];
 
     let message    = build_message("GetCapabilities");
@@ -502,8 +469,7 @@ pub fn get_capabilities() -> Result<Vec<String>, Error>
 ///
 /// This struct contains name, vendor, version and spec_version of the notification server
 /// running.
-pub fn get_server_information() -> Result<ServerInformation, Error>
-{
+pub fn get_server_information() -> Result<ServerInformation, Error> {
     let message    = build_message("GetServerInformation");
     let connection = try!(Connection::get_private(BusType::Session));
     let reply      = try!(connection.send_with_reply_and_block(message, 2000));
@@ -521,8 +487,7 @@ pub fn get_server_information() -> Result<ServerInformation, Error>
 /// Strictly internal.
 /// The Notificationserver implemented here exposes a "Stop" function.
 /// stops the notification server
-pub fn stop_server()
-{
+pub fn stop_server() {
     let message    = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
     let _reply     = connection.send_with_reply_and_block(message, 2000).unwrap();
@@ -543,8 +508,7 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
 
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str)
-{
+fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
@@ -576,14 +540,12 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
 }
 
 // Returns the name of the current executable, used as a default for `Notification.appname`.
-fn exe_name() -> String
-{
+fn exe_name() -> String {
     env::current_exe().unwrap()
     .file_name().unwrap().to_str().unwrap().to_owned()
 }
 
-fn build_message(method_name:&str) -> Message
-{
+fn build_message(method_name:&str) -> Message {
     Message::new_method_call(
         "org.freedesktop.Notifications",
         "/org/freedesktop/Notifications",
@@ -591,8 +553,7 @@ fn build_message(method_name:&str) -> Message
         method_name).ok().expect(&format!("Error building message call {:?}.", method_name))
 }
 
-fn unwrap_message_string(item: Option<&MessageItem>) -> String
-{
+fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item{
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
         _ => "".to_owned()

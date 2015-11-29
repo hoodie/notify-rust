@@ -86,13 +86,10 @@ pub enum NotificationHint
     Invalid // TODO find a better solution to this
 }
 
-impl NotificationHint
-{
+impl NotificationHint {
     /// Get the `bool` representation of this hint.
-    pub fn as_bool(&self) -> Option<bool>
-    {
-        match self
-        {
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
             &NotificationHint::ActionIcons(inner)   => Some(inner),
             &NotificationHint::Resident(inner)      => Some(inner),
             &NotificationHint::SuppressSound(inner) => Some(inner),
@@ -102,10 +99,8 @@ impl NotificationHint
     }
 
     /// Get the `i32` representation of this hint.
-    pub fn as_i32(&self) -> Option<i32>
-    {
-        match self
-        {
+    pub fn as_i32(&self) -> Option<i32> {
+        match self {
             &NotificationHint::X(inner) => Some(inner),
             &NotificationHint::Y(inner) => Some(inner),
             _ => None
@@ -113,10 +108,8 @@ impl NotificationHint
     }
 
     /// Get the `&str` representation of this hint.
-    pub fn as_str(&self) -> Option<&str>
-    {
-        match self
-        {
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
             &NotificationHint::DesktopEntry(ref inner) => Some(&inner),
             &NotificationHint::ImagePath(ref inner) => Some(&inner),
             &NotificationHint::SoundFile(ref inner) => Some(&inner),
@@ -127,10 +120,8 @@ impl NotificationHint
     }
 }
 
-impl<'a> From<&'a NotificationHint> for MessageItem
-{
-    fn from(hint: &NotificationHint) -> MessageItem
-    {
+impl<'a> From<&'a NotificationHint> for MessageItem {
+    fn from(hint: &NotificationHint) -> MessageItem {
         let hint:(String,MessageItem) = match hint {
             &NotificationHint::ActionIcons(value)   => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             &NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
@@ -158,10 +149,8 @@ impl<'a> From<&'a NotificationHint> for MessageItem
 }
 
 //impl<'a> FromMessageItem<'a> for NotificationHint {
-impl<'a> From<&'a MessageItem> for NotificationHint
-{
-    fn from (item: &MessageItem) -> NotificationHint
-    {
+impl<'a> From<&'a MessageItem> for NotificationHint {
+    fn from (item: &MessageItem) -> NotificationHint {
         match item{
             &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == CATEGORY       => NotificationHint::Category(unwrap_message_str(&**value)),
             &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == ACTION_ICONS   => NotificationHint::ActionIcons(unwrap_message_bool(&**value)),
@@ -196,8 +185,7 @@ mod test{
     use dbus::MessageItem as Item;
 
     #[test]
-    fn hint_to_item()
-    {
+    fn hint_to_item() {
         let category = &Hint::Category("testme".to_owned());
         let item:Item= category.into();
         let test_item= Item::DictEntry(
@@ -208,8 +196,7 @@ mod test{
     }
 
     #[test]
-    fn urgency()
-    {
+    fn urgency() {
         let low = &Hint::Urgency(Low);
         let low_item:Item= low.into();
         let test_item= Item::DictEntry(
@@ -219,8 +206,7 @@ mod test{
     }
 
     #[test]
-    fn simple_hint_to_item()
-    {
+    fn simple_hint_to_item() {
         let old_hint = &NotificationHint::Custom("foo".into(), "bar".into());
         let item:MessageItem = old_hint.into();
         let item_ref = &item;
