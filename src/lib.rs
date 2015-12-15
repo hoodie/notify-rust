@@ -62,7 +62,7 @@
         missing_copy_implementations,
         trivial_casts, trivial_numeric_casts,
         unsafe_code,
-        unstable_features,
+        //unstable_features,
         unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
@@ -76,7 +76,9 @@ use std::collections::HashSet;
 use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
 
+#[cfg(target_os="linux")]
 extern crate dbus;
+#[cfg(target_os="linux")]
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem, Error};
 
 mod util;
@@ -285,6 +287,7 @@ impl Notification {
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
+    #[cfg(target_os="linux")]
     fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
         //TODO catch this
         let mut message = build_message("Notify");
@@ -306,6 +309,10 @@ impl Notification {
             Some(&MessageItem::UInt32(ref id)) => Ok(*id),
             _ => Ok(0)
         }
+    }
+
+    #[cfg(target_os="macos")]
+    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
     }
 
     /// Wraps show() but prints notification to stdout.
@@ -559,4 +566,3 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String {
         _ => "".to_owned()
     }
 }
-
