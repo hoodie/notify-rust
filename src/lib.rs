@@ -76,9 +76,9 @@ use std::collections::HashSet;
 use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
 
-#[cfg(target_os="linux")]
+#[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
-#[cfg(target_os="linux")]
+#[cfg(all(unix, not(target_os = "macos")))]
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem, Error};
 
 mod util;
@@ -287,7 +287,7 @@ impl Notification {
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
-    #[cfg(target_os="linux")]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
         //TODO catch this
         let mut message = build_message("Notify");
