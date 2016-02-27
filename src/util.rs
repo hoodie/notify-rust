@@ -4,7 +4,11 @@ use dbus::MessageItem;
 //TODO get rid of the util functions
 
 pub fn unwrap_message_int(item: &MessageItem) -> i32{
-    unwrap_message_str(item).parse::<i32>().unwrap_or(0)
+    try_unwrap_message_int(item).unwrap_or(0)
+}
+
+pub fn try_unwrap_message_int(item: &MessageItem) -> Option<i32> {
+    unwrap_message_str(item).parse::<i32>().ok()
 }
 
 pub fn unwrap_message_bool(item: &MessageItem) -> bool{

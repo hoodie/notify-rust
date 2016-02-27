@@ -45,11 +45,11 @@ pub enum NotificationHint
     /// Name of the DesktopEntry representing the calling application. In case of "firefox.desktop"
     /// use "firefox". May be used to retrieve the correct icon.
     DesktopEntry(String),
-    
+
     // ///Not yet implemented
     //ImageData(iiibiiay),
     //IconData(iiibiiay),
-    
+
     /// Display the image at this path.
     ImagePath(String),
 
@@ -81,6 +81,9 @@ pub enum NotificationHint
 
     /// If you want to pass something entirely different.
     Custom(String,String),
+
+    /// A custom numerical (integer) hint
+    CustomInt(String, i32),
 
     /// Only used by this NotificationServer implementation
     Invalid // TODO find a better solution to this
@@ -138,6 +141,7 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
             &NotificationHint::Y(value)                 => (Y              .to_owned(), MessageItem::Int32(value)),
             &NotificationHint::Urgency(value)           => (URGENCY        .to_owned(), MessageItem::Byte(value as u8)),
             &NotificationHint::Custom(ref key, ref val) => (key            .to_owned(), MessageItem::Str(val.to_owned ())),
+            &NotificationHint::CustomInt(ref key, val)  => (key            .to_owned(), MessageItem::Int32(val)),
             &NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
         };
 
@@ -169,7 +173,10 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
                     2 => NotificationUrgency::Critical,
                     _ => NotificationUrgency::Normal
                 }),
-            &MessageItem::DictEntry(ref key, ref value) => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value)),
+            &MessageItem::DictEntry(ref key, ref value) => match try_unwrap_message_int(value) {
+                    Some(num) => NotificationHint::CustomInt(unwrap_message_str(&**key), num),
+                    None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value)),
+                },
             foo @ _ => {println!("Invalid {:#?} ", foo); NotificationHint::Invalid}
         }
     }
