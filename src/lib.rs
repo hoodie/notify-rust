@@ -78,7 +78,8 @@ use std::ops::{Deref,DerefMut};
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 #[cfg(all(unix, not(target_os = "macos")))]
-use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem, Error};
+use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
+pub use dbus::Error;
 
 mod util;
 pub mod server;
