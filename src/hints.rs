@@ -92,31 +92,31 @@ pub enum NotificationHint
 impl NotificationHint {
     /// Get the `bool` representation of this hint.
     pub fn as_bool(&self) -> Option<bool> {
-        match self {
-            &NotificationHint::ActionIcons(inner)   => Some(inner),
-            &NotificationHint::Resident(inner)      => Some(inner),
-            &NotificationHint::SuppressSound(inner) => Some(inner),
-            &NotificationHint::Transient(inner)     => Some(inner),
+        match *self {
+            NotificationHint::ActionIcons(inner)   |
+            NotificationHint::Resident(inner)      |
+            NotificationHint::SuppressSound(inner) |
+            NotificationHint::Transient(inner)     => Some(inner),
             _ => None
         }
     }
 
     /// Get the `i32` representation of this hint.
     pub fn as_i32(&self) -> Option<i32> {
-        match self {
-            &NotificationHint::X(inner) => Some(inner),
-            &NotificationHint::Y(inner) => Some(inner),
+        match *self {
+            NotificationHint::X(inner) |
+            NotificationHint::Y(inner) => Some(inner),
             _ => None
         }
     }
 
     /// Get the `&str` representation of this hint.
     pub fn as_str(&self) -> Option<&str> {
-        match self {
-            &NotificationHint::DesktopEntry(ref inner) => Some(&inner),
-            &NotificationHint::ImagePath(ref inner) => Some(&inner),
-            &NotificationHint::SoundFile(ref inner) => Some(&inner),
-            &NotificationHint::SoundName(ref inner) => Some(&inner),
+        match *self {
+            NotificationHint::DesktopEntry(ref inner) |
+            NotificationHint::ImagePath(ref inner)    |
+            NotificationHint::SoundFile(ref inner)    |
+            NotificationHint::SoundName(ref inner)    => Some(&inner),
             _ => None
         }
 
@@ -125,24 +125,24 @@ impl NotificationHint {
 
 impl<'a> From<&'a NotificationHint> for MessageItem {
     fn from(hint: &NotificationHint) -> MessageItem {
-        let hint:(String,MessageItem) = match hint {
-            &NotificationHint::ActionIcons(value)   => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
-            &NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
-            &NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-          //&NotificationHint::ImageData(iiibiiay)      => (IMAGE_DATA     .to_owned(), MessageItem::Str(format!("{:?}",  value)),
-            &NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
-          //&NotificationHint::IconData(iiibiiay)       => (ICON_DATA      .to_owned(), MessageItem::Str(format!("{:?}",  value)),
-            &NotificationHint::Resident(value)      => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
-            &NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
-            &NotificationHint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
-            &NotificationHint::SuppressSound(value)     => (SUPPRESS_SOUND .to_owned(), MessageItem::Bool(value)),
-            &NotificationHint::Transient(value)         => (TRANSIENT      .to_owned(), MessageItem::Bool(value)),
-            &NotificationHint::X(value)                 => (X              .to_owned(), MessageItem::Int32(value)),
-            &NotificationHint::Y(value)                 => (Y              .to_owned(), MessageItem::Int32(value)),
-            &NotificationHint::Urgency(value)           => (URGENCY        .to_owned(), MessageItem::Byte(value as u8)),
-            &NotificationHint::Custom(ref key, ref val) => (key            .to_owned(), MessageItem::Str(val.to_owned ())),
-            &NotificationHint::CustomInt(ref key, val)  => (key            .to_owned(), MessageItem::Int32(val)),
-            &NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
+        let hint:(String,MessageItem) = match *hint {
+            NotificationHint::ActionIcons(value)   => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
+            NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
+            NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
+          //NotificationHint::ImageData(iiibiiay)      => (IMAGE_DATA     .to_owned(), MessageItem::Str(format!("{:?}",  value)),
+            NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
+          //NotificationHint::IconData(iiibiiay)       => (ICON_DATA      .to_owned(), MessageItem::Str(format!("{:?}",  value)),
+            NotificationHint::Resident(value)      => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
+            NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
+            NotificationHint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
+            NotificationHint::SuppressSound(value)     => (SUPPRESS_SOUND .to_owned(), MessageItem::Bool(value)),
+            NotificationHint::Transient(value)         => (TRANSIENT      .to_owned(), MessageItem::Bool(value)),
+            NotificationHint::X(value)                 => (X              .to_owned(), MessageItem::Int32(value)),
+            NotificationHint::Y(value)                 => (Y              .to_owned(), MessageItem::Int32(value)),
+            NotificationHint::Urgency(value)           => (URGENCY        .to_owned(), MessageItem::Byte(value as u8)),
+            NotificationHint::Custom(ref key, ref val) => (key            .to_owned(), MessageItem::Str(val.to_owned ())),
+            NotificationHint::CustomInt(ref key, val)  => (key            .to_owned(), MessageItem::Int32(val)),
+            NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
         };
 
         MessageItem::DictEntry(
@@ -177,7 +177,7 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
                     Some(num) => NotificationHint::CustomInt(unwrap_message_str(&**key), num),
                     None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value)),
                 },
-            foo @ _ => {println!("Invalid {:#?} ", foo); NotificationHint::Invalid}
+            foo => {println!("Invalid {:#?} ", foo); NotificationHint::Invalid}
         }
     }
 

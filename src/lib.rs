@@ -66,7 +66,6 @@
         unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
-
 #![cfg_attr(feature = "dev", allow(unstable_features))]
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
@@ -246,8 +245,8 @@ impl Notification {
             icon:     self.icon.clone(),
             hints:    self.hints.clone(),
             actions:  self.actions.clone(),
-            timeout:  self.timeout.clone(),
-            id:       self.id.clone()
+            timeout:  self.timeout,
+            id:       self.id
         }
     }
 
@@ -261,13 +260,14 @@ impl Notification {
         }
 
         let sig = Cow::Borrowed("{sv}"); // cast to TypeSig makes rust1.0 and rust1.1 panic
-        return MessageItem::Array(vec![], sig);
+
+        MessageItem::Array(vec![], sig)
     }
 
     fn pack_actions(&self) -> MessageItem {
         if !self.actions.is_empty() {
             let mut actions = vec![];
-            for action in self.actions.iter() {
+            for action in &self.actions {
                 actions.push(action.to_owned().into());
             }
             if let Ok(array) = MessageItem::new_array(actions){
@@ -275,7 +275,7 @@ impl Notification {
             }
         }
         let sig = Cow::Borrowed("s"); // cast to TypeSig makes rust1.0 and rust1.1 panic
-        return MessageItem::Array(vec![], sig);
+        MessageItem::Array(vec![], sig)
     }
 
     /// Sends Notification to D-Bus.
@@ -420,12 +420,12 @@ pub enum NotificationUrgency{
 impl<'a> From<&'a str> for NotificationUrgency {
     fn from(string:&'a str) -> NotificationUrgency {
         match string.to_lowercase().as_ref() {
-            "low"      => NotificationUrgency::Low,
+            "low"      |
             "lo"       => NotificationUrgency::Low,
-            "normal"   => NotificationUrgency::Normal,
+            "normal"   |
             "medium"   => NotificationUrgency::Normal,
-            "critical" => NotificationUrgency::Critical,
-            "high"     => NotificationUrgency::Critical,
+            "critical" |
+            "high"     |
             "hi"       => NotificationUrgency::Critical,
             _ => unimplemented!()
         }
@@ -464,12 +464,13 @@ pub fn get_capabilities() -> Result<Vec<String>, Error> {
 
     if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
         for item in items.iter(){
-            if let &MessageItem::Str(ref cap) = item{
+            if let MessageItem::Str(ref cap) = *item{
                 capabilities.push(cap.clone());
             }
         }
     }
-    return Ok(capabilities);
+
+    Ok(capabilities)
 }
 
 /// Returns a struct containing ServerInformation.
@@ -528,8 +529,8 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
 
                 // Action Invoked
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref _action)) = (&items[0], &items[1]) {
-                        if nid == id { func(_action); break; }
+                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
+                        if nid == id { func(action); break; }
                     }
                 },
 
@@ -557,7 +558,7 @@ fn build_message(method_name:&str) -> Message {
         "org.freedesktop.Notifications",
         "/org/freedesktop/Notifications",
         "org.freedesktop.Notifications",
-        method_name).ok().expect(&format!("Error building message call {:?}.", method_name))
+        method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {

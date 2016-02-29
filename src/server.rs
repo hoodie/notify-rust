@@ -52,9 +52,9 @@ impl NotificationServer {
     pub fn start<F>(&mut self, closure: F) where F: Fn(&Notification) {
         let connection = Connection::get_private(BusType::Session).unwrap();
         connection.release_name("org.freedesktop.Notifications").unwrap();
-        connection.register_name("org.freedesktop.Notifications", NameFlag::ReplaceExisting as u32).ok().expect("Was not able to register name.");
+        connection.register_name("org.freedesktop.Notifications", NameFlag::ReplaceExisting as u32).expect("Was not able to register name.");
         let mut objpath = ObjectPath::new(&connection, "/org/freedesktop/Notifications", false);
-        connection.register_object_path( "/org/freedesktop/Notifications").ok().expect("could not register object path");
+        connection.register_object_path( "/org/freedesktop/Notifications").expect("could not register object path");
 
         let server_interface = Interface::new(
             vec![
@@ -105,8 +105,8 @@ impl NotificationServer {
                             vec![Argument::new("id", "u")], //No input arguments
                             vec![],
                             //MessageItem::new_array( vec![ "body".into(), ]).unwrap()
-                            Box::new(|_msg| {
-                                println!("{:?}", _msg);
+                            Box::new(|msg| {
+                                println!("{:?}", msg);
                                 Ok( vec![])}
                                 )
                            ),

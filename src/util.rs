@@ -16,9 +16,9 @@ pub fn unwrap_message_bool(item: &MessageItem) -> bool{
 }
 
 pub fn unwrap_message_str(item: &MessageItem) -> String {
-    match item{
-        &MessageItem::Str(ref value) => value.to_owned(),
-        &MessageItem::Variant(ref value) =>
+    match *item{
+        MessageItem::Str(ref value) => value.to_owned(),
+        MessageItem::Variant(ref value) =>
             match **value{
                 MessageItem::Str(ref value) => value.to_owned(),
                 _ => "".to_owned()
