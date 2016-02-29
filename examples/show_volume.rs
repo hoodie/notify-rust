@@ -25,9 +25,9 @@ fn show_volume(percent: Volume){
     Notification::new()
         .summary(" ")
         .icon(icon)
-        .hint(NotificationHint::SoundName("audio-volume-change".to_string()))
-        .hint(NotificationHint::Custom("synchronous".to_string(), "volume".to_string()))
-        .hint(NotificationHint::CustomInt("value".to_string(), value as i32))
+        .hint(NotificationHint::SoundName("audio-volume-change".to_owned()))
+        .hint(NotificationHint::Custom("synchronous".to_owned(), "volume".to_owned()))
+        .hint(NotificationHint::CustomInt("value".to_owned(), value))
         .show().unwrap();
 }
 
