@@ -6,9 +6,9 @@ fn main()
 {
 
     Notification::new()
-        .summary("Chromium Crashed")
+        .summary("Formatting")
         .appname("chromium")
-        .body(&format!("This is <b>{}</b>!<br/>", "a lie"))
+        .body(&format!("This is not chrome, but <b>{}</b>!<br/>", "bold"))
         .icon("chromium")
         .show();
 

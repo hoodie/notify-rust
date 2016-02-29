@@ -1,23 +1,14 @@
 extern crate notify_rust;
-
-use self::notify_rust::{
-    Notification,
-    NotificationHint,
-};
-
-use self::notify_rust::{
-    NotificationHandle,
-};
+use self::notify_rust::Notification;
+use self::notify_rust::NotificationHint;
+use std::time::Duration;
 
 enum Volume {
     Muted,
-    Percent(u32),
+    Percent(i32),
 }
 
-fn main(){
-
-    let percent = Volume::Percent(30);
-
+fn show_volume(percent: Volume){
     let icon = match percent {
         Volume::Muted => "notification-audio-volume-muted",
         Volume::Percent(x) if x == 0 => "notification-audio-volume-off",
@@ -37,5 +28,13 @@ fn main(){
         .hint(NotificationHint::SoundName("audio-volume-change".to_string()))
         .hint(NotificationHint::Custom("synchronous".to_string(), "volume".to_string()))
         .hint(NotificationHint::CustomInt("value".to_string(), value as i32))
-        .show();
+        .show().unwrap();
+}
+
+fn main(){
+    show_volume(Volume::Muted);
+    for i in 1..11{
+        std::thread::sleep(Duration::from_millis(1_000));
+        show_volume(Volume::Percent(i*10));
+    }
 }
