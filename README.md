@@ -32,7 +32,7 @@ use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 Notification::new()
     .summary("Category:email")
-    .body("This has nothing to do with emails.\nIt should not go away untill you acknoledge it.")
+    .body("This has nothing to do with emails.\nIt should not go away until you acknoledge it.")
     .icon("thunderbird")
     .appname("thunderbird")
     .hint(Hint::Category("email".to_owned()))

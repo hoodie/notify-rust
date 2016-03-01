@@ -1,4 +1,17 @@
 
+3.1.0 / 2016-03-01
+==================
+  * added custom int NotificationHint
+    this enables things like [volume bars](examples/show_volume.rs) on notify-osd
+
+  * made clippy happy
+  * removed redundant example
+  * info example print a valid yaml
+  * updated examples
+  * added examples for custom_int and reuse of notifications
+  * Merge pull request #15 from illegalprime/master
+  * updated examples to current api
+
 3.0.0 / 2015-10-01
 ==================
 
