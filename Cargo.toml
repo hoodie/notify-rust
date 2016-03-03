@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 dbus = "~0.3"
-clippy = {version = "*", optional = true}
+clippy = {version = "~0.0.44", optional = true}
 
 [features]
 default = []
