@@ -14,20 +14,32 @@ use dbus::MessageItem;
 use super::NotificationUrgency;
 use util::*;
 
-const ACTION_ICONS:&'static str   = "action-icons";
-const CATEGORY:&'static str       = "category";
-const DESKTOP_ENTRY:&'static str  = "desktop-entry";
-//const IMAGE_DATA:&'static str   = "image-data";
-const IMAGE_PATH:&'static str     = "image-path";
-//const ICON_DATA:&'static str    = "icon_data";
-const RESIDENT:&'static str       = "resident";
-const SOUND_FILE:&'static str     = "sound-file";
-const SOUND_NAME:&'static str     = "sound-name";
-const SUPPRESS_SOUND:&'static str = "suppress-sound";
-const TRANSIENT:&'static str      = "transient";
-const X:&'static str              = "x";
-const Y:&'static str              = "y";
-const URGENCY:&'static str        = "urgency";
+/// "action-icons"
+pub const ACTION_ICONS:&'static str   = "action-icons";
+/// "category"
+pub const CATEGORY:&'static str       = "category";
+/// "desktop-entry"
+pub const DESKTOP_ENTRY:&'static str  = "desktop-entry";
+//pub const IMAGE_DATA:&'static str   = "image-data";
+/// "image-path"
+pub const IMAGE_PATH:&'static str     = "image-path";
+//pub const ICON_DATA:&'static str    = "icon_data";
+/// "resident"
+pub const RESIDENT:&'static str       = "resident";
+/// "sound-file"
+pub const SOUND_FILE:&'static str     = "sound-file";
+/// "sound-name"
+pub const SOUND_NAME:&'static str     = "sound-name";
+/// "suppress-sound"
+pub const SUPPRESS_SOUND:&'static str = "suppress-sound";
+/// "transient"
+pub const TRANSIENT:&'static str      = "transient";
+/// "x"
+pub const X:&'static str              = "x";
+/// "y"
+pub const Y:&'static str              = "y";
+/// "urgency"
+pub const URGENCY:&'static str        = "urgency";
 
 /// All currently implemented NotificationHints that can be send.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -123,6 +135,25 @@ impl NotificationHint {
     }
 }
 
+/// convinience converting a name and value into a hint
+pub fn hint_from_pair(name: &str, value: &str) -> Result<NotificationHint, String>{
+    use NotificationHint as Hint;
+    match (name,value){
+        (ACTION_ICONS,val)    => val.parse::<bool>().map(|v| Hint::ActionIcons(v)).map_err(|e|e.to_string()),
+        (CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
+        (DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
+        (IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
+        (RESIDENT, val)       => val.parse::<bool>().map(|v| Hint::Resident(v)).map_err(|e|e.to_string()),
+        (SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
+        (SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
+        (SUPPRESS_SOUND, val) => val.parse::<bool>().map(|v| Hint::SuppressSound(v)).map_err(|e|e.to_string()),
+        (TRANSIENT, val)      => val.parse::<bool>().map(|v| Hint::Transient(v)).map_err(|e|e.to_string()),
+        (X, val)              => val.parse::<i32>().map(|v| Hint::X(v)).map_err(|e|e.to_string()),
+        (Y, val)              => val.parse::<i32>().map(|v| Hint::Y(v)).map_err(|e|e.to_string()),
+        _                     => Err(String::from("unknown name"))
+    }
+}
+
 impl<'a> From<&'a NotificationHint> for MessageItem {
     fn from(hint: &NotificationHint) -> MessageItem {
         let hint:(String,MessageItem) = match *hint {
@@ -180,7 +211,6 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
             foo => {println!("Invalid {:#?} ", foo); NotificationHint::Invalid}
         }
     }
-
 }
 
 #[cfg(test)]
