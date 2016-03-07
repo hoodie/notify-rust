@@ -44,30 +44,4 @@ Notification::new()
 Please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
 
 ### Commandline tool
-Checkout ./notify-cli, it exposes most of the functionality of the lib to the commandline.
-
-```
-$ ./target/debug/notify send --help
-notify-send 
-Shows a notification
-
-USAGE:
-	notify send [FLAGS] [OPTIONS] [ARGS] <summary>
-
-FLAGS:
-    -d, --debug      Also prints notification to stdout
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
-OPTIONS:
-    -a, --app-name <app-name>          Set a specific app-name manually.
-    -c, --category <category>          Set a category.
-    -t, --expire-time <expire-time>    Time until expiration in milliseconds. 0 means forever.
-    -i, --icon <icon>                  Icon of notification.
-    -u, --urgency <urgency>            How urgent is it. [values: high low normal]
-
-ARGS:
-    summary    Title of the Notification.
-    body       Message body
-
-```
+Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
