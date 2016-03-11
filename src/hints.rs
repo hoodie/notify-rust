@@ -136,7 +136,7 @@ impl NotificationHint {
 }
 
 /// convinience converting a name and value into a hint
-pub fn hint_from_pair(name: &str, value: &str) -> Result<NotificationHint, String>{
+pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, String>{
     use NotificationHint as Hint;
     match (name,value){
         (ACTION_ICONS,val)    => val.parse::<bool>().map(|v| Hint::ActionIcons(v)).map_err(|e|e.to_string()),

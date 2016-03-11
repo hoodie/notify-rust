@@ -235,6 +235,16 @@ impl Notification {
         self
     }
 
+    /// Set an Id ahead of time
+    ///
+    /// Setting the id ahead of time allows overriding a known other notification.
+    /// Though if you want to update a notification, it is easier to use the `update()` method of
+    /// the `NotificationHandle` object that `show()` returns.
+    pub fn id(&mut self, id:u32) -> &mut Notification {
+        self.id = Some(id);
+        self
+    }
+
     /// Finalizes a Notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
@@ -284,7 +294,8 @@ impl Notification {
     /// Returns a handle to a notification
     pub fn show(&mut self) -> Result<NotificationHandle, Error> {
         let connection = try!(Connection::get_private(BusType::Session));
-        let id = try!(self._show(0, &connection));
+        let inner_id = self.id.unwrap_or(0);
+        let id = try!(self._show(inner_id, &connection));
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
@@ -386,6 +397,11 @@ impl NotificationHandle {
     /// been tested by the developer.
     pub fn update(&mut self) {
         self.id = self.notification._show(self.id, &self.connection).unwrap();
+    }
+
+    /// Returns the Handle's id.
+    pub fn id(&self) -> u32{
+        self.id
     }
 }
 

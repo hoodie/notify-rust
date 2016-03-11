@@ -1,12 +1,12 @@
 extern crate notify_rust;
 
 #[cfg(test)]
-mod urgency_from_str{
+mod conversion{
 
     use notify_rust::NotificationUrgency as Urgency;
 
     #[test]
-    fn from_str()
+    fn urgency_from_str()
     {
         let u0:Urgency = "low".into();
         assert_eq!(u0, Urgency::Low);
@@ -17,6 +17,10 @@ mod urgency_from_str{
         assert_eq!(Urgency::from("High"), Urgency::Critical);
         assert_eq!(Urgency::from("Hi"), Urgency::Critical);
         assert_eq!(Urgency::from("Critical"), Urgency::Critical);
+    }
+    #[test]
+    fn hint_from_str()
+    {
     }
 
 }
