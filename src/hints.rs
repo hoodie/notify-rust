@@ -1,4 +1,4 @@
-//! NotificationHints allow to pass extra information to the server.
+//! `NotificationHints` allow to pass extra information to the server.
 //!
 //! Many of these are standardized by either:
 //!
@@ -41,7 +41,7 @@ pub const Y:&'static str              = "y";
 /// "urgency"
 pub const URGENCY:&'static str        = "urgency";
 
-/// All currently implemented NotificationHints that can be send.
+/// All currently implemented `NotificationHints` that can be send.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
 { // as found on https://developer.gnome.org/notification-spec/
@@ -128,7 +128,7 @@ impl NotificationHint {
             NotificationHint::DesktopEntry(ref inner) |
             NotificationHint::ImagePath(ref inner)    |
             NotificationHint::SoundFile(ref inner)    |
-            NotificationHint::SoundName(ref inner)    => Some(&inner),
+            NotificationHint::SoundName(ref inner)    => Some(inner),
             _ => None
         }
 
@@ -139,17 +139,17 @@ impl NotificationHint {
 pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, String>{
     use NotificationHint as Hint;
     match (name,value){
-        (ACTION_ICONS,val)    => val.parse::<bool>().map(|v| Hint::ActionIcons(v)).map_err(|e|e.to_string()),
+        (ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
         (CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
         (DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
         (IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
-        (RESIDENT, val)       => val.parse::<bool>().map(|v| Hint::Resident(v)).map_err(|e|e.to_string()),
+        (RESIDENT, val)       => val.parse::<bool>().map(Hint::Resident).map_err(|e|e.to_string()),
         (SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
         (SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
-        (SUPPRESS_SOUND, val) => val.parse::<bool>().map(|v| Hint::SuppressSound(v)).map_err(|e|e.to_string()),
-        (TRANSIENT, val)      => val.parse::<bool>().map(|v| Hint::Transient(v)).map_err(|e|e.to_string()),
-        (X, val)              => val.parse::<i32>().map(|v| Hint::X(v)).map_err(|e|e.to_string()),
-        (Y, val)              => val.parse::<i32>().map(|v| Hint::Y(v)).map_err(|e|e.to_string()),
+        (SUPPRESS_SOUND, val) => val.parse::<bool>().map(Hint::SuppressSound).map_err(|e|e.to_string()),
+        (TRANSIENT, val)      => val.parse::<bool>().map(Hint::Transient).map_err(|e|e.to_string()),
+        (X, val)              => val.parse::<i32>().map(Hint::X).map_err(|e|e.to_string()),
+        (Y, val)              => val.parse::<i32>().map(Hint::Y).map_err(|e|e.to_string()),
         _                     => Err(String::from("unknown name"))
     }
 }
@@ -208,7 +208,7 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
                     Some(num) => NotificationHint::CustomInt(unwrap_message_str(&**key), num),
                     None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value)),
                 },
-            foo => {println!("Invalid {:#?} ", foo); NotificationHint::Invalid}
+            other => {println!("Invalid {:#?} ", other); NotificationHint::Invalid}
         }
     }
 }

@@ -38,7 +38,7 @@ impl NotificationServer {
 
     /// Create a new `NotificationServer` instance.
     pub fn new() -> NotificationServer {
-        NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
+        NotificationServer::default()
     }
 
     //pub fn notify_mothod<F>(&mut self, closure: F)
@@ -165,5 +165,11 @@ impl NotificationServer {
                 break;
             }
         }
+    }
+}
+
+impl Default for NotificationServer{
+    fn default() -> NotificationServer{
+        NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
     }
 }

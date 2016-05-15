@@ -121,16 +121,7 @@ impl Notification {
     /// executable.
     /// The appname is used by some desktop environments to group notifications.
     pub fn new() -> Notification {
-        Notification {
-            appname:  exe_name(),
-            summary:  String::new(),
-            body:     String::new(),
-            icon:     String::new(),
-            hints:    HashSet::new(),
-            actions:  Vec::new(),
-            timeout:  -1,
-            id:       None
-        }
+        Notification::default()
     }
 
     /// Overwrite the appname field used for Notification.
@@ -339,6 +330,21 @@ impl Notification {
     }
 }
 
+impl Default for Notification {
+    fn default() -> Notification {
+        Notification {
+            appname:  exe_name(),
+            summary:  String::new(),
+            body:     String::new(),
+            icon:     String::new(),
+            hints:    HashSet::new(),
+            actions:  Vec::new(),
+            timeout:  -1,
+            id:       None
+        }
+    }
+}
+
 
 
 
@@ -405,7 +411,7 @@ impl NotificationHandle {
     }
 }
 
-/// Required for DerefMut
+/// Required for `DerefMut`
 impl Deref for NotificationHandle {
     type Target = Notification;
     fn deref(&self) -> &Notification {
@@ -490,9 +496,9 @@ pub fn get_capabilities() -> Result<Vec<String>, Error> {
     Ok(capabilities)
 }
 
-/// Returns a struct containing ServerInformation.
+/// Returns a struct containing `ServerInformation`.
 ///
-/// This struct contains name, vendor, version and spec_version of the notification server
+/// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
 /// running.
 pub fn get_server_information() -> Result<ServerInformation, Error> {
     let message    = build_message("GetServerInformation");
