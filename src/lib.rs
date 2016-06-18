@@ -66,14 +66,15 @@
         unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
-#![cfg_attr(feature = "dev", allow(unstable_features))]
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
+#![cfg_attr(feature = "lints", allow(unstable_features))]
+#![cfg_attr(feature = "lints", feature(plugin))]
+#![cfg_attr(feature = "lints", plugin(clippy))]
 
 use std::env;
 use std::collections::HashSet;
 use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
+use std::default::Default;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
@@ -283,7 +284,7 @@ impl Notification {
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
-    pub fn show(&mut self) -> Result<NotificationHandle, Error> {
+    pub fn show(&self) -> Result<NotificationHandle, Error> {
         let connection = try!(Connection::get_private(BusType::Session));
         let inner_id = self.id.unwrap_or(0);
         let id = try!(self._show(inner_id, &connection));
@@ -291,7 +292,7 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
+    fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
         //TODO catch this
         let mut message = build_message("Notify");
 
@@ -315,7 +316,7 @@ impl Notification {
     }
 
     #[cfg(target_os="macos")]
-    fn _show(&mut self, id:u32, connection: &Connection) -> Result<u32, Error> {
+    fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
     }
 
     /// Wraps show() but prints notification to stdout.

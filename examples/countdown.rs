@@ -21,9 +21,9 @@ fn main()
         println!("{}", 10-i);
     }
 
-    notification.body("TAKE OFF");
-    notification.appname("countdown_takeoff");
-    notification.update();
+    notification.body("TAKE OFF")
+    .appname("countdown_takeoff")
+    .show();
 
 }
 

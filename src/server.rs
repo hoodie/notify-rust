@@ -24,6 +24,7 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.
 /// See [the module level documentation](index.html) for more.
+#[derive(Default)]
 pub struct NotificationServer {
     /// Counter for generating notification ids
     pub counter: Cell<u32>,
@@ -165,11 +166,5 @@ impl NotificationServer {
                 break;
             }
         }
-    }
-}
-
-impl Default for NotificationServer{
-    fn default() -> NotificationServer{
-        NotificationServer{counter:Cell::new(0), stop:Cell::new(false)}
     }
 }
