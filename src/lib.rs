@@ -381,6 +381,14 @@ impl NotificationHandle {
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
+
+    /// Executes a closure after the notification has closed.
+    pub fn on_close<F>(self, closure:F) where F: FnOnce(){
+        self.wait_for_action(|action|
+            if action == "__closed" { closure(); }
+        );
+    }
+
     /// Replace the original notification with an updated version
     /// ## Example
     /// ```no_run
@@ -534,6 +542,7 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     wait_for_action_signal(&connection, id, func);
 }
+
 
 
 // here be non public functions
