@@ -159,6 +159,14 @@ impl Notification {
         self
     }
 
+    /// Set the `icon` field automatically.
+    ///
+    /// This looks at your binaries name and uses it to set the icon.t
+    pub fn auto_icon(&mut self) -> &mut Notification {
+        self.icon = exe_name();
+        self
+    }
+
     /// Adds a hint.
     ///
     /// This method will add a hint to the internal hint hashset.
