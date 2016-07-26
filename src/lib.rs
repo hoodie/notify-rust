@@ -3,7 +3,7 @@
 //! Desktop notifications are popup messages generated to notify the user of certain events.
 //!
 //! # Examples
-//! ## Example 1 (Simple Notification)
+//! ## Example 1: Simple Notification
 //! ```no_run
 //! # use notify_rust::Notification;
 //! # use notify_rust::NotificationHint as Hint;
@@ -15,7 +15,7 @@
 //!     .show().unwrap();
 //! ```
 //!
-//! ## Example 2 (Persistent Notification)
+//! ## Example 2: Persistent Notification
 //! ```no_run
 //! # use notify_rust::Notification;
 //! # use notify_rust::NotificationHint as Hint;
@@ -33,7 +33,7 @@
 //! Careful! There are no checks whether you use hints twice.
 //! It is possible to set `urgency=Low` AND `urgency=Critical`, in which case the behavior of the server is undefined.
 //!
-//! ## Example 3 (Ask the user to do something)
+//! ## Example 3: Ask the user to do something
 //! ```no_run
 //! # use notify_rust::Notification;
 //! # use notify_rust::NotificationHint as Hint;
@@ -54,6 +54,16 @@
 //!         }
 //!     });
 //!
+//! ```
+//!
+//! ## Minimal Example
+//!
+//! You can ommit almost everything
+//!
+//! ```no_run
+//! # use notify_rust::Notification;
+//! Notification::new()
+//!     .show();
 //! ```
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
@@ -86,8 +96,6 @@ mod util;
 pub mod server;
 pub mod hints;
 pub use hints::NotificationHint;
-
-
 
 /// Desktop notification.
 ///
@@ -391,6 +399,15 @@ impl NotificationHandle {
 
 
     /// Executes a closure after the notification has closed.
+    /// ## Example
+    /// ``` no_run
+    /// Notification::new()
+    ///     .summary("Time is running out")
+    ///     .body("This will go away.")
+    ///     .icon("clock")
+    ///     .show().unwrap()
+    ///     .on_close(||{println!("closed")});
+    /// ```
     pub fn on_close<F>(self, closure:F) where F: FnOnce(){
         self.wait_for_action(|action|
             if action == "__closed" { closure(); }
