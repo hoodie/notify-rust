@@ -1,4 +1,16 @@
 
+3.2.0 / 2016-08-07
+==================
+
+  * documentation: more examples
+  * added fn auto_icon()
+  * added on_close(F) method to NotificationHandle
+  * `.show(&mut self)` -> `.show(&self)`
+  * added use of id when sending
+  * pubbed NotificaionHint const strings and added hint_from_key_val
+  * more examples
+  * cleanups
+
 3.1.0 / 2016-03-01
 ==================
   * added custom int NotificationHint
@@ -102,8 +114,7 @@
 
 0.0.5 / 2015-04-04
 ==================
-  * deprecated: `send()` and `send_debug()`, these methods are now called
-	`show()` and `show_debug()`
+  * deprecated: `send()` and `send_debug()`, these methods are now called `show()` and `show_debug()`
   * changed: `show()` returns Notification ID
   * changed: set default timeout to -1
   * changed: renamed into notify-rust

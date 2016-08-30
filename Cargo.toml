@@ -11,9 +11,18 @@ license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "dbus", "libnotify"]
 readme = "README.md"
 
+include = [
+  "History.md",
+  ".gitignore",
+  ".travis.yml",
+  "Cargo.toml",
+  "src/*.rs",
+  "tests/*.rs"
+]
+
 [dependencies]
 dbus = "~0.3"
-clippy = {version = "~0.0.44", optional = true}
+clippy = {version = "~0.0.86", optional = true}
 
 [features]
 default = []
