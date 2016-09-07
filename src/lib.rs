@@ -400,7 +400,8 @@ impl NotificationHandle {
 
     /// Executes a closure after the notification has closed.
     /// ## Example
-    /// ``` no_run
+    /// ```no_run
+    /// # use notify_rust::Notification;
     /// Notification::new()
     ///     .summary("Time is running out")
     ///     .body("This will go away.")

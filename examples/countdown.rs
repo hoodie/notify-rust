@@ -23,7 +23,8 @@ fn main()
 
     notification.body("TAKE OFF")
     .appname("countdown_takeoff")
-    .show();
+    .show()
+    .unwrap();
 
 }
 

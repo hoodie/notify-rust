@@ -22,6 +22,7 @@ fn update_via_handle()
 
 }
 
+#[allow(dead_code)]
 fn update_via_manually_stored_id() {
 
     let handle = Notification::new()
@@ -46,7 +47,7 @@ fn update_via_manually_stored_id() {
 
 fn recycling_one_id() {
 
-    for i in (1..5) {
+    for i in 1..5 {
         let id = 6666; // you should probably not do this at all
         std::thread::sleep(Duration::from_millis(500));
         Notification::new()

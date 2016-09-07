@@ -21,7 +21,7 @@ include = [
 ]
 
 [dependencies]
-dbus = "~0.3"
+dbus = "~0.4"
 clippy = {version = "~0.0.86", optional = true}
 
 [features]
