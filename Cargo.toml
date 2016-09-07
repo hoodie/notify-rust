@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "3.2.0"
+version = "3.2.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>", "panicbit <panicbit@users.noreply.github.com>"]
 description = "Show desktop notifications. Pure Rust dbus client and server."
 homepage = "https://github.com/hoodie/notify-rust"
