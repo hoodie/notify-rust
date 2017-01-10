@@ -35,25 +35,26 @@
 //!
 //! ## Example 3: Ask the user to do something
 //! ```no_run
-//! # use notify_rust::Notification;
+//! # use notify_rust::{Action, Notification};
 //! # use notify_rust::NotificationHint as Hint;
-//! Notification::new()
+//! let mut notification = Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
 //!     .action("clicked", "click here")
 //!     .hint(Hint::Resident(true))
 //!     .show()
-//!     .unwrap()
-//!     .wait_for_action({|action|
-//!         match action {
-//!             "default" => {println!("you clicked \"default\"")},
-//!             "clicked" => {println!("that was correct")},
-//!             // here "__closed" is a hardcoded keyword
-//!             "__closed" => {println!("the notification was closed")},
-//!             _ => ()
-//!         }
-//!     });
+//!     .unwrap();
 //!
+//! match notification.wait_for_action() {
+//!     Action::ActionInvoked(action) => {
+//!         match &*action {
+//!             "default" => println!("you clicked \"default\""),
+//!             "clicked" => println!("that was correct"),
+//!             _ => (),
+//!         }
+//!     },
+//!     Action::NotificationClosed => println!("the notification was closed"),
+//! }
 //! ```
 //!
 //! ## Minimal Example
@@ -384,10 +385,11 @@ impl NotificationHandle {
         }
     }
 
-    /// Waits for the user to act on a notification and then calls
-    /// `invokation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str) {
-        wait_for_action_signal(&self.connection, self.id, invokation_closure);
+    /// Waits for the user to act on a notification and then returns
+    /// the action, which is either the identifier of an action or
+    /// the notification is closed.
+    pub fn wait_for_action(&mut self) -> Action {
+        wait_for_action_signal(&self.connection, self.id)
     }
 
     /// Manually close the notification
@@ -398,20 +400,24 @@ impl NotificationHandle {
     }
 
 
-    /// Executes a closure after the notification has closed.
+    /// Waits for the notification to be closed, ignoring all other actions.
     /// ## Example
     /// ``` no_run
+    /// # use notify_rust::Notification;
     /// Notification::new()
     ///     .summary("Time is running out")
     ///     .body("This will go away.")
     ///     .icon("clock")
     ///     .show().unwrap()
-    ///     .on_close(||{println!("closed")});
+    ///     .wait_for_close();
+    /// println!("closed");
     /// ```
-    pub fn on_close<F>(self, closure:F) where F: FnOnce(){
-        self.wait_for_action(|action|
-            if action == "__closed" { closure(); }
-        );
+    pub fn wait_for_close(&mut self) {
+        loop {
+            if let Action::NotificationClosed = self.wait_for_action() {
+                return;
+            }
+        }
     }
 
     /// Replace the original notification with an updated version
@@ -490,6 +496,15 @@ impl<'a> From<&'a str> for NotificationUrgency {
 }
 
 
+#[derive(Debug)]
+/// The possible actions that can be returned by `wait_for_action`
+pub enum Action {
+    /// An action was invoked
+    ActionInvoked(String),
+
+    /// The notification was closed
+    NotificationClosed,
+}
 
 
 /// Return value of `get_server_information()`.
@@ -563,9 +578,9 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
+pub fn handle_actions(id:u32) -> Action {
     let connection = Connection::get_private(BusType::Session).unwrap();
-    wait_for_action_signal(&connection, id, func);
+    wait_for_action_signal(&connection, id)
 }
 
 
@@ -574,32 +589,45 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
 
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
+fn wait_for_action_signal(connection: &Connection, id: u32) -> Action {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
 
-    for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(s) = item {
-            let (_, protocol, iface, member) = s.headers();
-            let items = s.get_items();
-            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
-
-                // Action Invoked
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
-                        if nid == id { func(action); break; }
+    loop {
+        for item in connection.iter(1000) {
+            if let ConnectionItem::Signal(s) = item {
+                if let (_, Some(protocol), Some(iface), Some(member)) = s.headers() {
+                    if "/org/freedesktop/Notifications" != protocol {
+                        continue;
                     }
-                },
 
-
-                // Notification Closed
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
-                        if nid == id  { func("__closed"); break; }
+                    if "org.freedesktop.Notifications" != iface {
+                        continue;
                     }
-                },
-                (_, _, _) => ()
+
+                    let mut items = s.get_items();
+                    let mut items_iter = items.drain(..);
+
+                    // Check that it has the correct ID
+                    if Some(MessageItem::UInt32(id)) != items_iter.next() {
+                        continue;
+                    }
+
+                    match &*member {
+                        "ActionInvoked" => {
+                            if let Some(MessageItem::Str(action)) = items_iter.next() {
+                                return Action::ActionInvoked(action);
+                            }
+                        }
+
+                        "NotificationClosed" => {
+                            return Action::NotificationClosed;
+                        }
+
+                        _ => ()
+                    }
+                }
             }
         }
     }
