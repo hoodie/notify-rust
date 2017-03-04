@@ -1,3 +1,6 @@
+//! This module contains XDG and DBus specific code.
+//!
+//! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
 use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
 
@@ -8,7 +11,6 @@ use super::{Notification, Error};
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
-#[cfg(all(unix, not(target_os = "macos")))]
 pub struct NotificationHandle {
     id: u32,
     connection: Connection,
@@ -17,7 +19,6 @@ pub struct NotificationHandle {
 
 
 
-#[cfg(all(unix, not(target_os = "macos")))]
 impl NotificationHandle {
     pub fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
@@ -90,7 +91,6 @@ impl NotificationHandle {
 }
 
 /// Required for `DerefMut`
-#[cfg(all(unix, not(target_os = "macos")))]
 impl Deref for NotificationHandle {
     type Target = Notification;
     fn deref(&self) -> &Notification {
@@ -99,7 +99,6 @@ impl Deref for NotificationHandle {
 }
 
 /// Allow to easily modify notification properties
-#[cfg(all(unix, not(target_os = "macos")))]
 impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
         &mut self.notification
@@ -110,7 +109,6 @@ impl DerefMut for NotificationHandle {
 // here be public functions
 
 /// Get list of all capabilities of the running notification server.
-#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_capabilities() -> Result<Vec<String>, Error> {
     let mut capabilities = vec![];
 
@@ -134,7 +132,6 @@ pub fn get_capabilities() -> Result<Vec<String>, Error> {
 /// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
 /// running.
 /// TODO dbus stuff module!!!
-#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_server_information() -> Result<ServerInformation, Error> {
     let message    = build_message("GetServerInformation");
     let connection = try!(Connection::get_private(BusType::Session));
@@ -166,7 +163,6 @@ pub struct ServerInformation {
 /// Strictly internal.
 /// The Notificationserver implemented here exposes a "Stop" function.
 /// stops the notification server
-#[cfg(all(unix, not(target_os = "macos")))]
 pub fn stop_server() {
     let message    = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
@@ -178,7 +174,6 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-#[cfg(all(unix, not(target_os = "macos")))]
 pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     wait_for_action_signal(&connection, id, func);
@@ -189,7 +184,6 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
 // here be non public functions
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-#[cfg(all(unix, not(target_os = "macos")))]
 fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
@@ -221,7 +215,6 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
     }
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
 pub fn build_message(method_name:&str) -> Message {
     Message::new_method_call(
         "org.freedesktop.Notifications",
@@ -230,7 +223,6 @@ pub fn build_message(method_name:&str) -> Message {
         method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item{
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
