@@ -21,7 +21,9 @@ include = [
 ]
 
 [dependencies]
-dbus = "~0.4"
+dbus = { version = "~0.4", optional = true }
+macos_notifications = { path = "../osx-rust-notification", optional = false }
+
 clippy = {version = "~0.0.86", optional = true}
 
 [features]

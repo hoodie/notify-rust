@@ -9,9 +9,10 @@
 //! Usually the `get_capabilities()` gives some clues, but the standards usually mention much more
 //! than is actually available.
 
-
+#[cfg(all(unix, not(target_os = "macos")))]
 use dbus::MessageItem;
 use super::NotificationUrgency;
+#[cfg(all(unix, not(target_os = "macos")))]
 use util::*;
 
 /// "action-icons"
@@ -154,6 +155,7 @@ pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, St
     }
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> From<&'a NotificationHint> for MessageItem {
     fn from(hint: &NotificationHint) -> MessageItem {
         let hint:(String,MessageItem) = match *hint {
@@ -183,7 +185,7 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
     }
 }
 
-//impl<'a> FromMessageItem<'a> for NotificationHint {
+#[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> From<&'a MessageItem> for NotificationHint {
     fn from (item: &MessageItem) -> NotificationHint {
         match item{

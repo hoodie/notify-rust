@@ -65,12 +65,12 @@
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
-#![deny(missing_docs,
-        missing_copy_implementations,
-        trivial_casts, trivial_numeric_casts,
-        unsafe_code,
-        //unstable_features,
-        unused_import_braces, unused_qualifications)]
+//#![deny(missing_docs,
+//        missing_copy_implementations,
+//        trivial_casts, trivial_numeric_casts,
+//        unsafe_code,
+//        //unstable_features,
+//        unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
 #![cfg_attr(feature = "lints", allow(unstable_features))]
@@ -85,12 +85,17 @@ use std::default::Default;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
-#[cfg(all(unix, not(target_os = "macos")))]
-use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
-pub use dbus::Error;
 
-mod util;
-pub mod server;
+#[cfg(target_os = "macos")]
+extern crate macos_notifications;
+
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
+#[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
+#[cfg(all(unix, not(target_os = "macos")))] mod util;
+#[cfg(all(unix, not(target_os = "macos")))] pub mod server;
+
+#[cfg(target_os = "macos")] struct Error{}
+
 pub mod hints;
 pub use hints::NotificationHint;
 
@@ -189,6 +194,7 @@ impl Notification {
     /// ```
     ///
     ///
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
@@ -209,6 +215,7 @@ impl Notification {
     /// Set the `urgency`.
     ///
     /// Pick between Medium, Low and High.
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint( NotificationHint::Urgency( urgency ));
         self
@@ -265,6 +272,7 @@ impl Notification {
         }
     }
 
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_hints(&self) -> MessageItem {
         if !self.hints.is_empty() {
             let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into() ).collect();
@@ -279,6 +287,7 @@ impl Notification {
         MessageItem::Array(vec![], sig)
     }
 
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_actions(&self) -> MessageItem {
         if !self.actions.is_empty() {
             let mut actions = vec![];
@@ -296,11 +305,27 @@ impl Notification {
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<NotificationHandle, Error> {
         let connection = try!(Connection::get_private(BusType::Session));
         let inner_id = self.id.unwrap_or(0);
         let id = try!(self._show(inner_id, &connection));
         Ok(NotificationHandle::new(id, connection, self.clone()))
+    }
+
+    /// Sends Notification to D-Bus.
+    ///
+    /// Returns a handle to a notification
+    #[cfg(target_os = "macos")]
+    pub fn show(&self) {//-> Result<NotificationHandle, Error> {
+        println!("{:?}", self);
+        macos_notifications::send_notification(
+            &self.summary, //title
+            None, // subtitle
+            &self.body, //message
+            None // sound
+            );
+
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -327,11 +352,8 @@ impl Notification {
         }
     }
 
-    #[cfg(target_os="macos")]
-    fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
-    }
-
     /// Wraps show() but prints notification to stdout.
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show_debug(&mut self) -> Result<NotificationHandle, Error> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
@@ -412,12 +434,14 @@ impl Default for Notification {
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub struct NotificationHandle {
     id: u32,
     connection: Connection,
     notification: Notification
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 impl NotificationHandle {
     fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
@@ -490,6 +514,7 @@ impl NotificationHandle {
 }
 
 /// Required for `DerefMut`
+#[cfg(all(unix, not(target_os = "macos")))]
 impl Deref for NotificationHandle {
     type Target = Notification;
     fn deref(&self) -> &Notification {
@@ -498,6 +523,7 @@ impl Deref for NotificationHandle {
 }
 
 /// Allow to easily modify notification properties
+#[cfg(all(unix, not(target_os = "macos")))]
 impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
         &mut self.notification
@@ -556,6 +582,7 @@ pub struct ServerInformation {
 
 
 /// Get list of all capabilities of the running notification server.
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_capabilities() -> Result<Vec<String>, Error> {
     let mut capabilities = vec![];
 
@@ -578,6 +605,8 @@ pub fn get_capabilities() -> Result<Vec<String>, Error> {
 ///
 /// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
 /// running.
+/// TODO dbus stuff module!!!
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_server_information() -> Result<ServerInformation, Error> {
     let message    = build_message("GetServerInformation");
     let connection = try!(Connection::get_private(BusType::Session));
@@ -596,6 +625,7 @@ pub fn get_server_information() -> Result<ServerInformation, Error> {
 /// Strictly internal.
 /// The Notificationserver implemented here exposes a "Stop" function.
 /// stops the notification server
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn stop_server() {
     let message    = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
@@ -607,6 +637,7 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     wait_for_action_signal(&connection, id, func);
@@ -618,6 +649,7 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
 
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
+#[cfg(all(unix, not(target_os = "macos")))]
 fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
@@ -655,6 +687,7 @@ fn exe_name() -> String {
     .file_name().unwrap().to_str().unwrap().to_owned()
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 fn build_message(method_name:&str) -> Message {
     Message::new_method_call(
         "org.freedesktop.Notifications",
@@ -663,9 +696,12 @@ fn build_message(method_name:&str) -> Message {
         method_name).expect(&format!("Error building message call {:?}.", method_name))
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item{
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
         _ => "".to_owned()
     }
 }
+
+
