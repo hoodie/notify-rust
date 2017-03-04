@@ -73,10 +73,6 @@
 //        unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
-#![cfg_attr(feature = "lints", allow(unstable_features))]
-#![cfg_attr(feature = "lints", feature(plugin))]
-#![cfg_attr(feature = "lints", plugin(clippy))]
-
 use std::env;
 use std::collections::HashSet;
 use std::borrow::Cow;
