@@ -21,7 +21,7 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.
 /// See [the module level documentation](index.html) for more.
-#[derive(Default)]
+#[derive(Debug,Default)]
 pub struct NotificationServer {
     /// Counter for generating notification ids
     pub counter: Cell<u32>,

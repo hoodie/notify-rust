@@ -72,12 +72,12 @@
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 
-//#![deny(missing_docs,
-//        missing_copy_implementations,
-//        trivial_casts, trivial_numeric_casts,
-//        unsafe_code,
-//        //unstable_features,
-//        unused_import_braces, unused_qualifications)]
+#![deny(missing_docs,
+        missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts,
+        unsafe_code,
+        unstable_features,
+        unused_import_braces, unused_qualifications)]
 #![warn(missing_debug_implementations)]
 
 use std::env;
@@ -85,21 +85,26 @@ use std::collections::HashSet;
 use std::default::Default;
 
 #[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
-#[cfg(all(unix, not(target_os = "macos")))] use std::ops::{Deref,DerefMut};
-
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 
 #[cfg(target_os = "macos")]
 extern crate macos_notifications;
 
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, ConnectionItem, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
 #[cfg(target_os = "macos")] mod macos;
-#[cfg(target_os = "macos")] use macos::*;
+#[cfg(target_os = "macos")] pub use macos::*;
+#[cfg(all(unix, not(target_os = "macos")))] mod xdg;
+#[cfg(all(unix, not(target_os = "macos")))] use xdg::NotificationHandle;
+#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::{
+    get_capabilities, get_server_information, handle_actions, stop_server 
+};
+
+#[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
 pub mod hints;
 pub use hints::NotificationHint;
@@ -493,76 +498,6 @@ pub struct ServerInformation {
 
 
 
-// here be public functions
-
-
-/// Get list of all capabilities of the running notification server.
-#[cfg(all(unix, not(target_os = "macos")))]
-pub fn get_capabilities() -> Result<Vec<String>, Error> {
-    let mut capabilities = vec![];
-
-    let message    = build_message("GetCapabilities");
-    let connection = try!(Connection::get_private(BusType::Session));
-    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
-
-    if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
-        for item in items.iter(){
-            if let MessageItem::Str(ref cap) = *item{
-                capabilities.push(cap.clone());
-            }
-        }
-    }
-
-    Ok(capabilities)
-}
-
-/// Returns a struct containing `ServerInformation`.
-///
-/// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
-/// running.
-/// TODO dbus stuff module!!!
-#[cfg(all(unix, not(target_os = "macos")))]
-pub fn get_server_information() -> Result<ServerInformation, Error> {
-    let message    = build_message("GetServerInformation");
-    let connection = try!(Connection::get_private(BusType::Session));
-    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
-
-    let items = reply.get_items();
-
-    Ok( ServerInformation{
-        name:          unwrap_message_string(items.get(0)),
-        vendor:        unwrap_message_string(items.get(1)),
-        version:       unwrap_message_string(items.get(2)),
-        spec_version:  unwrap_message_string(items.get(3))
-    })
-}
-
-/// Strictly internal.
-/// The Notificationserver implemented here exposes a "Stop" function.
-/// stops the notification server
-#[cfg(all(unix, not(target_os = "macos")))]
-pub fn stop_server() {
-    let message    = build_message("Stop");
-    let connection = Connection::get_private(BusType::Session).unwrap();
-    let _reply     = connection.send_with_reply_and_block(message, 2000).unwrap();
-}
-
-
-
-/// Listens for the `ActionInvoked(UInt32, String)` Signal.
-///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-#[cfg(all(unix, not(target_os = "macos")))]
-pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
-    let connection = Connection::get_private(BusType::Session).unwrap();
-    wait_for_action_signal(&connection, id, func);
-}
-
-
-
-// here be non public functions
-
-
 // Listens for the `ActionInvoked(UInt32, String)` signal.
 #[cfg(all(unix, not(target_os = "macos")))]
 fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
@@ -601,22 +536,4 @@ fn exe_name() -> String {
     env::current_exe().unwrap()
     .file_name().unwrap().to_str().unwrap().to_owned()
 }
-
-#[cfg(all(unix, not(target_os = "macos")))]
-fn build_message(method_name:&str) -> Message {
-    Message::new_method_call(
-        "org.freedesktop.Notifications",
-        "/org/freedesktop/Notifications",
-        "org.freedesktop.Notifications",
-        method_name).expect(&format!("Error building message call {:?}.", method_name))
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-fn unwrap_message_string(item: Option<&MessageItem>) -> String {
-    match item{
-        Some(&MessageItem::Str(ref value)) => value.to_owned(),
-        _ => "".to_owned()
-    }
-}
-
 
