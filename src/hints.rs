@@ -215,7 +215,7 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix, not(target_os = "macos")))]
 mod test{
     use super::*;
     use super::NotificationHint as Hint;

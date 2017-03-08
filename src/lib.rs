@@ -2,6 +2,12 @@
 //!
 //! Desktop notifications are popup messages generated to notify the user of certain events.
 //!
+//! ## Platform Support
+//!
+//! Since Version 3.3 this crate builds on macOS, however since the semantic of notifications is
+//! quite different between the XDG specification and macOS, only the a very small subset of
+//! functions is supported.
+//!
 //! # Examples
 //! ## Example 1: Simple Notification
 //! ```no_run
@@ -34,6 +40,7 @@
 //! ## Example 3: Ask the user to do something
 //! ```no_run
 //! # use notify_rust::*;
+//! # #[cfg(all(unix, not(target_os = "macos")))]
 //! Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
@@ -75,9 +82,10 @@
 
 use std::env;
 use std::collections::HashSet;
-use std::borrow::Cow;
-use std::ops::{Deref,DerefMut};
 use std::default::Default;
+
+#[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
+#[cfg(all(unix, not(target_os = "macos")))] use std::ops::{Deref,DerefMut};
 
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
@@ -90,7 +98,8 @@ extern crate macos_notifications;
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
-#[cfg(target_os = "macos")] struct Error{}
+#[cfg(target_os = "macos")] mod macos;
+#[cfg(target_os = "macos")] use macos::*;
 
 pub mod hints;
 pub use hints::NotificationHint;
@@ -130,17 +139,10 @@ impl Notification {
     }
 
     /// Overwrite the appname field used for Notification.
-    #[cfg(all(unix, not(target_os = "macos")))]
+    ///
+    /// (xdg only)
     pub fn appname(&mut self, appname:&str) -> &mut Notification {
         self.appname = appname.to_owned();
-        self
-    }
-
-    /// Overwrite the appname field used for Notification. **(inert)**
-    ///
-    /// This method has no effect on macOS
-    #[cfg(target_os = "macos")]
-    pub fn appname(&mut self, _appname:&str) -> &mut Notification {
         self
     }
 
@@ -167,6 +169,8 @@ impl Notification {
     /// You can use common icon names here, usually those in `/usr/share/icons`
     /// can all be used.
     /// You can also use an absolute path to file.
+    ///
+    /// (xdg only)
     pub fn icon(&mut self, icon:&str) -> &mut Notification {
         self.icon = icon.to_owned();
         self
@@ -175,6 +179,8 @@ impl Notification {
     /// Set the `icon` field automatically.
     ///
     /// This looks at your binaries name and uses it to set the icon.t
+    ///
+    /// (xdg only)
     pub fn auto_icon(&mut self) -> &mut Notification {
         self.icon = exe_name();
         self
@@ -198,8 +204,7 @@ impl Notification {
     ///     .show();
     /// ```
     ///
-    ///
-    #[cfg(all(unix, not(target_os = "macos")))]
+    /// (xdg only)
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
@@ -212,6 +217,8 @@ impl Notification {
     /// According to [specification](https://developer.gnome.org/notification-spec/)
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
+    ///
+    /// (xdg only)
     pub fn timeout<T: Into<Timeout>>(&mut self, timeout: T) -> &mut Notification {
         self.timeout = timeout.into();
         self
@@ -220,7 +227,8 @@ impl Notification {
     /// Set the `urgency`.
     ///
     /// Pick between Medium, Low and High.
-    #[cfg(all(unix, not(target_os = "macos")))]
+    ///
+    /// (xdg only)
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint( NotificationHint::Urgency( urgency ));
         self
@@ -236,6 +244,8 @@ impl Notification {
     ///
     /// There is nothing fancy going on here yet.
     /// **Carefull! This replaces the internal list of actions!**
+    ///
+    /// (xdg only)
     #[deprecated(note="please use .action() only")]
     pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification {
         self.actions = actions;
@@ -245,6 +255,8 @@ impl Notification {
     /// Add an action.
     ///
     /// This adds a single action to the internal list of actions.
+    ///
+    /// (xdg only)
     pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
@@ -256,6 +268,8 @@ impl Notification {
     /// Setting the id ahead of time allows overriding a known other notification.
     /// Though if you want to update a notification, it is easier to use the `update()` method of
     /// the `NotificationHandle` object that `show()` returns.
+    ///
+    /// (xdg only)
     pub fn id(&mut self, id:u32) -> &mut Notification {
         self.id = Some(id);
         self
@@ -320,9 +334,10 @@ impl Notification {
 
     /// Sends Notification to D-Bus.
     ///
-    /// Returns a handle to a notification
+    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
+    /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) {//-> Result<NotificationHandle, Error> {
+    pub fn show(&self) -> Result<NotificationHandle, Error> {
         println!("{:?}", self);
         macos_notifications::send_notification(
             &self.summary, //title
@@ -330,7 +345,7 @@ impl Notification {
             &self.body, //message
             None // sound
             );
-
+        Ok(NotificationHandle::new(self.clone()))
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -431,111 +446,6 @@ impl Default for Notification {
         }
     }
 }
-
-
-
-
-/// A handle to a shown notification.
-///
-/// This keeps a connection alive to ensure actions work on certain desktops.
-#[derive(Debug)]
-#[cfg(all(unix, not(target_os = "macos")))]
-pub struct NotificationHandle {
-    id: u32,
-    connection: Connection,
-    notification: Notification
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-impl NotificationHandle {
-    fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
-        NotificationHandle {
-            id: id,
-            connection: connection,
-            notification: notification
-        }
-    }
-
-    /// Waits for the user to act on a notification and then calls
-    /// `invokation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str) {
-        wait_for_action_signal(&self.connection, self.id, invokation_closure);
-    }
-
-    /// Manually close the notification
-    pub fn close(self) {
-        let mut message = build_message("CloseNotification");
-        message.append_items(&[ self.id.into() ]);
-        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
-    }
-
-
-    /// Executes a closure after the notification has closed.
-    /// ## Example
-    /// ```no_run
-    /// # use notify_rust::Notification;
-    /// Notification::new()
-    ///     .summary("Time is running out")
-    ///     .body("This will go away.")
-    ///     .icon("clock")
-    ///     .show().unwrap()
-    ///     .on_close(||{println!("closed")});
-    /// ```
-    pub fn on_close<F>(self, closure:F) where F: FnOnce(){
-        self.wait_for_action(|action|
-            if action == "__closed" { closure(); }
-        );
-    }
-
-    /// Replace the original notification with an updated version
-    /// ## Example
-    /// ```no_run
-    /// # use notify_rust::Notification;
-    /// let mut notification = Notification::new()
-    ///     .summary("Latest News")
-    ///     .body("Bayern Dortmund 3:2")
-    ///     .show().unwrap();
-    ///
-    /// std::thread::sleep_ms(1_500);
-    ///
-    /// notification
-    ///     .summary("Latest News (Correction)")
-    ///     .body("Bayern Dortmund 3:3");
-    ///
-    /// notification.update();
-    /// ```
-    /// Watch out for different implementations of the
-    /// notification server! On plasma5 or instance, you should also change the appname, so the old
-    /// message is really replaced and not just amended. Xfce behaves well, all others have not
-    /// been tested by the developer.
-    pub fn update(&mut self) {
-        self.id = self.notification._show(self.id, &self.connection).unwrap();
-    }
-
-    /// Returns the Handle's id.
-    pub fn id(&self) -> u32{
-        self.id
-    }
-}
-
-/// Required for `DerefMut`
-#[cfg(all(unix, not(target_os = "macos")))]
-impl Deref for NotificationHandle {
-    type Target = Notification;
-    fn deref(&self) -> &Notification {
-        &self.notification
-    }
-}
-
-/// Allow to easily modify notification properties
-#[cfg(all(unix, not(target_os = "macos")))]
-impl DerefMut for NotificationHandle {
-    fn deref_mut(&mut self) -> &mut Notification {
-        &mut self.notification
-    }
-}
-
-
 
 
 /// Levels of Urgency.
