@@ -1,7 +1,8 @@
 use std::ops::{Deref,DerefMut};
 use super::Notification;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
+/// Placeholder
 pub struct Error {}
 
 /// A handle to a shown notification.
@@ -13,6 +14,7 @@ pub struct NotificationHandle {
 }
 
 impl NotificationHandle {
+    #[allow(missing_docs)]
     pub fn new(notification: Notification) -> NotificationHandle {
         NotificationHandle {
             notification: notification

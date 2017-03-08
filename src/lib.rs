@@ -91,7 +91,7 @@ extern crate dbus;
 #[cfg(target_os = "macos")]
 extern crate macos_notifications;
 
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, ConnectionItem, BusType, MessageItem};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
@@ -100,9 +100,7 @@ extern crate macos_notifications;
 #[cfg(target_os = "macos")] pub use macos::*;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::NotificationHandle;
-#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::{
-    get_capabilities, get_server_information, handle_actions, stop_server 
-};
+#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
@@ -497,39 +495,6 @@ pub struct ServerInformation {
 
 
 
-
-// Listens for the `ActionInvoked(UInt32, String)` signal.
-#[cfg(all(unix, not(target_os = "macos")))]
-fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
-    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
-    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
-    connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
-
-    for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(s) = item {
-            let (_, protocol, iface, member) = s.headers();
-            let items = s.get_items();
-            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
-
-                // Action Invoked
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
-                        if nid == id { func(action); break; }
-                    }
-                },
-
-
-                // Notification Closed
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
-                        if nid == id  { func("__closed"); break; }
-                    }
-                },
-                (_, _, _) => ()
-            }
-        }
-    }
-}
 
 // Returns the name of the current executable, used as a default for `Notification.appname`.
 fn exe_name() -> String {
