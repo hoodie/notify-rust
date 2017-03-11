@@ -224,6 +224,7 @@ impl Notification {
     ///
     /// There is nothing fancy going on here yet.
     /// **Carefull! This replaces the internal list of actions!**
+    #[deprecated(note="please use .action() only")]
     pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification {
         self.actions = actions;
         self

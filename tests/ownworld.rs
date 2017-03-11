@@ -22,6 +22,7 @@ fn actions_vec() {
         })
     });
 
+    #[allow(deprecated)]
     Notification::new()
         .summary("Notification with actions")
         .body("action1=\"Action One\", something_else=\"Something Else\"")
