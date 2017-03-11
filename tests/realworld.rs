@@ -82,8 +82,8 @@ fn build_pattern()
     assert_eq!(notification.summary, "foo");
 
     let mut notification = Notification::new();
-    notification.timeout = 42;
-    assert_eq!(notification.timeout, 21*2);
+    notification.timeout = Timeout::Milliseconds(42);
+    assert_eq!(notification.timeout, Timeout::Milliseconds(21*2));
 
     let mut notification = Notification::new();
     notification.summary = "foo".to_string();

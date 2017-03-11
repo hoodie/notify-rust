@@ -1,15 +1,15 @@
 #![allow(unused_must_use)]
 extern crate notify_rust;
-use notify_rust::Notification;
+use notify_rust::*;
 use notify_rust::NotificationHint as Hint;
 fn main()
 {
     Notification::new()
-        .summary("Firefox Crashed")
-        .body("Just <b>kidding</b>, this is just the notify_show example.")
+        .summary("Persistent notification")
+        .body("This should not go away unless you want it to.")
         .icon("firefox")
         .hint(Hint::Resident(true)) // does not work on kde
-        .timeout(0) // works on kde and gnome
+        .timeout(Timeout::Never) // works on kde and gnome
         .show();
 
 }

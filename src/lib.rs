@@ -5,28 +5,26 @@
 //! # Examples
 //! ## Example 1: Simple Notification
 //! ```no_run
-//! # use notify_rust::Notification;
-//! # use notify_rust::NotificationHint as Hint;
+//! # use notify_rust::*;
 //! Notification::new()
 //!     .summary("Firefox News")
 //!     .body("This will almost look like a real firefox notification.")
 //!     .icon("firefox")
-//!     .timeout(6000) //milliseconds
+//!     .timeout(Timeout::Milliseconds(6000)) //milliseconds
 //!     .show().unwrap();
 //! ```
 //!
 //! ## Example 2: Persistent Notification
 //! ```no_run
-//! # use notify_rust::Notification;
-//! # use notify_rust::NotificationHint as Hint;
+//! # use notify_rust::*;
 //! Notification::new()
 //!     .summary("Category:email")
 //!     .body("This has nothing to do with emails.\nIt should not go away until you acknoledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
-//!     .hint(Hint::Category("email".to_owned()))
-//!     .hint(Hint::Resident(true)) // this is not supported by all implementations
-//!     .timeout(0) // this however is
+//!     .hint(NotificationHint::Category("email".to_owned()))
+//!     .hint(NotificationHint::Resident(true)) // this is not supported by all implementations
+//!     .timeout(Timeout::Never) // this however is
 //!     .show().unwrap();
 //! ```
 //!
@@ -35,13 +33,12 @@
 //!
 //! ## Example 3: Ask the user to do something
 //! ```no_run
-//! # use notify_rust::Notification;
-//! # use notify_rust::NotificationHint as Hint;
+//! # use notify_rust::*;
 //! Notification::new()
 //!     .summary("click me")
 //!     .action("default", "default")
 //!     .action("clicked", "click here")
-//!     .hint(Hint::Resident(true))
+//!     .hint(NotificationHint::Resident(true))
 //!     .show()
 //!     .unwrap()
 //!     .wait_for_action({|action|
@@ -116,9 +113,7 @@ pub struct Notification {
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
-    /// -1 -> expires according server default
-    /// 0 -> expires never
-    pub timeout: i32, // both gnome and galago want allow for -1
+    pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
     id: Option<u32>
 }
@@ -201,13 +196,13 @@ impl Notification {
 
     /// Set the `timeout`.
     ///
-    /// This sets the time (in miliseconds) from the time the notification is displayed until it is
+    /// This sets the time (in milliseconds) from the time the notification is displayed until it is
     /// closed again by the Notification Server.
     /// According to [specification](https://developer.gnome.org/notification-spec/)
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
-    pub fn timeout(&mut self, timeout: i32) -> &mut Notification {
-        self.timeout = timeout;
+    pub fn timeout<T: Into<Timeout>>(&mut self, timeout: T) -> &mut Notification {
+        self.timeout = timeout.into();
         self
     }
 
@@ -347,6 +342,53 @@ impl Notification {
     }
 }
 
+
+/// Describes the timeout of a notification
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Timeout {
+    /// Expires according to server default.
+    ///
+    /// Whatever that might be...
+    Default,
+    /// Do not expire, user will have to close this manually.
+    Never,
+    /// Exprire after n milliseconds.
+    Milliseconds(u32)
+}
+
+impl From<i32> for Timeout {
+    fn from(int: i32) -> Timeout {
+        if int < 0 { Timeout::Default }
+        else if int == 0 { Timeout::Never }
+        else { Timeout::Milliseconds(int as u32) }
+    }
+}
+
+impl Into<i32> for Timeout {
+    fn into(self) -> i32 {
+        match self {
+            Timeout::Default => -1,
+            Timeout::Never => 0,
+            Timeout::Milliseconds(ms) => ms as i32
+        }
+    }
+}
+
+impl Into<MessageItem> for Timeout {
+    fn into(self) -> MessageItem {
+        match self {
+            Timeout::Default => MessageItem::Int32(-1),
+            Timeout::Never   => MessageItem::Int32(0),
+            Timeout::Milliseconds(ms)   => MessageItem::Int32(ms as i32),
+        }
+    }
+}
+
+impl<'a> dbus::FromMessageItem<'a> for Timeout {
+    fn from(i: &'a MessageItem) -> Result<Timeout,()> {
+        if let &MessageItem::Int32(ref b) = i { Ok(Timeout::Milliseconds(*b as u32)) } else { Err(()) }
+    }
+}
 impl Default for Notification {
     fn default() -> Notification {
         Notification {
@@ -356,7 +398,7 @@ impl Default for Notification {
             icon:     String::new(),
             hints:    HashSet::new(),
             actions:  Vec::new(),
-            timeout:  -1,
+            timeout:  Timeout::Default,
             id:       None
         }
     }

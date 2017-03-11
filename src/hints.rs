@@ -218,7 +218,6 @@ mod test{
     use super::*;
     use super::NotificationHint as Hint;
     use NotificationUrgency::*;
-    use dbus::*;
     use dbus::MessageItem as Item;
 
     #[test]
