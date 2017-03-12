@@ -171,14 +171,14 @@ impl Notification {
     }
 
 
-    ///
+    /// Wrapper for `NotificationHint::SoundName`
     #[cfg(all(unix,not(target_os="macos")))]
     pub fn sound_name(&mut self, name:&str) -> &mut Notification {
         self.hint(NotificationHint::SoundName(name.to_owned()));
         self
     }
 
-    ///
+    /// Set the sound_name for the NSUserNotification
     #[cfg(taget_os="macos")]
     pub fn sound_name(&mut self, name:&str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());

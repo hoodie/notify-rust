@@ -87,6 +87,7 @@ impl NotificationServer {
                                     body:    unwrap_message_string(msg.get_items().get(4)),
                                     icon:    unwrap_message_string(msg.get_items().get(2)),
                                     timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
+                                    subtitle: None,
                                     hints:   hints,
                                     actions: actions,
                                     id: Some(self.counter.get())
