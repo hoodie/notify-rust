@@ -90,6 +90,9 @@ extern crate dbus;
 
 #[cfg(target_os = "macos")]
 extern crate mac_notification_sys;
+#[cfg(target_os = "macos")]
+pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+
 
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
@@ -116,6 +119,8 @@ pub struct Notification {
     pub appname: String,
     /// Single line to summarize the content.
     pub summary: String,
+    /// Subtitle for macOS
+    pub subtitle: Option<String>,
     /// Multiple lines possible, may support simple markup,
     /// checkout `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
     pub body:    String,
@@ -125,6 +130,7 @@ pub struct Notification {
     pub hints:   HashSet<NotificationHint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
+    #[cfg(target_os="macos")] sound_name: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -154,6 +160,28 @@ impl Notification {
     /// Often acts as title of the notification. For more elaborate content use the `body` field.
     pub fn summary(&mut self, summary:&str) -> &mut Notification {
         self.summary = summary.to_owned();
+        self
+    }
+    /// Set the `subtitle`.
+    ///
+    /// This is only useful on macOS
+    pub fn subtitle(&mut self, subtitle:&str) -> &mut Notification {
+        self.subtitle = Some(subtitle.to_owned());
+        self
+    }
+
+
+    ///
+    #[cfg(all(unix,not(target_os="macos")))]
+    pub fn sound_name(&mut self, name:&str) -> &mut Notification {
+        self.hint(NotificationHint::SoundName(name.to_owned()));
+        self
+    }
+
+    ///
+    #[cfg(taget_os="macos")]
+    pub fn sound_name(&mut self, name:&str) -> &mut Notification {
+        self.sound_name = Some(name.to_owned());
         self
     }
 
@@ -282,16 +310,7 @@ impl Notification {
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
     pub fn finalize(&self) -> Notification {
-        Notification {
-            appname:  self.appname.clone(),
-            summary:  self.summary.clone(),
-            body:     self.body.clone(),
-            icon:     self.icon.clone(),
-            hints:    self.hints.clone(),
-            actions:  self.actions.clone(),
-            timeout:  self.timeout,
-            id:       self.id
-        }
+        self.clone()
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -341,16 +360,11 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
-        let identifier = mac_notification_sys::get_bundle_identifier_or_default(&self.appname);
-        let _ = mac_notification_sys::set_application(&identifier);
-        let mut lines = self.summary.lines();
-        let title = lines.next().unwrap();
-        let subtitle: String = lines.map(|x| x.to_owned() + " ").collect();
         match mac_notification_sys::send_notification(
-            &title, //title
-            Some(&subtitle), // subtitle
+            &self.summary, //title
+            &self.subtitle.as_ref().map(|s| &**s), // subtitle
             &self.body, //message
-            None // sound
+            &self.sound_name.as_ref().map(|s| &**s) // sound
         ) {
             Ok(_) => Ok(NotificationHandle::new(self.clone())),
             Err(x) => Err(x)
@@ -444,15 +458,32 @@ impl<'a> dbus::FromMessageItem<'a> for Timeout {
     }
 }
 impl Default for Notification {
+    #[cfg(all(unix, not(target_os="macos")))]
     fn default() -> Notification {
         Notification {
             appname:  exe_name(),
             summary:  String::new(),
+            subtitle:  None,
             body:     String::new(),
             icon:     String::new(),
             hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  Timeout::Default,
+            id:       None
+        }
+    }
+    #[cfg(target_os="macos")]
+    fn default() -> Notification {
+        Notification {
+            appname:  exe_name(),
+            summary:  String::new(),
+            subtitle:  None,
+            body:     String::new(),
+            icon:     String::new(),
+            hints:    HashSet::new(),
+            actions:  Vec::new(),
+            timeout:  Timeout::Default,
+            sound_name: Default::default(),
             id:       None
         }
     }
