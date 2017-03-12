@@ -89,7 +89,7 @@ use std::default::Default;
 extern crate dbus;
 
 #[cfg(target_os = "macos")]
-extern crate macos_notifications;
+extern crate mac_notification_sys;
 
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
@@ -335,20 +335,22 @@ impl Notification {
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
-    /// Sends Notification to D-Bus.
+    /// Sends Notification to NSUserNotificationCenter.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> Result<NotificationHandle, Error> {
+    pub fn show(&self) -> Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
         println!("{:?}", self);
-        macos_notifications::send_notification(
+        match mac_notification_sys::send_notification(
             &self.summary, //title
             None, // subtitle
             &self.body, //message
             None // sound
-            );
-        Ok(NotificationHandle::new(self.clone()))
+        ) {
+            Ok(_) => Ok(NotificationHandle::new(self.clone())),
+            Err(x) => Err(x)
+        }
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -420,6 +422,7 @@ impl Into<i32> for Timeout {
     }
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 impl Into<MessageItem> for Timeout {
     fn into(self) -> MessageItem {
         match self {
@@ -430,6 +433,7 @@ impl Into<MessageItem> for Timeout {
     }
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> dbus::FromMessageItem<'a> for Timeout {
     fn from(i: &'a MessageItem) -> Result<Timeout,()> {
         if let &MessageItem::Int32(ref b) = i { Ok(Timeout::Milliseconds(*b as u32)) } else { Err(()) }
@@ -501,4 +505,3 @@ fn exe_name() -> String {
     env::current_exe().unwrap()
     .file_name().unwrap().to_str().unwrap().to_owned()
 }
-
