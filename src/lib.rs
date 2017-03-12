@@ -360,15 +360,12 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
-        match mac_notification_sys::send_notification(
+        mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
             &self.body, //message
             &self.sound_name.as_ref().map(|s| &**s) // sound
-        ) {
-            Ok(_) => Ok(NotificationHandle::new(self.clone())),
-            Err(x) => Err(x)
-        }
+        ).map(|_| NotificationHandle::new(self.clone()))
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
