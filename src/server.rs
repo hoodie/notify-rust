@@ -6,9 +6,6 @@
 //! This server will not replace an already running notification server.
 //!
 
-#![allow(missing_debug_implementations)]
-extern crate dbus;
-
 use std::collections::HashSet;
 use std::cell::Cell;
 
@@ -24,7 +21,7 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.
 /// See [the module level documentation](index.html) for more.
-#[derive(Default)]
+#[derive(Debug,Default)]
 pub struct NotificationServer {
     /// Counter for generating notification ids
     pub counter: Cell<u32>,
@@ -90,6 +87,7 @@ impl NotificationServer {
                                     body:    unwrap_message_string(msg.get_items().get(4)),
                                     icon:    unwrap_message_string(msg.get_items().get(2)),
                                     timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
+                                    subtitle: None,
                                     hints:   hints,
                                     actions: actions,
                                     id: Some(self.counter.get())
