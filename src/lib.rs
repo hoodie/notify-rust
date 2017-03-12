@@ -341,10 +341,14 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
-        println!("{:?}", self);
+        let identifier = mac_notification_sys::get_bundle_identifier_or_default(&self.appname);
+        let _ = mac_notification_sys::set_application(&identifier);
+        let mut lines = self.summary.lines();
+        let title = lines.next().unwrap();
+        let subtitle: String = lines.map(|x| x.to_owned() + " ").collect();
         match mac_notification_sys::send_notification(
-            &self.summary, //title
-            None, // subtitle
+            &title, //title
+            Some(&subtitle), // subtitle
             &self.body, //message
             None // sound
         ) {
