@@ -45,3 +45,7 @@ Please see the [documentation](http://hoodie.github.io/notify-rust/) for current
 
 ### Commandline tool
 Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
+
+### Platform support
+
+This library shines on linux and bsd, which is it's original target platform. However lately it gained minimal support for macOS. However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features. You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.

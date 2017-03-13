@@ -5,7 +5,7 @@
 //! ## Platform Support
 //!
 //! Since Version 3.3 this crate builds on macOS, however since the semantic of notifications is
-//! quite different between the XDG specification and macOS, only the a very small subset of
+//! quite different between the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS, only the a very small subset of
 //! functions is supported.
 //!
 //! # Examples
@@ -164,7 +164,7 @@ impl Notification {
     }
     /// Set the `subtitle`.
     ///
-    /// This is only useful on macOS
+    /// This is only useful on macOS, it's not part of the XDG specification and will therefore be eaten by gremlins under your CPU 😈🤘.
     pub fn subtitle(&mut self, subtitle:&str) -> &mut Notification {
         self.subtitle = Some(subtitle.to_owned());
         self
@@ -201,7 +201,8 @@ impl Notification {
     /// can all be used.
     /// You can also use an absolute path to file.
     ///
-    /// (xdg only)
+    /// # Platform support
+    /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn icon(&mut self, icon:&str) -> &mut Notification {
         self.icon = icon.to_owned();
         self
@@ -211,7 +212,8 @@ impl Notification {
     ///
     /// This looks at your binaries name and uses it to set the icon.t
     ///
-    /// (xdg only)
+    /// # Platform support
+    /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn auto_icon(&mut self) -> &mut Notification {
         self.icon = exe_name();
         self
@@ -235,7 +237,8 @@ impl Notification {
     ///     .show();
     /// ```
     ///
-    /// (xdg only)
+    /// # Platform support
+    /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
     pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
@@ -249,7 +252,8 @@ impl Notification {
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
     ///
-    /// (xdg only)
+    /// # Platform support
+    /// This only works on XDG Desktops, macOS does not support manually setting the timeout.
     pub fn timeout<T: Into<Timeout>>(&mut self, timeout: T) -> &mut Notification {
         self.timeout = timeout.into();
         self
@@ -259,7 +263,8 @@ impl Notification {
     ///
     /// Pick between Medium, Low and High.
     ///
-    /// (xdg only)
+    /// # Platform support
+    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS it to cool to even have something like this in it's spec 😊.
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint( NotificationHint::Urgency( urgency ));
         self
