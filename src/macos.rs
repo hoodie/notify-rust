@@ -1,10 +1,6 @@
 use std::ops::{Deref,DerefMut};
 use super::Notification;
 
-#[derive(Copy, Clone, Debug)]
-/// Placeholder
-pub struct Error {}
-
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
