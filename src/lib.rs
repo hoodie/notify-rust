@@ -377,7 +377,7 @@ impl Notification {
     fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
         //TODO catch this
         let mut message = build_message("Notify");
-
+        let timeout: i32 = self.timeout.into();
         message.append_items(&[
                              self.appname.to_owned().into(), // appname
                              id.into(),                      // notification to update
@@ -386,7 +386,7 @@ impl Notification {
                              self.body.to_owned().into(),    // body
                              self.pack_actions().into(),     // actions
                              self.pack_hints().into(),       // hints
-                             self.timeout.into()             // timeout
+                             timeout.into()                  // timeout
         ]);
 
         let reply = try!(connection.send_with_reply_and_block(message, 2000));
@@ -420,7 +420,7 @@ pub enum Timeout {
     Default,
     /// Do not expire, user will have to close this manually.
     Never,
-    /// Exprire after n milliseconds.
+    /// Expire after n milliseconds.
     Milliseconds(u32)
 }
 
@@ -443,22 +443,17 @@ impl Into<i32> for Timeout {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-impl Into<MessageItem> for Timeout {
-    fn into(self) -> MessageItem {
-        match self {
-            Timeout::Default => MessageItem::Int32(-1),
-            Timeout::Never   => MessageItem::Int32(0),
-            Timeout::Milliseconds(ms)   => MessageItem::Int32(ms as i32),
+impl<'a> dbus::FromMessageItem<'a> for Timeout {
+    fn from(i: &'a MessageItem) -> Result<Timeout,()> {
+        if let &MessageItem::Int32(ref b) = i {
+            let timeout_millis: i32 = *b;
+            Ok(timeout_millis.into())
+        } else {
+            Err(())
         }
     }
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> dbus::FromMessageItem<'a> for Timeout {
-    fn from(i: &'a MessageItem) -> Result<Timeout,()> {
-        if let &MessageItem::Int32(ref b) = i { Ok(Timeout::Milliseconds(*b as u32)) } else { Err(()) }
-    }
-}
 impl Default for Notification {
     #[cfg(all(unix, not(target_os="macos")))]
     fn default() -> Notification {
