@@ -21,8 +21,8 @@ fn burst()
         assert!(
         Notification::new()
             .summary("burst")
-            .appname(&format!("{}", msg))
-            .body(&format!("{}", msg))
+            .appname(&msg)
+            .body(&msg)
             .icon("media-floppy")
             .show()
             .is_ok());
@@ -37,7 +37,7 @@ fn burst()
         assert!(
         Notification::new()
             .summary("merged burst")
-            .body(&format!("{}", msg))
+            .body(&msg)
             .icon("applications-toys")
             .show()
             .is_ok());
@@ -60,7 +60,7 @@ fn capabilities()
 {
     let capabilities:Vec<String> = get_capabilities().unwrap();
     for capability in capabilities{
-        assert!(Notification::new().summary("capability").body(&format!("{}", capability)).show().is_ok());
+        assert!(Notification::new().summary("capability").body(&capability).show().is_ok());
     }
 }
 
