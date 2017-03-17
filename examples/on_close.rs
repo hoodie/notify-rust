@@ -14,6 +14,8 @@ fn print(){
     println!("notification was closed");
 }
 
+#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     thread::spawn(||
                   Notification::new()

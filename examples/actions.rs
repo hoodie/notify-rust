@@ -3,8 +3,8 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 
-fn main()
-{
+fn main() {
+    #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new()
         .summary("click me")
 
@@ -23,4 +23,11 @@ fn main()
                 _ => ()
             }
         });
+
+    #[cfg(target_os = "macos")]
+    Notification::new()
+        .summary("PLATFORM ERROR")
+        .subtitle("unsupported functionality")
+        .body("cannot wait for closing on macOS.")
+        .show().unwrap();
 }

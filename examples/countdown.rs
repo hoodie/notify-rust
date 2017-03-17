@@ -2,8 +2,9 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use std::time::Duration;
 
-fn main()
-{
+#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(all(unix, not(target_os = "macos")))]
+fn main() {
     let mut notification = Notification::new()
         .summary("Rocket launch in ...")
         .body("count down")

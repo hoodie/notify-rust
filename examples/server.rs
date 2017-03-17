@@ -2,11 +2,13 @@ extern crate notify_rust;
 use std::thread;
 use std::time::Duration;
 
-use notify_rust::Notification;
+#[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
+use notify_rust::Notification;
 
-fn main()
-{
+#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(all(unix, not(target_os = "macos")))]
+fn main() {
     let mut server = NotificationServer::new();
     thread::spawn(move||{ server.start( |notification| println!("{:#?}", notification)) });
 

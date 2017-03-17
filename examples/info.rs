@@ -1,6 +1,7 @@
 extern crate notify_rust;
-fn main()
-{
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn main() {
     if let Ok(info) = notify_rust::get_server_information(){
         println!("{}:", info.name);
         println!("  ServerInformation:");
@@ -16,3 +17,4 @@ fn main()
 
 }
 
+#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }

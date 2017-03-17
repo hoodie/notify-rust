@@ -2,8 +2,8 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use std::time::Duration;
 
-fn update_via_handle()
-{
+#[cfg(all(unix, not(target_os = "macos")))]
+fn update_via_handle() {
     let mut notification_handle = Notification::new()
         .summary("First Notification")
         .body("This notification will be changed!")
@@ -23,6 +23,7 @@ fn update_via_handle()
 }
 
 #[allow(dead_code)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn update_via_manually_stored_id() {
 
     let handle = Notification::new()
@@ -60,6 +61,8 @@ fn recycling_one_id() {
 
 }
 
+#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
 
     // please use the handle to update a notification
