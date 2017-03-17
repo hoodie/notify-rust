@@ -12,12 +12,12 @@ use notify_rust::NotificationUrgency::*;
 #[test]
 fn burst()
 {
-    for msg in [
+    for msg in &[
         "These should each",
         "come in their own pop up.",
         "If they don't than",
         "I will have to complain about it."
-    ].iter(){
+    ]{
         assert!(
         Notification::new()
             .summary("burst")
@@ -28,12 +28,12 @@ fn burst()
             .is_ok());
     }
 
-    for msg in [
+    for msg in &[
         "These may be grouped",
         "together by the server.",
         "that is because the all have the same",
         "appname."
-    ].iter(){
+    ]{
         assert!(
         Notification::new()
             .summary("merged burst")
@@ -110,11 +110,11 @@ fn init()
 fn urgency()
 {
     // use it this way
-    for urgency in [
+    for urgency in &[
         Hint::Urgency(Low),
         Hint::Urgency(Normal),
         Hint::Urgency(Critical)
-    ].iter(){
+    ]{
         assert!(
         Notification::new()
             .summary(&format!("Urgency {:?}", urgency))
