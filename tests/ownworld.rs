@@ -50,7 +50,7 @@ fn actions_automatic() {
             assert_eq!(notification.actions[1], "actions_built1");
             assert_eq!(notification.actions[2], "actions_built2");
             assert_eq!(notification.actions[3], "actions_built3");
-            assert!(notification.timeout == Timeout::Milliseconds(6000));
+            assert_eq!(notification.timeout, Timeout::Milliseconds(6000));
         })
     });
 
