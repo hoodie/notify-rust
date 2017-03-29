@@ -1,4 +1,14 @@
 
+3.3.0 / 2017-03-30
+==================
+
+  * builds on macOS, no full feature set though
+  * added an extra type for timeout
+  * deprecated .actions
+  * examples compile on macOS
+  * a little more macOS documentation
+  * Merge branch 'feature/macos_notifications'
+
 3.2.0 / 2016-08-07
 ==================
 
