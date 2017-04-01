@@ -4,12 +4,18 @@
 //!
 //! ## Platform Support
 //!
-//! Since Version 3.3 this crate builds on macOS, however since the semantic of notifications is
-//! quite different between the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS, only the a very small subset of
-//! functions is supported.
+//! This library was originally conceived with the [XDG](https://en.wikipedia.org/wiki/XDG) notification specification in mind.
+//! Since version 3.3 this crate also builds on macOS, however the semantics of the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS NSNotifications
+//! are quite different.
+//! Therefore only the a very small subset of functions is supported on macOS.
+//! Certain methods don't have any effect there, others will explicitly fail to compile,
+//! in these cases you will have to add platform specific toggles to your code.
+//! For more see [platform differences](#platform-differences)
 //!
 //! # Examples
+//!
 //! ## Example 1: Simple Notification
+//!
 //! ```no_run
 //! # use notify_rust::*;
 //! Notification::new()
@@ -21,6 +27,7 @@
 //! ```
 //!
 //! ## Example 2: Persistent Notification
+//!
 //! ```no_run
 //! # use notify_rust::*;
 //! Notification::new()
@@ -38,6 +45,7 @@
 //! It is possible to set `urgency=Low` AND `urgency=Critical`, in which case the behavior of the server is undefined.
 //!
 //! ## Example 3: Ask the user to do something
+//!
 //! ```no_run
 //! # use notify_rust::*;
 //! # #[cfg(all(unix, not(target_os = "macos")))]
@@ -71,6 +79,67 @@
 //! ```
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
+//!
+//! # Platform Differences
+//! ✔︎ = works <br/>
+//! ❌ = will not compile
+//!
+//! ## `Notification`
+//! <table>
+//! <thead>
+//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
+//! </thead>
+//!
+//!  <tr> <td> fn appname(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn summary(...)  </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
+//!  <tr> <td> fn subtitle(...) </td>  <td>   </td>  <td> ✔︎ </td>  </tr>
+//!  <tr> <td> fn body(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
+//!  <tr> <td> fn icon(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn auto_icon(...)</td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn hint(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn timeout(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn urgency(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn action(...)   </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn id(...)       </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
+//!  <tr> <td> fn finalize(...) </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
+//!  <tr> <td> fn show(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
+//! </table>
+//!
+//! ## `NotificationHandle`
+//! <table>
+//! <thead>
+//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
+//! </thead>
+//! <tr> <td> fn wait_for_action(...)</td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
+//! <tr> <td> fn close(...)          </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
+//! <tr> <td> fn on_close(...)       </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
+//! <tr> <td> fn update(...)         </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
+//! <tr> <td> fn id(...)             </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
+//! </table>
+//!
+//! ## Functions
+//! <table>
+//! <thead>
+//! <tr> <td></td> <td>XDG</td> <td>macOS</td> </tr>
+//! </thead>
+//!
+//! <tr> <td> fn get_capabilities(...)</td>                 <td> ✔︎ </td>  <td> ❌ </td> </tr>
+//! <tr> <td> fn get_server_information(...)</td>           <td> ✔︎ </td>  <td> ❌ </td> </tr>
+//! <tr> <td> fn set_application(...)</td>                  <td> ❌ </td>  <td> ✔︎ </td> </tr>
+//! <tr> <td> fn get_bundle_identifier_or_default(...)</td> <td> ❌ </td>  <td> ✔︎ </td> </tr>
+//!
+//! </table>
+//!
+//! ### Toggles
+//!
+//! Please use `target_os` toggles if you plan on using methods labeled with ❌.
+//!
+//! ```
+//! #[cfg(target_os = "macos")]
+//! // or
+//! #[cfg(all(unix, not(target_os = "macos")))]
+//! ```
+//!
 
 #![deny(missing_docs,
         missing_copy_implementations,
@@ -149,7 +218,8 @@ impl Notification {
 
     /// Overwrite the appname field used for Notification.
     ///
-    /// (xdg only)
+    /// # Platform Support
+    /// Please note that this method has no effect on macOS. Here you can only set the application via [`set_application()`](fn.set_application.html)
     pub fn appname(&mut self, appname:&str) -> &mut Notification {
         self.appname = appname.to_owned();
         self
