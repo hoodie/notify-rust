@@ -8,6 +8,7 @@ mod realworld{
 use notify_rust::*;
 use notify_rust::NotificationHint as Hint;
 use notify_rust::NotificationUrgency::*;
+use notify_rust::NotificationImage as Image;
 
 #[test]
 fn burst()
@@ -155,6 +156,25 @@ fn persistent() {
         .timeout(0)
         .show().is_ok());
 
+}
+
+#[test]
+fn imagedata() {
+
+    let mut data : Vec<u8> = vec![0 as u8; 64*64*3];
+    for x in 0..64 {
+        for y in 0..64 {
+            let offset = (y * 64 + x) * 3;
+            data[ offset ] = (x + y) as u8;
+            data[ offset + 1 ] = x as u8;
+            data[ offset + 2 ] = y as u8;
+        }
+    }
+    assert!(
+    Notification::new()
+        .summary("I can haz image data!")
+        .hint(Hint::ImageData(Image::from_rgb(64,64,data).unwrap()))
+        .show().is_ok());
 }
 
 }

@@ -178,6 +178,7 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 
 pub mod hints;
 pub use hints::NotificationHint;
+pub use hints::NotificationImage;
 
 /// Desktop notification.
 ///
@@ -389,9 +390,9 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    fn pack_hints(&self) -> MessageItem {
+    fn pack_hints(&self, spec_version:&str) -> MessageItem {
         if !self.hints.is_empty() {
-            let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into() ).collect();
+            let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into_message_item(spec_version) ).collect();
 
             if let Ok(array) = MessageItem::new_array(hints){
                 return array;
@@ -445,6 +446,7 @@ impl Notification {
 
     #[cfg(all(unix, not(target_os = "macos")))]
     fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
+        let info = get_server_information()?;
         //TODO catch this
         let mut message = build_message("Notify");
         let timeout: i32 = self.timeout.into();
@@ -455,7 +457,7 @@ impl Notification {
                              self.summary.to_owned().into(), // summary (title)
                              self.body.to_owned().into(),    // body
                              self.pack_actions().into(),     // actions
-                             self.pack_hints().into(),       // hints
+                             self.pack_hints(&info.spec_version).into(),       // hints
                              timeout.into()                  // timeout
         ]);
 

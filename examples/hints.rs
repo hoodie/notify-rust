@@ -3,6 +3,7 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationUrgency::*;
 use notify_rust::NotificationHint as Hint;
+use notify_rust::NotificationImage as Image;
 
 fn freeze(message:&str)
 {
@@ -48,6 +49,15 @@ fn main ()
     Notification::new().hint(Hint::X(200))
                        .hint(Hint::Y(200))
                        .show();
+
+    freeze("ImageData");
+    let mut image_data = vec![0;64*64*3];
+    for i in 0..64*64*3 {
+        image_data[i] = (i % 256) as u8;
+    }
+    Notification::new().hint(Hint::ImageData(Image::from_rgb(64,64,image_data).unwrap()))
+                       .show();
+
     //freeze("Custom");
     //Notification::new().hint(Hint::Custom("foo","bar")).show();
 }

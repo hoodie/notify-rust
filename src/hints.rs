@@ -15,16 +15,23 @@ use super::NotificationUrgency;
 #[cfg(all(unix, not(target_os = "macos")))]
 use util::*;
 
+use std::vec::Vec;
+use std::cmp::Ordering;
+
 /// "action-icons"
 pub const ACTION_ICONS:&'static str   = "action-icons";
 /// "category"
 pub const CATEGORY:&'static str       = "category";
 /// "desktop-entry"
 pub const DESKTOP_ENTRY:&'static str  = "desktop-entry";
-//pub const IMAGE_DATA:&'static str   = "image-data";
+/// "image-data";
+pub const IMAGE_DATA:&'static str     = "image-data";
+/// "image_data" as of spec 1.1
+pub const IMAGE_DATA_1_1: &'static str = "image_data";
+/// "icon_data" as of spec < 1.1
+pub const IMAGE_DATA_1_0: &'static str = "icon_data";
 /// "image-path"
 pub const IMAGE_PATH:&'static str     = "image-path";
-//pub const ICON_DATA:&'static str    = "icon_data";
 /// "resident"
 pub const RESIDENT:&'static str       = "resident";
 /// "sound-file"
@@ -42,6 +49,71 @@ pub const Y:&'static str              = "y";
 /// "urgency"
 pub const URGENCY:&'static str        = "urgency";
 
+/// Raw image data as represented on dbus
+#[derive(PartialEq,Eq,Debug,Clone,Hash)]
+pub struct NotificationImage {
+    width: i32,
+    height: i32,
+    rowstride: i32,
+    alpha: bool,
+    bits_per_sample: i32,
+    channels: i32,
+    data: Vec<u8>
+}
+
+/// Errors that can occour when creating an Image
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+pub enum ImageError {
+    /// The given image is too big. DBus only has 32 bits for width / height 
+    TooBig,
+    /// The given bytes don't match the width, height and channel count
+    WrongDataSize
+}
+
+impl NotificationImage {
+
+    /// Creates an image from a raw vector of bytes
+    pub fn from_rgb(width: u32, height: u32, data: Vec<u8>) -> Result<Self, ImageError> {
+        if width > 0x0fff_ffff {
+            return Err(ImageError::TooBig)
+        }
+        if height > 0x0fff_ffff {
+            return Err(ImageError::TooBig)
+        }
+        let width = width as i32;
+        let height = height as i32;
+        if data.len() != (width * height * 3) as usize {
+            return Err(ImageError::WrongDataSize)
+        } else {
+            return Ok(Self{
+                width: width,
+                height: height,
+                rowstride: width * 3,
+                alpha: false,
+                bits_per_sample: 8,
+                channels: 3,
+                data: data,
+            })
+        }
+    }
+
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+impl From<NotificationImage> for MessageItem {
+
+    fn from(img : NotificationImage) -> Self {
+         MessageItem::Struct(vec![
+            MessageItem::Int32(img.width),
+            MessageItem::Int32(img.height),
+            MessageItem::Int32(img.rowstride),
+            MessageItem::Bool(img.alpha),
+            MessageItem::Int32(img.bits_per_sample),
+            MessageItem::Int32(img.channels),
+            MessageItem::Array(img.data.into_iter().map(MessageItem::Byte).collect(),"y".into())
+        ])
+    }
+}
 /// All currently implemented `NotificationHints` that can be send.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum NotificationHint
@@ -60,8 +132,8 @@ pub enum NotificationHint
     DesktopEntry(String),
 
     // ///Not yet implemented
-    //ImageData(iiibiiay),
-    //IconData(iiibiiay),
+    /// Image as raw data
+    ImageData(NotificationImage),
 
     /// Display the image at this path.
     ImagePath(String),
@@ -156,15 +228,22 @@ pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, St
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> From<&'a NotificationHint> for MessageItem {
-    fn from(hint: &NotificationHint) -> MessageItem {
-        let hint:(String,MessageItem) = match *hint {
+impl NotificationHint {
+    /// converts into a MessageItem
+    pub fn into_message_item(&self, spec_version: &str) -> MessageItem {
+        let hint:(String,MessageItem) = match *self {
             NotificationHint::ActionIcons(value)   => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-          //NotificationHint::ImageData(iiibiiay)      => (IMAGE_DATA     .to_owned(), MessageItem::Str(format!("{:?}",  value)),
+            NotificationHint::ImageData(ref image)  => {
+                let key = match spec_version.cmp("1.1") {
+                    Ordering::Less => IMAGE_DATA_1_0.to_owned(),
+                    Ordering::Equal => IMAGE_DATA_1_1.to_owned(),
+                    Ordering::Greater => IMAGE_DATA.to_owned()
+                };
+                ( key, image.clone().into() )
+            },
             NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
-          //NotificationHint::IconData(iiibiiay)       => (ICON_DATA      .to_owned(), MessageItem::Str(format!("{:?}",  value)),
             NotificationHint::Resident(value)      => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
@@ -182,6 +261,14 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
             Box::new(hint.0.into()),
             Box::new(MessageItem::Variant( Box::new(hint.1) ))
             )
+    }
+}
+
+
+#[cfg(all(unix, not(target_os = "macos")))]
+impl<'a> From<&'a NotificationHint> for MessageItem {
+    fn from(hint: &'a NotificationHint) -> Self {
+        hint.into_message_item("1.2")
     }
 }
 
@@ -250,5 +337,52 @@ mod test{
         let item_ref = &item;
         let hint:NotificationHint = item_ref.into();
         assert!(old_hint == &hint);
+    }
+
+    #[test]
+    fn imagedata_hint_to_item() {
+        let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1,1,vec![0,0,0]).unwrap());
+        let item:MessageItem = hint.into();
+        let test_item = Item::DictEntry(
+            Box::new(Item::Str("image-data".into())),
+            Box::new(Item::Variant( Box::new(Item::Struct(vec![
+                Item::Int32(1),
+                Item::Int32(1),
+                Item::Int32(3),
+                Item::Bool(false),
+                Item::Int32(8),
+                Item::Int32(3),
+                Item::Array(vec![
+                    Item::Byte(0),
+                    Item::Byte(0),
+                    Item::Byte(0),
+                ],"y".into())
+            ]))))
+        );
+        assert_eq!(item, test_item);
+    }
+
+    #[test]
+    fn imagedata_hint_to_item_with_spec() {
+        let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1,1,vec![0,0,0]).unwrap());
+        match hint.into_message_item("1.0") {
+            Item::DictEntry(key,_) => {
+                assert_eq!(*key, Item::Str("icon_data".into()))
+            },
+            _ => unreachable!()
+        }
+        match hint.into_message_item("1.1") {
+            Item::DictEntry(key,_) => {
+                assert_eq!(*key, Item::Str("image_data".into()))
+            },
+            _ => unreachable!()
+        }
+        match hint.into_message_item("1.2") {
+            Item::DictEntry(key,_) => {
+                assert_eq!(*key, Item::Str("image-data".into()))
+            },
+            _ => unreachable!()
+        }
+
     }
 }
