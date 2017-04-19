@@ -249,7 +249,7 @@ impl Notification {
     }
 
     /// Set the sound_name for the NSUserNotification
-    #[cfg(taget_os="macos")]
+    #[cfg(target_os="macos")]
     pub fn sound_name(&mut self, name:&str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
         self
