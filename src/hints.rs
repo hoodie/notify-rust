@@ -15,7 +15,6 @@ use super::NotificationUrgency;
 #[cfg(all(unix, not(target_os = "macos")))]
 use util::*;
 
-use std::vec::Vec;
 use std::cmp::Ordering;
 
 /// "action-icons"
@@ -63,8 +62,9 @@ pub struct NotificationImage {
 
 /// Errors that can occour when creating an Image
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub enum ImageError {
-    /// The given image is too big. DBus only has 32 bits for width / height 
+    /// The given image is too big. DBus only has 32 bits for width / height
     TooBig,
     /// The given bytes don't match the width, height and channel count
     WrongDataSize
@@ -73,25 +73,24 @@ pub enum ImageError {
 impl NotificationImage {
 
     /// Creates an image from a raw vector of bytes
-    pub fn from_rgb(width: u32, height: u32, data: Vec<u8>) -> Result<Self, ImageError> {
-        if width > 0x0fff_ffff {
+    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+        if width > 0x0fff_ffff || height > 0x0fff_ffff {
             return Err(ImageError::TooBig)
         }
-        if height > 0x0fff_ffff {
-            return Err(ImageError::TooBig)
-        }
-        let width = width as i32;
-        let height = height as i32;
-        if data.len() != (width * height * 3) as usize {
-            return Err(ImageError::WrongDataSize)
+
+        let channels = 3i32;
+        let bits_per_sample = 8;
+
+        if data.len() != (width * height * channels) as usize {
+            Err(ImageError::WrongDataSize)
         } else {
-            return Ok(Self{
+            Ok(Self{
                 width: width,
                 height: height,
-                rowstride: width * 3,
+                rowstride: width * channels,
                 alpha: false,
-                bits_per_sample: 8,
-                channels: 3,
+                bits_per_sample: bits_per_sample,
+                channels: channels,
                 data: data,
             })
         }
