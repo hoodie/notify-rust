@@ -2,6 +2,8 @@
 
 [![license](https://img.shields.io/crates/l/notify-rust.svg)](https://crates.io/crates/notify-rust/)
 [![version](https://img.shields.io/crates/v/notify-rust.svg)](https://crates.io/crates/notify-rust/)
+[![documentation](https://docs.rs/notify-rust/badge.svg)](https://docs.rs/notify-rust/)
+[![ci](https://travis-ci.org/hoodie/notify-rust.svg?branch=master)](https://travis-ci.org/hoodie/notify-rust)
 
 Shows desktop notifications.
 This implementation does not rely on libnotify, as it is using [dbus-rs](https://github.com/diwic/dbus-rs/).
@@ -12,7 +14,7 @@ The API shown below should be stable.
 ```toml
 #Cargo.toml
 [dependencies]
-notify-rust = "3.3"
+notify-rust = "3"
 ```
 
 # Examples
