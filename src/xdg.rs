@@ -5,7 +5,8 @@ use std::borrow::Cow;
 use std::ops::{Deref,DerefMut};
 
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
-use super::{Notification, Error};
+use super::Notification;
+use error::*;
 
 /// A handle to a shown notification.
 ///
@@ -109,7 +110,7 @@ impl DerefMut for NotificationHandle {
 // here be public functions
 
 /// Get list of all capabilities of the running notification server.
-pub fn get_capabilities() -> Result<Vec<String>, Error> {
+pub fn get_capabilities() -> Result<Vec<String>> {
     let mut capabilities = vec![];
 
     let message    = build_message("GetCapabilities");
@@ -132,7 +133,7 @@ pub fn get_capabilities() -> Result<Vec<String>, Error> {
 /// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
 /// running.
 /// TODO dbus stuff module!!!
-pub fn get_server_information() -> Result<ServerInformation, Error> {
+pub fn get_server_information() -> Result<ServerInformation> {
     let message    = build_message("GetServerInformation");
     let connection = try!(Connection::get_private(BusType::Session));
     let reply      = try!(connection.send_with_reply_and_block(message, 2000));

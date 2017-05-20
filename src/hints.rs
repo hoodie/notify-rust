@@ -14,39 +14,40 @@ use dbus::MessageItem;
 use super::NotificationUrgency;
 #[cfg(all(unix, not(target_os = "macos")))]
 use util::*;
+use miniver::Version;
 
 use std::cmp::Ordering;
 
 /// "action-icons"
-pub const ACTION_ICONS:&'static str   = "action-icons";
+pub const ACTION_ICONS:&str    = "action-icons";
 /// "category"
-pub const CATEGORY:&'static str       = "category";
+pub const CATEGORY:&str        = "category";
 /// "desktop-entry"
-pub const DESKTOP_ENTRY:&'static str  = "desktop-entry";
-/// "image-data";
-pub const IMAGE_DATA:&'static str     = "image-data";
-/// "image_data" as of spec 1.1
-pub const IMAGE_DATA_1_1: &'static str = "image_data";
-/// "icon_data" as of spec < 1.1
-pub const IMAGE_DATA_1_0: &'static str = "icon_data";
+pub const DESKTOP_ENTRY:&str   = "desktop-entry";
+/// "image-data" if spec_version > 1.1;
+pub const IMAGE_DATA:&str      = "image-data";
+/// "image_data" if spec_version == 1.1
+pub const IMAGE_DATA_1_1: &str = "image_data";
+/// "image-data" if spec_version < 1.1;
+pub const IMAGE_DATA_1_0: &str = "icon_data";
 /// "image-path"
-pub const IMAGE_PATH:&'static str     = "image-path";
+pub const IMAGE_PATH:&str      = "image-path";
 /// "resident"
-pub const RESIDENT:&'static str       = "resident";
+pub const RESIDENT:&str        = "resident";
 /// "sound-file"
-pub const SOUND_FILE:&'static str     = "sound-file";
+pub const SOUND_FILE:&str      = "sound-file";
 /// "sound-name"
-pub const SOUND_NAME:&'static str     = "sound-name";
+pub const SOUND_NAME:&str      = "sound-name";
 /// "suppress-sound"
-pub const SUPPRESS_SOUND:&'static str = "suppress-sound";
+pub const SUPPRESS_SOUND:&str  = "suppress-sound";
 /// "transient"
-pub const TRANSIENT:&'static str      = "transient";
+pub const TRANSIENT:&str       = "transient";
 /// "x"
-pub const X:&'static str              = "x";
+pub const X:&str               = "x";
 /// "y"
-pub const Y:&'static str              = "y";
+pub const Y:&str               = "y";
 /// "urgency"
-pub const URGENCY:&'static str        = "urgency";
+pub const URGENCY:&str         = "urgency";
 
 /// Raw image data as represented on dbus
 #[derive(PartialEq,Eq,Debug,Clone,Hash)]
@@ -74,7 +75,8 @@ impl NotificationImage {
 
     /// Creates an image from a raw vector of bytes
     pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
-        if width > 0x0fff_ffff || height > 0x0fff_ffff {
+        const MAX_SIZE:i32 = 0x0fff_ffff;
+        if width > MAX_SIZE || height > MAX_SIZE {
             return Err(ImageError::TooBig)
         }
 
@@ -102,21 +104,22 @@ impl NotificationImage {
 impl From<NotificationImage> for MessageItem {
 
     fn from(img : NotificationImage) -> Self {
-         MessageItem::Struct(vec![
-            MessageItem::Int32(img.width),
-            MessageItem::Int32(img.height),
-            MessageItem::Int32(img.rowstride),
-            MessageItem::Bool(img.alpha),
-            MessageItem::Int32(img.bits_per_sample),
-            MessageItem::Int32(img.channels),
-            MessageItem::Array(img.data.into_iter().map(MessageItem::Byte).collect(),"y".into())
+        let bytes = img.data.into_iter().map(MessageItem::Byte).collect();
+
+        MessageItem::Struct(vec![
+                            MessageItem::Int32(img.width),
+                            MessageItem::Int32(img.height),
+                            MessageItem::Int32(img.rowstride),
+                            MessageItem::Bool(img.alpha),
+                            MessageItem::Int32(img.bits_per_sample),
+                            MessageItem::Int32(img.channels),
+                            MessageItem::Array(bytes, "y".into())
         ])
     }
 }
 /// All currently implemented `NotificationHints` that can be send.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub enum NotificationHint
-{ // as found on https://developer.gnome.org/notification-spec/
+pub enum NotificationHint { // as found on https://developer.gnome.org/notification-spec/
     /// If true, server may interpret action identifiers as named icons and display those.
     ActionIcons(bool),
 
@@ -228,22 +231,28 @@ pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, St
 
 #[cfg(all(unix, not(target_os = "macos")))]
 impl NotificationHint {
-    /// converts into a MessageItem
-    pub fn into_message_item(&self, spec_version: &str) -> MessageItem {
-        let hint:(String,MessageItem) = match *self {
-            NotificationHint::ActionIcons(value)   => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
+}
+
+/// matching image data key for each spec version
+pub fn image_spec(version:Version) -> String {
+    match version.cmp(&Version::new(1,1)) {
+        Ordering::Less => IMAGE_DATA_1_0.to_owned(),
+        Ordering::Equal => IMAGE_DATA_1_1.to_owned(),
+        Ordering::Greater => IMAGE_DATA.to_owned()
+    }
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+/// TODO make this move
+impl<'a> From<&'a NotificationHint> for MessageItem {
+    fn from(hint: &'a NotificationHint) -> Self {
+        let hint:(String,MessageItem) = match *hint {
+            NotificationHint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::ImageData(ref image)  => {
-                let key = match spec_version.cmp("1.1") {
-                    Ordering::Less => IMAGE_DATA_1_0.to_owned(),
-                    Ordering::Equal => IMAGE_DATA_1_1.to_owned(),
-                    Ordering::Greater => IMAGE_DATA.to_owned()
-                };
-                ( key, image.clone().into() )
-            },
+            NotificationHint::ImageData(ref image)     => (image_spec(*::SPEC_VERSION), image.clone().into()),
             NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::Resident(value)      => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
+            NotificationHint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::SuppressSound(value)     => (SUPPRESS_SOUND .to_owned(), MessageItem::Bool(value)),
@@ -260,14 +269,6 @@ impl NotificationHint {
             Box::new(hint.0.into()),
             Box::new(MessageItem::Variant( Box::new(hint.1) ))
             )
-    }
-}
-
-
-#[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> From<&'a NotificationHint> for MessageItem {
-    fn from(hint: &'a NotificationHint) -> Self {
-        hint.into_message_item("1.2")
     }
 }
 
@@ -302,7 +303,7 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
 }
 
 #[cfg(all(test, unix, not(target_os = "macos")))]
-mod test{
+mod test {
     use super::*;
     use super::NotificationHint as Hint;
     use NotificationUrgency::*;
@@ -343,7 +344,7 @@ mod test{
         let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1,1,vec![0,0,0]).unwrap());
         let item:MessageItem = hint.into();
         let test_item = Item::DictEntry(
-            Box::new(Item::Str("image-data".into())),
+            Box::new(Item::Str(image_spec(*::SPEC_VERSION))),
             Box::new(Item::Variant( Box::new(Item::Struct(vec![
                 Item::Int32(1),
                 Item::Int32(1),
@@ -363,25 +364,13 @@ mod test{
 
     #[test]
     fn imagedata_hint_to_item_with_spec() {
-        let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1,1,vec![0,0,0]).unwrap());
-        match hint.into_message_item("1.0") {
-            Item::DictEntry(key,_) => {
-                assert_eq!(*key, Item::Str("icon_data".into()))
-            },
-            _ => unreachable!()
-        }
-        match hint.into_message_item("1.1") {
-            Item::DictEntry(key,_) => {
-                assert_eq!(*key, Item::Str("image_data".into()))
-            },
-            _ => unreachable!()
-        }
-        match hint.into_message_item("1.2") {
-            Item::DictEntry(key,_) => {
-                assert_eq!(*key, Item::Str("image-data".into()))
-            },
-            _ => unreachable!()
-        }
+        let key = image_spec(Version::new(1,0));
+        assert_eq!(key, String::from("icon_data"));
 
+        let key = image_spec(Version::new(1,1));
+        assert_eq!(key, String::from("image_data"));
+
+        let key = image_spec(Version::new(1,2));
+        assert_eq!(key, String::from("image-data"));
     }
 }

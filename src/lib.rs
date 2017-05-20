@@ -141,17 +141,13 @@
 //! ```
 //!
 
-#![deny(missing_docs,
+#![deny(
         missing_copy_implementations,
         trivial_casts, trivial_numeric_casts,
         unsafe_code,
         unstable_features,
         unused_import_braces, unused_qualifications)]
-#![warn(missing_debug_implementations)]
-
-use std::env;
-use std::collections::HashSet;
-use std::default::Default;
+#![warn(missing_docs)]
 
 #[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -164,7 +160,6 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 
 
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
-#[cfg(all(unix, not(target_os = "macos")))] pub use dbus::Error;
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
@@ -176,9 +171,32 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
+#[macro_use]
+extern crate error_chain;
+
+#[macro_use]
+extern crate lazy_static;
+
 pub mod hints;
 pub use hints::NotificationHint;
 pub use hints::NotificationImage;
+
+pub mod error;
+use error::*;
+
+mod miniver;
+
+use std::env;
+use std::collections::HashSet;
+use std::default::Default;
+
+lazy_static!{
+    /// Rad once at runtime. Needed for Images
+    pub static ref SPEC_VERSION: miniver::Version =
+        get_server_information()
+        .and_then(|info| info.spec_version.parse::<miniver::Version>())
+        .unwrap_or(miniver::Version::new(1,1));
+}
 
 /// Desktop notification.
 ///
@@ -390,18 +408,20 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    fn pack_hints(&self, spec_version:&str) -> MessageItem {
+    fn pack_hints(&self) -> Result<MessageItem> {
         if !self.hints.is_empty() {
-            let hints:Vec<MessageItem> = self.hints.iter().map(|hint| hint.into_message_item(spec_version) ).collect();
+            let hints = self.hints.iter()
+                                  .map(|hint| hint.into() )
+                                  .collect::<Vec<_>>();
 
-            if let Ok(array) = MessageItem::new_array(hints){
-                return array;
+            if let Ok(array) = MessageItem::new_array(hints) {
+                return Ok(array);
             }
         }
 
         let sig = Cow::Borrowed("{sv}"); // cast to TypeSig makes rust1.0 and rust1.1 panic
 
-        MessageItem::Array(vec![], sig)
+        Ok(MessageItem::Array(vec![], sig))
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -423,7 +443,7 @@ impl Notification {
     ///
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn show(&self) -> Result<NotificationHandle, Error> {
+    pub fn show(&self) -> Result<NotificationHandle> {
         let connection = try!(Connection::get_private(BusType::Session));
         let inner_id = self.id.unwrap_or(0);
         let id = try!(self._show(inner_id, &connection));
@@ -435,7 +455,7 @@ impl Notification {
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
+    pub fn show(&self) -> std::result::Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
         mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
@@ -445,9 +465,7 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    fn _show(&self, id:u32, connection: &Connection) -> Result<u32, Error> {
-        let info = get_server_information()?;
-        //TODO catch this
+    fn _show(&self, id:u32, connection: &Connection) -> Result<u32> {
         let mut message = build_message("Notify");
         let timeout: i32 = self.timeout.into();
         message.append_items(&[
@@ -457,7 +475,7 @@ impl Notification {
                              self.summary.to_owned().into(), // summary (title)
                              self.body.to_owned().into(),    // body
                              self.pack_actions().into(),     // actions
-                             self.pack_hints(&info.spec_version).into(),       // hints
+                             self.pack_hints()?.into(),      // hints
                              timeout.into()                  // timeout
         ]);
 
@@ -471,7 +489,7 @@ impl Notification {
 
     /// Wraps show() but prints notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn show_debug(&mut self) -> Result<NotificationHandle, Error> {
+    pub fn show_debug(&mut self) -> Result<NotificationHandle> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
             appname = self.appname,
             summary = self.summary,
@@ -516,7 +534,7 @@ impl Into<i32> for Timeout {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> dbus::FromMessageItem<'a> for Timeout {
-    fn from(i: &'a MessageItem) -> Result<Timeout,()> {
+    fn from(i: &'a MessageItem) -> std::result::Result<Timeout,()> {
         if let &MessageItem::Int32(ref b) = i {
             let timeout_millis: i32 = *b;
             Ok(timeout_millis.into())
