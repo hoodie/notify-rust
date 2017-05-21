@@ -250,7 +250,10 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
             NotificationHint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::ImageData(ref image)     => (image_spec(*::SPEC_VERSION), image.clone().into()),
+            NotificationHint::ImageData(ref image)     => {
+                #[cfg(feature = "images")]      { (image_spec(*::SPEC_VERSION), image.clone().into()) }
+                #[cfg(not(feature = "images"))] { (IMAGE_DATA.to_owned(), MessageItem::Bool(false)) }
+            },
             NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),

@@ -149,16 +149,19 @@
         unused_import_braces, unused_qualifications)]
 #![warn(missing_docs)]
 
-#[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 
-#[cfg(target_os = "macos")]
-extern crate mac_notification_sys;
-#[cfg(target_os = "macos")]
-pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+extern crate image;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+use image::GenericImage;
 
+#[cfg(target_os = "macos")] extern crate mac_notification_sys;
+#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
+#[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
+#[cfg(all(unix, not(target_os = "macos")))] use std::path::Path;
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
@@ -175,10 +178,12 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 extern crate error_chain;
 
 #[macro_use]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
 pub mod hints;
 pub use hints::NotificationHint;
+#[cfg(feature = "images")]
 pub use hints::NotificationImage;
 
 pub mod error;
@@ -190,8 +195,9 @@ use std::env;
 use std::collections::HashSet;
 use std::default::Default;
 
+#[cfg(feature = "images")]
 lazy_static!{
-    /// Rad once at runtime. Needed for Images
+    /// Read once at runtime. Needed for Images
     pub static ref SPEC_VERSION: miniver::Version =
         get_server_information()
         .and_then(|info| info.spec_version.parse::<miniver::Version>())
@@ -259,6 +265,42 @@ impl Notification {
         self
     }
 
+    /// Manual wrapper for `NotificationHint::ImageData`
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    pub fn image_data(&mut self, image:NotificationImage) -> &mut Notification {
+        self.hint(NotificationHint::ImageData(image));
+        self
+    }
+
+    /// Wrapper for `NotificationHint::ImagePath`
+    #[cfg(all(unix,not(target_os="macos")))]
+    pub fn image_path(&mut self, path:&str) -> &mut Notification {
+        self.hint(NotificationHint::ImagePath(path.to_string()));
+        self
+    }
+
+    /// Wrapper for `NotificationHint::ImageData`
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    pub fn image<T:AsRef<Path>+Sized>(&mut self, path:T) -> &mut Notification {
+        if let Ok(img) = image::open(&path) {
+            if let Some(image_data) = img.as_rgb8() {
+                let (width, height) = img.dimensions();
+                let image_data = image_data.clone().into_raw();
+                self.hint(
+                    NotificationHint::ImageData(
+                        NotificationImage::from_rgb(
+                            width as i32,
+                            height as i32,
+                            image_data
+                            ).unwrap()
+                        )
+                    );
+            }
+        } else {
+            println!("notify-rust: could not open image {}", path.as_ref().display())
+        }
+        self
+    }
 
     /// Wrapper for `NotificationHint::SoundName`
     #[cfg(all(unix,not(target_os="macos")))]
@@ -313,6 +355,14 @@ impl Notification {
     /// This method will add a hint to the internal hint hashset.
     /// Hints must be of type NotificationHint.
     ///
+    /// Many of these are again wrapped by more convenient functions such as:
+    ///
+    /// * `sound_name(...)`
+    /// * `urgency(...)`
+    /// * [`image(...)`](#method.image) or
+    ///   * [`image_data(...)`](#method.image_data)
+    ///   * [`image_path(...)`](#method.image_path)
+    ///
     /// ```no_run
     /// # use notify_rust::Notification;
     /// # use notify_rust::NotificationHint;
@@ -355,7 +405,7 @@ impl Notification {
     /// # Platform support
     /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS it to cool to even have something like this in it's spec 😊.
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
-        self.hint( NotificationHint::Urgency( urgency ));
+        self.hint( NotificationHint::Urgency( urgency )); // TODO impl as T where T: Into<NotificationUrgency>
         self
     }
 
