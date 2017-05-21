@@ -51,6 +51,7 @@ pub const URGENCY:&str         = "urgency";
 
 /// Raw image data as represented on dbus
 #[derive(PartialEq,Eq,Debug,Clone,Hash)]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub struct NotificationImage {
     width: i32,
     height: i32,
@@ -61,16 +62,7 @@ pub struct NotificationImage {
     data: Vec<u8>
 }
 
-/// Errors that can occour when creating an Image
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
-#[cfg(all(unix, not(target_os = "macos")))]
-pub enum ImageError {
-    /// The given image is too big. DBus only has 32 bits for width / height
-    TooBig,
-    /// The given bytes don't match the width, height and channel count
-    WrongDataSize
-}
-
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 impl NotificationImage {
 
     /// Creates an image from a raw vector of bytes
@@ -100,7 +92,17 @@ impl NotificationImage {
 
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+/// Errors that can occour when creating an Image
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
+#[cfg(all(feature = "images",unix, not(target_os = "macos")))]
+pub enum ImageError {
+    /// The given image is too big. DBus only has 32 bits for width / height
+    TooBig,
+    /// The given bytes don't match the width, height and channel count
+    WrongDataSize
+}
+
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 impl From<NotificationImage> for MessageItem {
 
     fn from(img : NotificationImage) -> Self {
@@ -134,6 +136,7 @@ pub enum NotificationHint { // as found on https://developer.gnome.org/notificat
     DesktopEntry(String),
 
     /// Image as raw data
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     ImageData(NotificationImage),
 
     /// Display the image at this path.
@@ -249,10 +252,8 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
             NotificationHint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::ImageData(ref image)     => {
-                #[cfg(feature = "images")]      { (image_spec(*::SPEC_VERSION), image.clone().into()) }
-                #[cfg(not(feature = "images"))] { (IMAGE_DATA.to_owned(), MessageItem::Bool(false)) }
-            },
+            #[cfg(all(feature = "images", unix, not(target_os ="macos")))]
+            NotificationHint::ImageData(ref image)     => (image_spec(*::SPEC_VERSION), image.clone().into()),
             NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),

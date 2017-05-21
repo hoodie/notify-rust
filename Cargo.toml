@@ -20,10 +20,11 @@ include = [
   "tests/*.rs"
 ]
 
+[dependencies]
+error-chain = "0.10"
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = "~0.4"
-error-chain = "0.10"
 lazy_static = {version = "0.2", optional = true}
 image = {version = "0.13", optional = true}
 
