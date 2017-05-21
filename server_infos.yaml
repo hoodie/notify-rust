@@ -1,0 +1,48 @@
+# this is to replace capabilities.md
+Plasma:
+  ServerInformation:
+    name: Plasma
+    vendor: KDE
+    version: 2.0
+    spec_version: 1.1
+  capabilities:  [
+    "body",
+    "body-hyperlinks",
+    "body-markup",
+    "icon-static",
+    "actions"
+]
+notify-osd:
+  ServerInformation:
+    name: notify-osd
+    vendor: Canonical Ltd
+    version: 1.0
+    spec_version: 1.1
+  capabilities:  [
+    "body",
+    "body-markup",
+    "icon-static",
+    "image/svg+xml",
+    "x-canonical-private-synchronous",
+    "x-canonical-append",
+    "x-canonical-private-icon-only",
+    "x-canonical-truncation",
+    "private-synchronous",
+    "append",
+    "private-icon-only",
+    "truncation"
+]
+gnome-shell:
+  ServerInformation:
+    name: gnome-shell
+    vendor: GNOME
+    version: 3.22.3
+    spec_version: 1.2
+  capabilities:  [
+    "actions",
+    "body",
+    "body-markup",
+    "icon-static",
+    "persistence",
+    "sound"
+]

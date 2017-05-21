@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+
 use dbus::MessageItem;
 
 //TODO get rid of the util functions
@@ -36,4 +37,3 @@ pub fn unwrap_message_string(item: Option<&MessageItem>) -> String {
         _ => "".to_owned()
     }
 }
-

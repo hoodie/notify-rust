@@ -48,6 +48,17 @@ fn main ()
     Notification::new().hint(Hint::X(200))
                        .hint(Hint::Y(200))
                        .show();
+
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))] {
+        freeze("ImageData");
+        let mut image_data = vec![0;128*128*3];
+        for i in 0..128*128*3 {
+            image_data[i] = (i % 256) as u8;
+        }
+        Notification::new().hint(Hint::ImageData(Image::from_rgb(128,128,image_data).unwrap()))
+                           .summary("You should see stripes in this notification")
+    }
+
     //freeze("Custom");
     //Notification::new().hint(Hint::Custom("foo","bar")).show();
 }
