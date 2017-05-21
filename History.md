@@ -1,3 +1,9 @@
+3.4.0 / 2017-05-21
+===================
+
+* adds image support (feature gated, because of extra dependencies)
+* refactored error handling
+
 
 3.3.0 / 2017-03-30
 ==================
