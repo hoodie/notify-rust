@@ -186,6 +186,7 @@ pub use hints::NotificationImage;
 
 pub mod error;
 use error::*;
+pub use error::Error;
 
 mod miniver;
 
