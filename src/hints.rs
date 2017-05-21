@@ -133,7 +133,6 @@ pub enum NotificationHint { // as found on https://developer.gnome.org/notificat
     /// use "firefox". May be used to retrieve the correct icon.
     DesktopEntry(String),
 
-    // ///Not yet implemented
     /// Image as raw data
     ImageData(NotificationImage),
 
@@ -343,6 +342,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     fn imagedata_hint_to_item() {
         let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1,1,vec![0,0,0]).unwrap());
         let item:MessageItem = hint.into();
@@ -366,6 +366,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     fn imagedata_hint_to_item_with_spec() {
         let key = image_spec(Version::new(1,0));
         assert_eq!(key, String::from("icon_data"));

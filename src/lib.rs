@@ -134,7 +134,7 @@
 //!
 //! Please use `target_os` toggles if you plan on using methods labeled with ❌.
 //!
-//! ```
+//! ```ignore
 //! #[cfg(target_os = "macos")]
 //! // or
 //! #[cfg(all(unix, not(target_os = "macos")))]
@@ -152,16 +152,14 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-extern crate image;
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use image::GenericImage;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate image;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use image::GenericImage;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use std::path::Path;
 
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
 #[cfg(all(unix, not(target_os = "macos")))] use std::borrow::Cow;
-#[cfg(all(unix, not(target_os = "macos")))] use std::path::Path;
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem};
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;

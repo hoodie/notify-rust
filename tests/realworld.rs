@@ -8,6 +8,7 @@ mod realworld{
 use notify_rust::*;
 use notify_rust::NotificationHint as Hint;
 use notify_rust::NotificationUrgency::*;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use notify_rust::NotificationImage as Image;
 
 #[test]
@@ -159,6 +160,7 @@ fn persistent() {
 }
 
 #[test]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 fn imagedata() {
 
     let mut data : Vec<u8> = vec![0 as u8; 64*64*3];
