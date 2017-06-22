@@ -2,6 +2,9 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 use dbus;
 
+#[cfg(target_os= "macos")]
+use mac_notification_sys;
+
 use std::num;
 
 error_chain!{
@@ -11,6 +14,7 @@ error_chain!{
 
     foreign_links {
         Dbus(dbus::Error) #[cfg(all(unix, not(target_os = "macos")))] ;
+        MacNotificationSys(mac_notification_sys::error::Error) #[cfg(target_os = "macos")] ;
         Parse(num::ParseIntError);
     }
 
