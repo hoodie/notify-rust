@@ -504,13 +504,13 @@ impl Notification {
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> std::result::Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
-        mac_notification_sys::send_notification(
+    pub fn show(&self) -> Result<NotificationHandle> {
+        Ok(mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
             &self.body, //message
             &self.sound_name.as_ref().map(|s| &**s) // sound
-        ).map(|_| NotificationHandle::new(self.clone()))
+        ).map(|_| NotificationHandle::new(self.clone()))?)
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
