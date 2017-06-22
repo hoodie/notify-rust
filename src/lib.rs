@@ -504,7 +504,7 @@ impl Notification {
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> std::result::Result<NotificationHandle, mac_notification_sys::error::ErrorKind> {
+    pub fn show(&self) -> std::result::Result<NotificationHandle, mac_notification_sys::error::Error> {
         mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
