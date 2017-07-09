@@ -21,7 +21,7 @@ pub struct NotificationHandle {
 
 
 impl NotificationHandle {
-    pub fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
             id: id,
             connection: connection,
