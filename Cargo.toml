@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "3.4.0"
+version = "3.4.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>", "panicbit <panicbit@users.noreply.github.com>"]
 description = "Show desktop notifications. Pure Rust dbus client and server."
 homepage = "https://github.com/hoodie/notify-rust"
@@ -29,7 +29,7 @@ lazy_static = {version = "0.2", optional = true}
 image = {version = "0.13", optional = true}
 
 [target.'cfg(target_os="macos")'.dependencies]
-mac-notification-sys = "0.1.2"
+mac-notification-sys = "0.1"
 
 [features]
 default = []
