@@ -167,7 +167,7 @@ extern crate dbus;
 #[cfg(target_os = "macos")] mod macos;
 #[cfg(target_os = "macos")] pub use macos::*;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
-#[cfg(all(unix, not(target_os = "macos")))] use xdg::NotificationHandle;
+#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::NotificationHandle;
 #[cfg(all(unix, not(target_os = "macos")))] pub use xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
