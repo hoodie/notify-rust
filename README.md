@@ -18,6 +18,13 @@ The API shown below should be stable.
 notify-rust = "3"
 ```
 
+# Requirements
+
+* `rustc` >= 1.18.0
+* linux, with `libdbus-1`
+* macos
+* no windows support
+
 # Examples
 ## Example 1 (Simple Notification)
 ```rust
