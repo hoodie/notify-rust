@@ -8,23 +8,22 @@ pub struct Version {
 }
 
 impl Version {
-    pub fn new( major: u64, minor: u64) -> Self {
-        Self {
-            major, minor
-        }
+    pub fn new(major: u64, minor: u64) -> Self {
+        Self { major, minor }
     }
 }
 
 impl FromStr for Version {
-    type Err=Error;
-    fn from_str(s:&str) -> Result<Version> {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Version> {
         let vv = s.split('.').collect::<Vec<&str>>();
-        match (vv.get(0),vv.get(1)) {
-            (Some(maj), Some(min)) => Ok(Version {
-                major: maj.parse()?,
-                minor: min.parse()?
-            }),
-            _ => bail!(ErrorKind::SpecVersion(s.into()))
+        match (vv.get(0), vv.get(1)) {
+            (Some(maj), Some(min)) =>
+                Ok(Version {
+                    major: maj.parse()?,
+                    minor: min.parse()?,
+                }),
+            _ => bail!(ErrorKind::SpecVersion(s.into())),
         }
     }
 }
@@ -57,7 +56,8 @@ impl Ord for Version {
     }
 }
 
-#[cfg(test)] mod tests {
+#[cfg(test)]
+mod tests {
     use super::*;
 
     #[test]
@@ -70,9 +70,9 @@ impl Ord for Version {
 
     #[test]
     fn version_comparison() {
-        assert!(Version::new(1,3) >= Version::new(1,2));
-        assert!(Version::new(1,2) >= Version::new(1,2));
-        assert!(Version::new(1,2) == Version::new(1,2));
-        assert!(Version::new(1,1) <= Version::new(1,2));
+        assert!(Version::new(1, 3) >= Version::new(1, 2));
+        assert!(Version::new(1, 2) >= Version::new(1, 2));
+        assert!(Version::new(1, 2) == Version::new(1, 2));
+        assert!(Version::new(1, 1) <= Version::new(1, 2));
     }
 }

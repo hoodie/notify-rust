@@ -2,7 +2,7 @@
 //!
 //! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
 use std::borrow::Cow;
-use std::ops::{Deref,DerefMut};
+use std::ops::{Deref, DerefMut};
 
 use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
 use super::Notification;
@@ -38,7 +38,7 @@ impl NotificationHandle {
     /// Manually close the notification
     pub fn close(self) {
         let mut message = build_message("CloseNotification");
-        message.append_items(&[ self.id.into() ]);
+        message.append_items(&[self.id.into()]);
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
@@ -54,10 +54,12 @@ impl NotificationHandle {
     ///     .show().unwrap()
     ///     .on_close(||{println!("closed")});
     /// ```
-    pub fn on_close<F>(self, closure:F) where F: FnOnce(){
-        self.wait_for_action(|action|
-            if action == "__closed" { closure(); }
-        );
+    pub fn on_close<F>(self, closure: F)
+        where F: FnOnce()
+    {
+        self.wait_for_action(|action| if action == "__closed" {
+            closure();
+        });
     }
 
     /// Replace the original notification with an updated version
@@ -86,7 +88,7 @@ impl NotificationHandle {
     }
 
     /// Returns the Handle's id.
-    pub fn id(&self) -> u32{
+    pub fn id(&self) -> u32 {
         self.id
     }
 }
@@ -118,8 +120,8 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     let reply      = try!(connection.send_with_reply_and_block(message, 2000));
 
     if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
-        for item in items.iter(){
-            if let MessageItem::Str(ref cap) = *item{
+        for item in items.iter() {
+            if let MessageItem::Str(ref cap) = *item {
                 capabilities.push(cap.clone());
             }
         }
@@ -175,7 +177,9 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
+pub fn handle_actions<F>(id: u32, func: F)
+    where F: FnOnce(&str)
+{
     let connection = Connection::get_private(BusType::Session).unwrap();
     wait_for_action_signal(&connection, id, func);
 }
@@ -185,7 +189,9 @@ pub fn handle_actions<F>(id:u32, func:F) where F: FnOnce(&str) {
 // here be non public functions
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F: FnOnce(&str) {
+fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
+    where F: FnOnce(&str)
+{
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
     connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
@@ -199,36 +205,40 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F) where F:
                 // Action Invoked
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
-                        if nid == id { func(action); break; }
+                        if nid == id {
+                            func(action);
+                            break;
+                        }
                     }
-                },
+                }
 
 
                 // Notification Closed
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
-                        if nid == id  { func("__closed"); break; }
+                        if nid == id {
+                            func("__closed");
+                            break;
+                        }
                     }
-                },
-                (_, _, _) => ()
+                }
+                (_, _, _) => (),
             }
         }
     }
 }
 
-pub fn build_message(method_name:&str) -> Message {
-    Message::new_method_call(
-        "org.freedesktop.Notifications",
-        "/org/freedesktop/Notifications",
-        "org.freedesktop.Notifications",
-        method_name).expect(&format!("Error building message call {:?}.", method_name))
+pub fn build_message(method_name: &str) -> Message {
+    Message::new_method_call("org.freedesktop.Notifications",
+                             "/org/freedesktop/Notifications",
+                             "org.freedesktop.Notifications",
+                             method_name)
+        .expect(&format!("Error building message call {:?}.", method_name))
 }
 
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
-    match item{
+    match item {
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
-        _ => "".to_owned()
+        _ => "".to_owned(),
     }
 }
-
-

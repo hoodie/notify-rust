@@ -12,9 +12,7 @@ pub struct NotificationHandle {
 impl NotificationHandle {
     #[allow(missing_docs)]
     pub fn new(notification: Notification) -> NotificationHandle {
-        NotificationHandle {
-            notification: notification
-        }
+        NotificationHandle { notification: notification }
     }
 }
 

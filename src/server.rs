@@ -12,7 +12,7 @@ use std::cell::Cell;
 use dbus::{Connection, BusType, NameFlag, ConnectionItem, Message, MessageItem};
 use dbus::obj::{ObjectPath, Argument, Method, Interface};
 
-use super::{Notification,NotificationHint};
+use super::{Notification, NotificationHint};
 use util::*;
 
 static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
@@ -26,12 +26,12 @@ pub struct NotificationServer {
     /// Counter for generating notification ids
     pub counter: Cell<u32>,
     /// A flag that stops the server
-    pub stop: Cell<bool>
+    pub stop: Cell<bool>,
 }
 
 impl NotificationServer {
     fn count_up(&self) {
-        self.counter.set( self.counter.get() + 1);
+        self.counter.set(self.counter.get() + 1);
     }
 
     /// Create a new `NotificationServer` instance.
@@ -47,7 +47,9 @@ impl NotificationServer {
     //fn handle_notification
 
     /// Start listening for incoming notifications
-    pub fn start<F>(&mut self, closure: F) where F: Fn(&Notification) {
+    pub fn start<F>(&mut self, closure: F)
+        where F: Fn(&Notification)
+    {
         let connection = Connection::get_private(BusType::Session).unwrap();
         connection.release_name("org.freedesktop.Notifications").unwrap();
         connection.register_name("org.freedesktop.Notifications", NameFlag::ReplaceExisting as u32).expect("Was not able to register name.");
@@ -151,12 +153,16 @@ impl NotificationServer {
 
         for n in connection.iter(10) {
             match n {
-                ConnectionItem::MethodCall(mut m) =>
+                ConnectionItem::MethodCall(mut m) => {
                     if objpath.handle_message(&mut m).is_none() {
-                        connection.send(Message::new_error(&m, DBUS_ERROR_FAILED, "Object path not found").unwrap()).unwrap();
+                        connection.send(Message::new_error(&m,
+                                                     DBUS_ERROR_FAILED,
+                                                     "Object path not found")
+                                .unwrap())
+                            .unwrap();
                     }
-                ,
-                ConnectionItem::Signal(_m) => { /*println!("Signal: {:?}", _m);*/ },
+                }
+                ConnectionItem::Signal(_m) => { /*println!("Signal: {:?}", _m);*/ }
                 _ => (),
             }
             if self.stop.get() {
