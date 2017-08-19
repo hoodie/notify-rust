@@ -11,11 +11,24 @@ use notify_rust::server::*;
 
 #[test]
 #[ignore]
+fn server_can_be_stopped() {
+
+    let thread_handle = thread::spawn(move||{
+        let server = NotificationServer::new();
+        NotificationServer::start(&server, |_|{})
+    });
+
+    stop_server();
+    assert!(thread_handle.join().is_ok());
+}
+
+#[test]
+#[ignore]
 fn actions_vec() {
 
     let thread_handle = thread::spawn(move||{
-    let mut server = NotificationServer::new();
-        server.start( |notification|{
+    let server = NotificationServer::new();
+        NotificationServer::start(&server, |notification|{
             assert_eq!(notification.actions[0], "actions_vec0");
             assert_eq!(notification.actions[1], "actions_vec1");
             assert_eq!(notification.actions[2], "actions_vec2");
@@ -43,9 +56,9 @@ fn actions_vec() {
 #[ignore]
 fn actions_automatic() {
 
-    let mut server = NotificationServer::new();
+    let server = NotificationServer::new();
     let thread_handle = thread::spawn(move||{
-        server.start( |notification|{
+        NotificationServer::start(&server, |notification|{
             assert_eq!(notification.actions[0], "actions_built0");
             assert_eq!(notification.actions[1], "actions_built1");
             assert_eq!(notification.actions[2], "actions_built2");
@@ -71,8 +84,8 @@ fn actions_automatic() {
 #[ignore]
 #[should_panic]
 fn no_server() {
-    let mut server = NotificationServer::new();
-    thread::spawn(move||{ server.start( |notification| println!("{:#?}", notification)) });
+    let server = NotificationServer::new();
+    thread::spawn(move||{ NotificationServer::start(&server, |notification| println!("{:#?}", notification)) });
 
     stop_server();
     Notification::new()
@@ -87,8 +100,8 @@ fn no_server() {
 fn join_failed(){
 
     let thread_handle = thread::spawn(||{
-        let mut server = NotificationServer::new();
-        server.start( |notification|{
+        let server = NotificationServer::new();
+        NotificationServer::start(&server, |notification|{
             assert_eq!(notification.timeout, Timeout::Milliseconds(6000));
             assert_eq!(notification.actions[0], "this is no action");
         })

@@ -1,12 +1,19 @@
 //! This module contains XDG and DBus specific code.
 //!
 //! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
-use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
+use std::time::Duration;
+use std::thread;
 
 use super::Notification;
 use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem};
 use error::*;
+
+#[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
+#[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
+
+#[cfg(feature = "debug_namespace")] pub static NOTIFICATION_NAMESPACE: &str = "de.hoodie.Notifications";
+#[cfg(feature = "debug_namespace")] pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
 
 /// A handle to a shown notification.
 ///
@@ -18,13 +25,9 @@ pub struct NotificationHandle {
     notification: Notification
 }
 
-
-
 impl NotificationHandle {
     pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
-        NotificationHandle { id,
-                             connection,
-                             notification }
+        NotificationHandle { id, connection, notification }
     }
 
     /// Waits for the user to act on a notification and then calls
@@ -120,7 +123,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     let connection = Connection::get_private(BusType::Session)?;
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
-    if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
+    if let Some(&MessageItem::Array(ref items)) = reply.get_items().get(0) {
         for item in items.iter() {
             if let MessageItem::Str(ref cap) = *item {
                 capabilities.push(cap.clone());
@@ -143,7 +146,8 @@ pub fn get_server_information() -> Result<ServerInformation> {
 
     let items = reply.get_items();
 
-    Ok(ServerInformation { name:         unwrap_message_string(items.get(0)),
+    Ok(ServerInformation {
+        name:         unwrap_message_string(items.get(0)),
         vendor:       unwrap_message_string(items.get(1)),
         version:      unwrap_message_string(items.get(2)),
         spec_version: unwrap_message_string(items.get(3)) })
@@ -168,7 +172,8 @@ pub struct ServerInformation {
 pub fn stop_server() {
     let message = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    let _reply = connection.send_with_reply_and_block(message, 2000).unwrap();
+    thread::sleep(Duration::from_millis(200));
+    connection.send(message).unwrap();
 }
 
 
@@ -229,9 +234,9 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
 }
 
 pub fn build_message(method_name: &str) -> Message {
-    Message::new_method_call("org.freedesktop.Notifications",
-                             "/org/freedesktop/Notifications",
-                             "org.freedesktop.Notifications",
+    Message::new_method_call(NOTIFICATION_NAMESPACE,
+                             NOTIFICATION_OBJECTPATH,
+                             NOTIFICATION_NAMESPACE,
                              method_name)
         .unwrap_or_else(|_| panic!("Error building message call {:?}.", method_name))
 }
