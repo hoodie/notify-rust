@@ -172,6 +172,10 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
+#[cfg(target_os = "windows")] extern crate winrt;
+#[cfg(target_os = "windows")] extern crate winrt_notification;
+#[cfg(target_os = "windows")] use winrt_notification::{Duration, Sound, Toast};
+
 #[macro_use]
 extern crate error_chain;
 
@@ -179,7 +183,6 @@ extern crate error_chain;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 
 extern crate lazy_static;
-#[cfg(target_os = "windows")] extern crate winrt;
 
 pub mod hints;
 pub use hints::NotificationHint;
@@ -521,33 +524,16 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
-
-        use winrt::*;
-        use winrt::windows::data::xml::dom::*;
-        use winrt::windows::ui::notifications::*;
-
-        let msg_title = FastHString::from(self.summary.as_ref());
-        let msg_body = FastHString::from(self.body.as_ref());
-        let appname = FastHString::new(self.appname.as_ref());
-        unsafe {
-            let mut toast_xml = ToastNotificationManager::get_template_content(ToastTemplateType_ToastText02).unwrap();
-            let mut toast_text_elements = toast_xml.get_elements_by_tag_name(&FastHString::new("text")).unwrap();
-
-            toast_text_elements.item(0).unwrap()
-                               .append_child(&*toast_xml.create_text_node(&msg_title).unwrap()
-                                                        .query_interface::<IXmlNode>().unwrap())
-                               .unwrap();
-            toast_text_elements.item(1).unwrap()
-                               .append_child(&*toast_xml.create_text_node(&msg_body).unwrap()
-                                                        .query_interface::<IXmlNode>().unwrap())
-                               .unwrap();
-
-
-            let toast = ToastNotification::create_toast_notification(&*toast_xml).unwrap();
-            ToastNotificationManager::create_toast_notifier_with_id(&appname).unwrap().show(&*toast).unwrap();
-            
+        //Ok(
+        Toast::new("My application name")
+            .title(&self.summary)
+            .text1(&self.body)
+            //.duration(Duration::Short)
+            .show().unwrap();
+            //.map_err(|e| error::WinRTError) 
+            //?)
+            //.expect("unable to send notification");
             Ok(())
-        }
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
