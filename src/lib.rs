@@ -144,7 +144,7 @@
 #![deny(
         missing_copy_implementations,
         trivial_casts, trivial_numeric_casts,
-        unsafe_code,
+        // unsafe_code,
         unstable_features,
         unused_import_braces, unused_qualifications)]
 #![warn(missing_docs)]
@@ -177,7 +177,9 @@ extern crate error_chain;
 
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+
 extern crate lazy_static;
+#[cfg(target_os = "windows")] extern crate winrt;
 
 pub mod hints;
 pub use hints::NotificationHint;
@@ -513,6 +515,41 @@ impl Notification {
         ).map(|_| NotificationHandle::new(self.clone()))?)
     }
 
+    /// Sends Notification to NSUserNotificationCenter.
+    ///
+    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
+    /// the notification.
+    #[cfg(target_os = "windows")]
+    pub fn show(&self) -> Result<()> {
+
+        use winrt::*;
+        use winrt::windows::data::xml::dom::*;
+        use winrt::windows::ui::notifications::*;
+
+        let msg_title = FastHString::from(self.summary.as_ref());
+        let msg_body = FastHString::from(self.body.as_ref());
+        let appname = FastHString::new(self.appname.as_ref());
+        unsafe {
+            let mut toast_xml = ToastNotificationManager::get_template_content(ToastTemplateType_ToastText02).unwrap();
+            let mut toast_text_elements = toast_xml.get_elements_by_tag_name(&FastHString::new("text")).unwrap();
+
+            toast_text_elements.item(0).unwrap()
+                               .append_child(&*toast_xml.create_text_node(&msg_title).unwrap()
+                                                        .query_interface::<IXmlNode>().unwrap())
+                               .unwrap();
+            toast_text_elements.item(1).unwrap()
+                               .append_child(&*toast_xml.create_text_node(&msg_body).unwrap()
+                                                        .query_interface::<IXmlNode>().unwrap())
+                               .unwrap();
+
+
+            let toast = ToastNotification::create_toast_notification(&*toast_xml).unwrap();
+            ToastNotificationManager::create_toast_notifier_with_id(&appname).unwrap().show(&*toast).unwrap();
+            
+            Ok(())
+        }
+    }
+
     #[cfg(all(unix, not(target_os = "macos")))]
     fn _show(&self, id:u32, connection: &Connection) -> Result<u32> {
         let mut message = build_message("Notify");
@@ -595,6 +632,20 @@ impl<'a> dbus::FromMessageItem<'a> for Timeout {
 
 impl Default for Notification {
     #[cfg(all(unix, not(target_os="macos")))]
+    fn default() -> Notification {
+        Notification {
+            appname:  exe_name(),
+            summary:  String::new(),
+            subtitle:  None,
+            body:     String::new(),
+            icon:     String::new(),
+            hints:    HashSet::new(),
+            actions:  Vec::new(),
+            timeout:  Timeout::Default,
+            id:       None
+        }
+    }
+        #[cfg(target_os="windows")]
     fn default() -> Notification {
         Notification {
             appname:  exe_name(),

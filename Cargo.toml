@@ -31,6 +31,9 @@ image = {version = "0.13", optional = true}
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.1"
 
+[target.'cfg(target_os="windows")'.dependencies]
+winrt = {version = "0.2.1", features = ["windows-data", "windows-ui"]}
+
 [features]
 default = []
 images = ["image", "lazy_static"]

@@ -5,7 +5,7 @@ fn main() {
 
     Notification::new()
         .summary("Firefox Crashed")
-        .body("Just <b>kidding</b>, this is just the notify_show example.")
+        .body("Just <b>kidding</b>, this is just the notify-rust example.")
         .icon("firefox")
         .show()
         .unwrap();
