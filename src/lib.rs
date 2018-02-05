@@ -172,9 +172,9 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
-#[cfg(target_os = "windows")] extern crate winrt;
 #[cfg(target_os = "windows")] extern crate winrt_notification;
-#[cfg(target_os = "windows")] use winrt_notification::{Duration, Sound, Toast};
+#[cfg(target_os = "windows")] use winrt_notification::Toast;
+#[cfg(target_os = "windows")] use std::str::FromStr;
 
 #[macro_use]
 extern crate error_chain;
@@ -229,6 +229,7 @@ pub struct Notification {
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     #[cfg(target_os="macos")] sound_name: Option<String>,
+    #[cfg(target_os="windows")] sound_name: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -315,6 +316,13 @@ impl Notification {
 
     /// Set the sound_name for the NSUserNotification
     #[cfg(target_os="macos")]
+    pub fn sound_name(&mut self, name:&str) -> &mut Notification {
+        self.sound_name = Some(name.to_owned());
+        self
+    }
+
+    /// Set the sound_name for the NSUserNotification
+    #[cfg(target_os="windows")]
     pub fn sound_name(&mut self, name:&str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
         self
@@ -524,16 +532,34 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
-        //Ok(
-        Toast::new("My application name")
+        let sound_name = self.sound_name.clone();
+        let sound = match sound_name {
+            Some(chosen_sound_name) => winrt_notification::Sound::from_str(&chosen_sound_name).ok(),
+            None => None
+        };
+
+        let duration = match self.timeout {
+            Timeout::Default => winrt_notification::Duration::Short,
+            Timeout::Never => winrt_notification::Duration::Long,
+            Timeout::Milliseconds(t) => if t >= 25000 {
+                winrt_notification::Duration::Long
+            } else {
+                winrt_notification::Duration::Short
+            }
+        };
+
+        let result = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
             .title(&self.summary)
-            .text1(&self.body)
-            //.duration(Duration::Short)
-            .show().unwrap();
-            //.map_err(|e| error::WinRTError) 
-            //?)
-            //.expect("unable to send notification");
-            Ok(())
+            .text1(&self.subtitle.as_ref().map(|s| &**s).unwrap_or("")) // subtitle
+            .text2(&self.body)
+            .sound(sound)
+            .duration(duration)
+            .show();
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("{:?}",e).into())
+        }
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -631,7 +657,7 @@ impl Default for Notification {
             id:       None
         }
     }
-        #[cfg(target_os="windows")]
+    #[cfg(target_os="windows")]
     fn default() -> Notification {
         Notification {
             appname:  exe_name(),
@@ -642,6 +668,7 @@ impl Default for Notification {
             hints:    HashSet::new(),
             actions:  Vec::new(),
             timeout:  Timeout::Default,
+            sound_name: Default::default(),
             id:       None
         }
     }

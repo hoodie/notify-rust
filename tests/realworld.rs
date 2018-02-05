@@ -1,5 +1,4 @@
 #![allow(unused_must_use)]
-#![cfg(all(unix, not(target_os = "macos")))]
 extern crate notify_rust;
 
 #[cfg(test)]
@@ -46,7 +45,7 @@ fn burst()
     }
 }
 
-#[test]
+#[cfg(all(test, unix, not(target_os = "macos")))]
 fn closing()
 {
     Notification::new()
@@ -57,7 +56,7 @@ fn closing()
         .close();
 }
 
-#[test]
+#[cfg(all(test, unix, not(target_os = "macos")))]
 fn capabilities()
 {
     let capabilities:Vec<String> = get_capabilities().unwrap();
