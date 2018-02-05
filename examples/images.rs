@@ -10,6 +10,9 @@ use notify_rust::NotificationImage as Image;
 #[cfg(target_os = "macos")]
 fn main() { println!("this is a xdg only feature") }
 
+#[cfg(target_os = "windows")]
+fn main() { println!("this is a xdg only feature") }
+
 #[cfg(all(not(feature = "images"), unix, not(target_os = "macos")))]
 fn main() { println!("please build with '--features=images'") }
 

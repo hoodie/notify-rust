@@ -2,9 +2,6 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 use dbus;
 
-#[cfg(target_os= "windows")]
-use winrt;
-
 #[cfg(target_os= "macos")]
 use mac_notification_sys;
 
