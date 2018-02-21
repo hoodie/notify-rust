@@ -51,7 +51,7 @@ Notification::new()
     .show().unwrap();
 ```
 ## Usage & Documentation
-Please see the [documentation](http://hoodie.github.io/notify-rust/) for current examples.
+Please see the [documentation](https://docs.rs/crate/notify-rust/) for current examples.
 
 ### Commandline tool
 Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
