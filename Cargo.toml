@@ -22,10 +22,10 @@ include = [
 ]
 
 [dependencies]
-error-chain = "0.10"
+error-chain = "0.11"
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
-dbus = "~0.4"
+dbus = "0.4"
 lazy_static = {version = "0.2", optional = true}
 image = {version = "0.13", optional = true}
 
