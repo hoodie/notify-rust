@@ -2,7 +2,7 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 use dbus;
 
-#[cfg(target_os= "macos")]
+#[cfg(target_os = "macos")]
 use mac_notification_sys;
 
 use std::num;

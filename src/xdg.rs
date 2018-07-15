@@ -4,8 +4,8 @@
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
-use dbus::{Connection, ConnectionItem, BusType, Message, MessageItem};
 use super::Notification;
+use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem};
 use error::*;
 
 /// A handle to a shown notification.
@@ -13,8 +13,8 @@ use error::*;
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct NotificationHandle {
-    id: u32,
-    connection: Connection,
+    id:           u32,
+    connection:   Connection,
     notification: Notification
 }
 
@@ -22,16 +22,16 @@ pub struct NotificationHandle {
 
 impl NotificationHandle {
     pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> NotificationHandle {
-        NotificationHandle {
-            id: id,
-            connection: connection,
-            notification: notification
-        }
+        NotificationHandle { id,
+                             connection,
+                             notification }
     }
 
     /// Waits for the user to act on a notification and then calls
     /// `invokation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invokation_closure:F) where F:FnOnce(&str) {
+    pub fn wait_for_action<F>(self, invokation_closure: F)
+        where F: FnOnce(&str)
+    {
         wait_for_action_signal(&self.connection, self.id, invokation_closure);
     }
 
@@ -42,40 +42,40 @@ impl NotificationHandle {
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
-
     /// Executes a closure after the notification has closed.
     /// ## Example
     /// ```no_run
     /// # use notify_rust::Notification;
-    /// Notification::new()
-    ///     .summary("Time is running out")
-    ///     .body("This will go away.")
-    ///     .icon("clock")
-    ///     .show().unwrap()
-    ///     .on_close(||{println!("closed")});
+    /// Notification::new().summary("Time is running out")
+    ///                    .body("This will go away.")
+    ///                    .icon("clock")
+    ///                    .show()
+    ///                    .unwrap()
+    ///                    .on_close(|| println!("closed"));
     /// ```
     pub fn on_close<F>(self, closure: F)
         where F: FnOnce()
     {
-        self.wait_for_action(|action| if action == "__closed" {
-            closure();
-        });
+        self.wait_for_action(|action| {
+                                 if action == "__closed" {
+                                     closure();
+                                 }
+                             });
     }
 
     /// Replace the original notification with an updated version
     /// ## Example
     /// ```no_run
     /// # use notify_rust::Notification;
-    /// let mut notification = Notification::new()
-    ///     .summary("Latest News")
-    ///     .body("Bayern Dortmund 3:2")
-    ///     .show().unwrap();
+    /// let mut notification = Notification::new().summary("Latest News")
+    ///                                           .body("Bayern Dortmund 3:2")
+    ///                                           .show()
+    ///                                           .unwrap();
     ///
     /// std::thread::sleep_ms(1_500);
     ///
-    /// notification
-    ///     .summary("Latest News (Correction)")
-    ///     .body("Bayern Dortmund 3:3");
+    /// notification.summary("Latest News (Correction)")
+    ///             .body("Bayern Dortmund 3:3");
     ///
     /// notification.update();
     /// ```
@@ -96,6 +96,7 @@ impl NotificationHandle {
 /// Required for `DerefMut`
 impl Deref for NotificationHandle {
     type Target = Notification;
+
     fn deref(&self) -> &Notification {
         &self.notification
     }
@@ -115,9 +116,9 @@ impl DerefMut for NotificationHandle {
 pub fn get_capabilities() -> Result<Vec<String>> {
     let mut capabilities = vec![];
 
-    let message    = build_message("GetCapabilities");
-    let connection = try!(Connection::get_private(BusType::Session));
-    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
+    let message = build_message("GetCapabilities");
+    let connection = Connection::get_private(BusType::Session)?;
+    let reply = connection.send_with_reply_and_block(message, 2000)?;
 
     if let Some(&MessageItem::Array(ref items, Cow::Borrowed("s"))) = reply.get_items().get(0) {
         for item in items.iter() {
@@ -136,40 +137,38 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 /// running.
 /// TODO dbus stuff module!!!
 pub fn get_server_information() -> Result<ServerInformation> {
-    let message    = build_message("GetServerInformation");
-    let connection = try!(Connection::get_private(BusType::Session));
-    let reply      = try!(connection.send_with_reply_and_block(message, 2000));
+    let message = build_message("GetServerInformation");
+    let connection = Connection::get_private(BusType::Session)?;
+    let reply = connection.send_with_reply_and_block(message, 2000)?;
 
     let items = reply.get_items();
 
-    Ok( ServerInformation{
-        name:          unwrap_message_string(items.get(0)),
-        vendor:        unwrap_message_string(items.get(1)),
-        version:       unwrap_message_string(items.get(2)),
-        spec_version:  unwrap_message_string(items.get(3))
-    })
+    Ok(ServerInformation { name:         unwrap_message_string(items.get(0)),
+        vendor:       unwrap_message_string(items.get(1)),
+        version:      unwrap_message_string(items.get(2)),
+        spec_version: unwrap_message_string(items.get(3)) })
 }
 
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation {
     /// The product name of the server.
-    pub name:          String,
+    pub name: String,
     /// The vendor name.
-    pub vendor:        String,
+    pub vendor: String,
     /// The server's version string.
-    pub version:       String,
+    pub version: String,
     /// The specification version the server is compliant with.
-    pub spec_version:  String
+    pub spec_version: String
 }
 
 /// Strictly internal.
 /// The Notificationserver implemented here exposes a "Stop" function.
 /// stops the notification server
 pub fn stop_server() {
-    let message    = build_message("Stop");
+    let message = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    let _reply     = connection.send_with_reply_and_block(message, 2000).unwrap();
+    let _reply = connection.send_with_reply_and_block(message, 2000).unwrap();
 }
 
 
@@ -192,16 +191,18 @@ pub fn handle_actions<F>(id: u32, func: F)
 fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
     where F: FnOnce(&str)
 {
-    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
-    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'").unwrap();
-    connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'").unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+              .unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+              .unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+              .unwrap();
 
     for item in connection.iter(1000) {
         if let ConnectionItem::Signal(s) = item {
             let (_, protocol, iface, member) = s.headers();
             let items = s.get_items();
             match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
-
                 // Action Invoked
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
@@ -212,7 +213,6 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
                     }
                 }
 
-
                 // Notification Closed
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
@@ -222,7 +222,7 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
                         }
                     }
                 }
-                (_, _, _) => (),
+                (..) => ()
             }
         }
     }
@@ -239,6 +239,6 @@ pub fn build_message(method_name: &str) -> Message {
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item {
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
-        _ => "".to_owned(),
+        _ => "".to_owned()
     }
 }

@@ -8,13 +8,16 @@
 //! Which of these are actually implemented depends strongly on the Notification server you talk to.
 //! Usually the `get_capabilities()` gives some clues, but the standards usually mention much more
 //! than is actually available.
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
+use super::NotificationUrgency;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 use dbus::MessageItem;
-use super::NotificationUrgency;
+use miniver::Version;
+
 #[cfg(all(unix, not(target_os = "macos")))]
 use util::*;
-use miniver::Version;
 
 use std::cmp::Ordering;
 
@@ -64,21 +67,20 @@ pub const Y: &str               = "y";
 pub const URGENCY: &str         = "urgency";
 
 /// Raw image data as represented on dbus
-#[derive(PartialEq,Eq,Debug,Clone,Hash)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub struct NotificationImage {
-    width: i32,
-    height: i32,
-    rowstride: i32,
-    alpha: bool,
+    width:           i32,
+    height:          i32,
+    rowstride:       i32,
+    alpha:           bool,
     bits_per_sample: i32,
-    channels: i32,
-    data: Vec<u8>
+    channels:        i32,
+    data:            Vec<u8>
 }
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 impl NotificationImage {
-
     /// Creates an image from a raw vector of bytes
     pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
         const MAX_SIZE: i32 = 0x0fff_ffff;
@@ -103,17 +105,16 @@ impl NotificationImage {
             })
         }
     }
-
 }
 
 /// Errors that can occour when creating an Image
-#[derive(Clone,Copy,Debug,PartialEq,Eq)]
-#[cfg(all(feature = "images",unix, not(target_os = "macos")))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub enum ImageError {
     /// The given image is too big. DBus only has 32 bits for width / height
     TooBig,
     /// The given bytes don't match the width, height and channel count
-    WrongDataSize,
+    WrongDataSize
 }
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
@@ -131,6 +132,7 @@ impl From<NotificationImage> for MessageItem {
                                 ])
     }
 }
+
 /// All currently implemented `NotificationHints` that can be send.
 ///
 /// as found on https://developer.gnome.org/notification-spec/
@@ -196,10 +198,10 @@ impl NotificationHint {
     /// Get the `bool` representation of this hint.
     pub fn as_bool(&self) -> Option<bool> {
         match *self {
-            NotificationHint::ActionIcons(inner)   |
-            NotificationHint::Resident(inner)      |
-            NotificationHint::SuppressSound(inner) |
-            NotificationHint::Transient(inner)     => Some(inner),
+            NotificationHint::ActionIcons(inner)
+            | NotificationHint::Resident(inner)
+            | NotificationHint::SuppressSound(inner)
+            | NotificationHint::Transient(inner) => Some(inner),
             _ => None
         }
     }
@@ -207,8 +209,7 @@ impl NotificationHint {
     /// Get the `i32` representation of this hint.
     pub fn as_i32(&self) -> Option<i32> {
         match *self {
-            NotificationHint::X(inner) |
-            NotificationHint::Y(inner) => Some(inner),
+            NotificationHint::X(inner) | NotificationHint::Y(inner) => Some(inner),
             _ => None
         }
     }
@@ -222,7 +223,6 @@ impl NotificationHint {
             NotificationHint::SoundName(ref inner)    => Some(inner),
             _ => None
         }
-
     }
 }
 
@@ -251,14 +251,13 @@ impl NotificationHint {}
 /// matching image data key for each spec version
 pub fn image_spec(version: Version) -> String {
     match version.cmp(&Version::new(1, 1)) {
-        Ordering::Less    => IMAGE_DATA_1_0.to_owned(),
-        Ordering::Equal   => IMAGE_DATA_1_1.to_owned(),
+        Ordering::Less => IMAGE_DATA_1_0.to_owned(),
+        Ordering::Equal => IMAGE_DATA_1_1.to_owned(),
         Ordering::Greater => IMAGE_DATA.to_owned()
     }
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-/// TODO make this move
 impl<'a> From<&'a NotificationHint> for MessageItem {
     fn from(hint: &'a NotificationHint) -> Self {
         let hint:(String,MessageItem) = match *hint {
@@ -311,19 +310,23 @@ impl<'a> From<&'a MessageItem> for NotificationHint {
                 }),
             &MessageItem::DictEntry(ref key, ref value) => match try_unwrap_message_int(value) {
                     Some(num) => NotificationHint::CustomInt(unwrap_message_str(&**key), num),
-                    None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value)),
-                },
-            other => {println!("Invalid {:#?} ", other); NotificationHint::Invalid}
+                    None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value))
+            }
+            other => {
+                println!("Invalid {:#?} ", other);
+                NotificationHint::Invalid
+            }
         }
     }
 }
 
 #[cfg(all(test, unix, not(target_os = "macos")))]
 mod test {
+    use dbus::MessageItem as Item;
+
     use super::*;
     use super::NotificationHint as Hint;
-    use NotificationUrgency::*;
-    use dbus::MessageItem as Item;
+    use super::NotificationUrgency::*;
 
     #[test]
     fn hint_to_item() {

@@ -49,23 +49,19 @@
 //! ```no_run
 //! # use notify_rust::*;
 //! # #[cfg(all(unix, not(target_os = "macos")))]
-//! Notification::new()
-//!     .summary("click me")
-//!     .action("default", "default")
-//!     .action("clicked", "click here")
-//!     .hint(NotificationHint::Resident(true))
-//!     .show()
-//!     .unwrap()
-//!     .wait_for_action({|action|
-//!         match action {
-//!             "default" => {println!("you clicked \"default\"")},
-//!             "clicked" => {println!("that was correct")},
-//!             // here "__closed" is a hardcoded keyword
-//!             "__closed" => {println!("the notification was closed")},
-//!             _ => ()
-//!         }
-//!     });
-//!
+//! Notification::new().summary("click me")
+//!                    .action("default", "default")
+//!                    .action("clicked", "click here")
+//!                    .hint(NotificationHint::Resident(true))
+//!                    .show()
+//!                    .unwrap()
+//!                    .wait_for_action(|action| match action {
+//!                                         "default" => println!("you clicked \"default\""),
+//!                                         "clicked" => println!("that was correct"),
+//!                                         // here "__closed" is a hardcoded keyword
+//!                                         "__closed" => println!("the notification was closed"),
+//!                                         _ => ()
+//!                                     });
 //! ```
 //!
 //! ## Minimal Example
@@ -74,8 +70,7 @@
 //!
 //! ```no_run
 //! # use notify_rust::Notification;
-//! Notification::new()
-//!     .show();
+//! Notification::new().show();
 //! ```
 //!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
@@ -137,16 +132,17 @@
 //! ```ignore
 //! #[cfg(target_os = "macos")]
 //! // or
-//! #[cfg(all(unix, not(target_os = "macos")))]
+//! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
 //!
 
-#![deny(
-        missing_copy_implementations,
-        trivial_casts, trivial_numeric_casts,
+#![deny(missing_copy_implementations,
+        trivial_casts,
+        trivial_numeric_casts,
         unsafe_code,
         unstable_features,
-        unused_import_braces, unused_qualifications)]
+        unused_import_braces,
+        unused_qualifications)]
 #![warn(missing_docs)]
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -185,14 +181,14 @@ pub use hints::NotificationHint;
 pub use hints::NotificationImage;
 
 pub mod error;
-use error::*;
 pub use error::Error;
+use error::*;
 
 mod miniver;
 
-use std::env;
 use std::collections::HashSet;
 use std::default::Default;
+use std::env;
 
 #[cfg(feature = "images")]
 lazy_static!{
@@ -206,7 +202,7 @@ lazy_static!{
 /// Desktop notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Notification {
     /// Filled by default with executable name.
     pub appname: String,
@@ -244,7 +240,7 @@ impl Notification {
     ///
     /// # Platform Support
     /// Please note that this method has no effect on macOS. Here you can only set the application via [`set_application()`](fn.set_application.html)
-    pub fn appname(&mut self, appname:&str) -> &mut Notification {
+    pub fn appname(&mut self, appname: &str) -> &mut Notification {
         self.appname = appname.to_owned();
         self
     }
@@ -252,35 +248,36 @@ impl Notification {
     /// Set the `summary`.
     ///
     /// Often acts as title of the notification. For more elaborate content use the `body` field.
-    pub fn summary(&mut self, summary:&str) -> &mut Notification {
+    pub fn summary(&mut self, summary: &str) -> &mut Notification {
         self.summary = summary.to_owned();
         self
     }
+
     /// Set the `subtitle`.
     ///
     /// This is only useful on macOS, it's not part of the XDG specification and will therefore be eaten by gremlins under your CPU 😈🤘.
-    pub fn subtitle(&mut self, subtitle:&str) -> &mut Notification {
+    pub fn subtitle(&mut self, subtitle: &str) -> &mut Notification {
         self.subtitle = Some(subtitle.to_owned());
         self
     }
 
     /// Manual wrapper for `NotificationHint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    pub fn image_data(&mut self, image:NotificationImage) -> &mut Notification {
+    pub fn image_data(&mut self, image: NotificationImage) -> &mut Notification {
         self.hint(NotificationHint::ImageData(image));
         self
     }
 
     /// Wrapper for `NotificationHint::ImagePath`
-    #[cfg(all(unix,not(target_os="macos")))]
-    pub fn image_path(&mut self, path:&str) -> &mut Notification {
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn image_path(&mut self, path: &str) -> &mut Notification {
         self.hint(NotificationHint::ImagePath(path.to_string()));
         self
     }
 
     /// Wrapper for `NotificationHint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    pub fn image<T:AsRef<Path>+Sized>(&mut self, path:T) -> &mut Notification {
+    pub fn image<T: AsRef<Path> + Sized>(&mut self, path: T) -> &mut Notification {
         if let Ok(img) = image::open(&path) {
             if let Some(image_data) = img.as_rgb8() {
                 let (width, height) = img.dimensions();
@@ -302,15 +299,15 @@ impl Notification {
     }
 
     /// Wrapper for `NotificationHint::SoundName`
-    #[cfg(all(unix,not(target_os="macos")))]
-    pub fn sound_name(&mut self, name:&str) -> &mut Notification {
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.hint(NotificationHint::SoundName(name.to_owned()));
         self
     }
 
     /// Set the sound_name for the NSUserNotification
-    #[cfg(target_os="macos")]
-    pub fn sound_name(&mut self, name:&str) -> &mut Notification {
+    #[cfg(target_os = "macos")]
+    pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
         self
     }
@@ -320,7 +317,7 @@ impl Notification {
     /// Multiline textual content of the notification.
     /// Each line should be treated as a paragraph.
     /// Simple html markup should be supported, depending on the server implementation.
-    pub fn body(&mut self, body:&str) -> &mut Notification {
+    pub fn body(&mut self, body: &str) -> &mut Notification {
         self.body = body.to_owned();
         self
     }
@@ -333,7 +330,7 @@ impl Notification {
     ///
     /// # Platform support
     /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
-    pub fn icon(&mut self, icon:&str) -> &mut Notification {
+    pub fn icon(&mut self, icon: &str) -> &mut Notification {
         self.icon = icon.to_owned();
         self
     }
@@ -365,19 +362,18 @@ impl Notification {
     /// ```no_run
     /// # use notify_rust::Notification;
     /// # use notify_rust::NotificationHint;
-    /// Notification::new()
-    ///     .summary("Category:email")
-    ///     .body("This should not go away until you acknoledge it.")
-    ///     .icon("thunderbird")
-    ///     .appname("thunderbird")
-    ///     .hint(NotificationHint::Category("email".to_owned()))
-    ///     .hint(NotificationHint::Resident(true))
-    ///     .show();
+    /// Notification::new().summary("Category:email")
+    ///                    .body("This should not go away until you acknoledge it.")
+    ///                    .icon("thunderbird")
+    ///                    .appname("thunderbird")
+    ///                    .hint(NotificationHint::Category("email".to_owned()))
+    ///                    .hint(NotificationHint::Resident(true))
+    ///                    .show();
     /// ```
     ///
     /// # Platform support
     /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
-    pub fn hint(&mut self, hint:NotificationHint) -> &mut Notification {
+    pub fn hint(&mut self, hint: NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
     }
@@ -404,7 +400,7 @@ impl Notification {
     /// # Platform support
     /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS it to cool to even have something like this in it's spec 😊.
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
-        self.hint( NotificationHint::Urgency( urgency )); // TODO impl as T where T: Into<NotificationUrgency>
+        self.hint(NotificationHint::Urgency(urgency)); // TODO impl as T where T: Into<NotificationUrgency>
         self
     }
 
@@ -420,8 +416,8 @@ impl Notification {
     /// **Carefull! This replaces the internal list of actions!**
     ///
     /// (xdg only)
-    #[deprecated(note="please use .action() only")]
-    pub fn actions(&mut self, actions:Vec<String>) -> &mut Notification {
+    #[deprecated(note = "please use .action() only")]
+    pub fn actions(&mut self, actions: Vec<String>) -> &mut Notification {
         self.actions = actions;
         self
     }
@@ -431,7 +427,7 @@ impl Notification {
     /// This adds a single action to the internal list of actions.
     ///
     /// (xdg only)
-    pub fn action(&mut self, identifier:&str, label:&str) -> &mut Notification {
+    pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
         self
@@ -444,7 +440,7 @@ impl Notification {
     /// the `NotificationHandle` object that `show()` returns.
     ///
     /// (xdg only)
-    pub fn id(&mut self, id:u32) -> &mut Notification {
+    pub fn id(&mut self, id: u32) -> &mut Notification {
         self.id = Some(id);
         self
     }
@@ -459,9 +455,7 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_hints(&self) -> Result<MessageItem> {
         if !self.hints.is_empty() {
-            let hints = self.hints.iter()
-                                  .map(|hint| hint.into() )
-                                  .collect::<Vec<_>>();
+            let hints = self.hints.iter().map(|hint| hint.into()).collect::<Vec<_>>();
 
             if let Ok(array) = MessageItem::new_array(hints) {
                 return Ok(array);
@@ -480,7 +474,7 @@ impl Notification {
             for action in &self.actions {
                 actions.push(action.to_owned().into());
             }
-            if let Ok(array) = MessageItem::new_array(actions){
+            if let Ok(array) = MessageItem::new_array(actions) {
                 return array;
             }
         }
@@ -493,9 +487,9 @@ impl Notification {
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<NotificationHandle> {
-        let connection = try!(Connection::get_private(BusType::Session));
+        let connection = Connection::get_private(BusType::Session)?;
         let inner_id = self.id.unwrap_or(0);
-        let id = try!(self._show(inner_id, &connection));
+        let id = self._show(inner_id, &connection)?;
         Ok(NotificationHandle::new(id, connection, self.clone()))
     }
 
@@ -514,23 +508,22 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    fn _show(&self, id:u32, connection: &Connection) -> Result<u32> {
+    fn _show(&self, id: u32, connection: &Connection) -> Result<u32> {
         let mut message = build_message("Notify");
         let timeout: i32 = self.timeout.into();
-        message.append_items(&[
-                             self.appname.to_owned().into(), // appname
-                             id.into(),                      // notification to update
-                             self.icon.to_owned().into(),    // icon
-                             self.summary.to_owned().into(), // summary (title)
-                             self.body.to_owned().into(),    // body
-                             self.pack_actions().into(),     // actions
-                             self.pack_hints()?.into(),      // hints
-                             timeout.into()                  // timeout
+        message.append_items(&[self.appname.to_owned().into(), // appname
+                               id.into(),                      // notification to update
+                               self.icon.to_owned().into(),    // icon
+                               self.summary.to_owned().into(), // summary (title)
+                               self.body.to_owned().into(),    // body
+                               self.pack_actions().into(),     // actions
+                               self.pack_hints()?.into(),      // hints
+                               timeout.into()                  // timeout
         ]);
 
-        let reply = try!(connection.send_with_reply_and_block(message, 2000));
+        let reply = connection.send_with_reply_and_block(message, 2000)?;
 
-        match  reply.get_items().get(0) {
+        match reply.get_items().get(0) {
             Some(&MessageItem::UInt32(ref id)) => Ok(*id),
             _ => Ok(0)
         }
@@ -540,11 +533,11 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show_debug(&mut self) -> Result<NotificationHandle> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
-            appname = self.appname,
-            summary = self.summary,
-            body    = self.body,
-            hints   = self.hints,
-            icon    = self.icon,);
+                 appname = self.appname,
+                 summary = self.summary,
+                 body = self.body,
+                 hints = self.hints,
+                 icon = self.icon,);
         self.show()
     }
 }
@@ -583,7 +576,7 @@ impl Into<i32> for Timeout {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> dbus::FromMessageItem<'a> for Timeout {
-    fn from(i: &'a MessageItem) -> std::result::Result<Timeout,()> {
+    fn from(i: &'a MessageItem) -> std::result::Result<Timeout, ()> {
         if let &MessageItem::Int32(ref b) = i {
             let timeout_millis: i32 = *b;
             Ok(timeout_millis.into())
@@ -594,12 +587,12 @@ impl<'a> dbus::FromMessageItem<'a> for Timeout {
 }
 
 impl Default for Notification {
-    #[cfg(all(unix, not(target_os="macos")))]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn default() -> Notification {
         Notification {
             appname:  exe_name(),
             summary:  String::new(),
-            subtitle:  None,
+            subtitle: None,
             body:     String::new(),
             icon:     String::new(),
             hints:    HashSet::new(),
@@ -608,19 +601,20 @@ impl Default for Notification {
             id:       None
         }
     }
-    #[cfg(target_os="macos")]
+
+    #[cfg(target_os = "macos")]
     fn default() -> Notification {
         Notification {
-            appname:  exe_name(),
-            summary:  String::new(),
-            subtitle:  None,
-            body:     String::new(),
-            icon:     String::new(),
-            hints:    HashSet::new(),
-            actions:  Vec::new(),
-            timeout:  Timeout::Default,
+            appname:    exe_name(),
+            summary:    String::new(),
+            subtitle:   None,
+            body:       String::new(),
+            icon:       String::new(),
+            hints:      HashSet::new(),
+            actions:    Vec::new(),
+            timeout:    Timeout::Default,
             sound_name: Default::default(),
-            id:       None
+            id:         None
         }
     }
 }
@@ -628,7 +622,7 @@ impl Default for Notification {
 
 /// Levels of Urgency.
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency{
+pub enum NotificationUrgency {
     /// The behaviour for `Low` urgency depends on the notification server.
     Low = 0,
     /// The behaviour for `Normal` urgency depends on the notification server.
@@ -638,7 +632,7 @@ pub enum NotificationUrgency{
 }
 
 impl<'a> From<&'a str> for NotificationUrgency {
-    fn from(string:&'a str) -> NotificationUrgency {
+    fn from(string: &'a str) -> NotificationUrgency {
         match string.to_lowercase().as_ref() {
             "low"      |
             "lo"       => NotificationUrgency::Low,

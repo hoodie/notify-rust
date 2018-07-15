@@ -1,5 +1,5 @@
-use std::ops::{Deref,DerefMut};
 use super::Notification;
+use std::ops::{Deref, DerefMut};
 
 /// A handle to a shown notification.
 ///
@@ -12,12 +12,13 @@ pub struct NotificationHandle {
 impl NotificationHandle {
     #[allow(missing_docs)]
     pub fn new(notification: Notification) -> NotificationHandle {
-        NotificationHandle { notification: notification }
+        NotificationHandle { notification }
     }
 }
 
 impl Deref for NotificationHandle {
     type Target = Notification;
+
     fn deref(&self) -> &Notification {
         &self.notification
     }
@@ -29,5 +30,3 @@ impl DerefMut for NotificationHandle {
         &mut self.notification
     }
 }
-
-
