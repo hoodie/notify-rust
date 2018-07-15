@@ -516,8 +516,8 @@ impl Notification {
                                self.icon.to_owned().into(),    // icon
                                self.summary.to_owned().into(), // summary (title)
                                self.body.to_owned().into(),    // body
-                               self.pack_actions().into(),     // actions
-                               self.pack_hints()?.into(),      // hints
+                               self.pack_actions(),            // actions
+                               self.pack_hints()?,             // hints
                                timeout.into()                  // timeout
         ]);
 
@@ -577,7 +577,7 @@ impl Into<i32> for Timeout {
 #[cfg(all(unix, not(target_os = "macos")))]
 impl<'a> dbus::FromMessageItem<'a> for Timeout {
     fn from(i: &'a MessageItem) -> std::result::Result<Timeout, ()> {
-        if let &MessageItem::Int32(ref b) = i {
+        if let MessageItem::Int32(ref b) = *i {
             let timeout_millis: i32 = *b;
             Ok(timeout_millis.into())
         } else {

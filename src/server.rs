@@ -15,9 +15,9 @@ use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem, NameFlag};
 use super::{Notification, NotificationHint};
 use util::*;
 
-static DBUS_ERROR_FAILED: &'static str = "org.freedesktop.DBus.Error.Failed";
+static DBUS_ERROR_FAILED: &str = "org.freedesktop.DBus.Error.Failed";
 /// Version of the crate equals the version server.
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.
 /// See [the module level documentation](index.html) for more.
@@ -76,23 +76,23 @@ impl NotificationServer {
                 // Callback
                 Box::new(|msg| {
                     // TODO this must be prettier!
-                    let hint_items = msg.get_items().get(6).unwrap().clone();
+                    let hint_items = msg.get_items()[6].clone();
                     let hint_items: &Vec<MessageItem> = hint_items.inner().unwrap();
                     let hints = hint_items.iter()
                                           .map(|item| item.into())
                                           .collect::<HashSet<NotificationHint>>();
 
-                    let action_items = msg.get_items().get(5).unwrap().clone();
+                    let action_items = msg.get_items()[5].clone();
                     let action_items: &Vec<MessageItem> = action_items.inner().unwrap();
                     let actions: Vec<String> = action_items.iter()
                                                            .map(|action| action.inner::<&String>().unwrap().to_owned())
                                                            .collect();
 
-                    let notification = Notification { appname: unwrap_message_str(msg.get_items().get(0).unwrap()),
+                    let notification = Notification { appname: unwrap_message_str(&msg.get_items()[0]),
                                                       summary: unwrap_message_string(msg.get_items().get(3)),
                                                       body: unwrap_message_string(msg.get_items().get(4)),
                                                       icon: unwrap_message_string(msg.get_items().get(2)),
-                                                      timeout: msg.get_items().get(7).unwrap().inner().unwrap(),
+                                                      timeout: msg.get_items()[7].inner().unwrap(),
                                                       subtitle: None,
                                                       hints,
                                                       actions,
