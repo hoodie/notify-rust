@@ -18,9 +18,5 @@ mod conversion{
         assert_eq!(Urgency::from("Hi"), Urgency::Critical);
         assert_eq!(Urgency::from("Critical"), Urgency::Critical);
     }
-    #[test]
-    fn hint_from_str()
-    {
-    }
 
 }

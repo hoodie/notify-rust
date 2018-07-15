@@ -1,9 +1,9 @@
-#![allow(unused_must_use)]
 extern crate notify_rust;
 use notify_rust::Notification;
-fn main() {
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     Notification::new()
         .summary("minimal notification")
-        .show();
+        .show()?;
+    Ok(())
 }
-
