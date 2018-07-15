@@ -2,16 +2,15 @@
 extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationUrgency::*;
-fn main()
-{
+
+fn main() {
     // use it this way
     for urgency in &[Low, Normal, Critical] {
-        Notification::new()
-            .summary(&format!("Urgency {:?}", urgency))
-            .body("This notification uses hints")
-            .icon("firefox")
-            .urgency(*urgency)
-            .show();
+        Notification::new().summary(&format!("Urgency {:?}", urgency))
+                           .body("This notification uses hints")
+                           .icon("firefox")
+                           .urgency(*urgency)
+                           .show();
     }
 
     Notification::new()
@@ -19,7 +18,4 @@ fn main()
         .icon("dialog-warning")
         .urgency("high".into()) // only if you realy have to :D
         .show();
-
 }
-
-

@@ -1,0 +1,18 @@
+indent_style = "Visual"
+max_width = 120
+force_multiline_blocks = false
+normalize_comments = true
+condense_wildcard_suffixes = true
+
+reorder_impl_items = true
+report_todo = "Always"
+report_fixme = "Always"
+struct_field_align_threshold = 50
+use_field_init_shorthand = true
+use_try_shorthand = true
+blank_lines_upper_bound = 3
+
+
+error_on_line_overflow = false
+
+trailing_comma = "Never"

@@ -7,10 +7,8 @@ fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new()
         .summary("click me")
-
         .action("default", "default")    // IDENTIFIER, LABEL
         .action("clicked", "click here") // IDENTIFIER, LABEL
-
         .hint(Hint::Resident(true))
         .show()
         .unwrap()
@@ -25,9 +23,9 @@ fn main() {
         });
 
     #[cfg(target_os = "macos")]
-    Notification::new()
-        .summary("PLATFORM ERROR")
-        .subtitle("unsupported functionality")
-        .body("cannot wait for closing on macOS.")
-        .show().unwrap();
+    Notification::new().summary("PLATFORM ERROR")
+                       .subtitle("unsupported functionality")
+                       .body("cannot wait for closing on macOS.")
+                       .show()
+                       .unwrap();
 }

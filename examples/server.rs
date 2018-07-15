@@ -6,18 +6,22 @@ use std::time::Duration;
 use notify_rust::server::NotificationServer;
 use notify_rust::Notification;
 
-#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is a xdg only feature")
+}
+
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     let mut server = NotificationServer::new();
-    thread::spawn(move||{ server.start( |notification| println!("{:#?}", notification)) });
+    thread::spawn(move || server.start(|notification| println!("{:#?}", notification)));
 
     std::thread::sleep(Duration::from_millis(500));
 
-    Notification::new()
-        .summary("Notification Logger")
-        .body("If you can read this in the console, the server works fine.")
-        .show().unwrap();
+    Notification::new().summary("Notification Logger")
+                       .body("If you can read this in the console, the server works fine.")
+                       .show()
+                       .unwrap();
 
     println!("Press enter to exit.\n");
     let mut _devnull = String::new();

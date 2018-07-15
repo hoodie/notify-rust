@@ -10,21 +10,23 @@ fn wait_for_keypress() {
     io::stdin().read_line(&mut String::new()).unwrap();
 }
 
-fn print(){
+fn print() {
     println!("notification was closed");
 }
 
-#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(target_os = "macos")]
 fn main() {
-    thread::spawn(||
-                  Notification::new()
-                  .summary("Time is running out")
-                  .body("This will go away.")
-                  .icon("clock")
-                  .show()
-                  .map(|handler| handler.on_close(print))
-                 );
-    wait_for_keypress();
+    println!("this is a xdg only feature")
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
+fn main() {
+    thread::spawn(|| {
+                      Notification::new().summary("Time is running out")
+                                         .body("This will go away.")
+                                         .icon("clock")
+                                         .show()
+                                         .map(|handler| handler.on_close(print))
+                  });
+    wait_for_keypress();
+}
