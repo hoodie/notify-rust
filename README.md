@@ -25,9 +25,14 @@ notify-rust = "3"
 * macos
 * no windows support
 
+## Compiletime requirements
+
+* `libdbus-1-dev`
+
 # Examples
 ## Example 1 (Simple Notification)
 ```rust
+extern crate notify_rust;
 use notify_rust::Notification;
 Notification::new()
     .summary("Firefox News")
@@ -38,6 +43,7 @@ Notification::new()
 
 ## Example 2 (Persistent Notification)
 ```rust
+extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 Notification::new()
