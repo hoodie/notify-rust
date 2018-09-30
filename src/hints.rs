@@ -95,13 +95,13 @@ impl NotificationImage {
             Err(ImageError::WrongDataSize)
         } else {
             Ok(Self {
-                width: width,
-                height: height,
+                width,
+                height,
+                bits_per_sample,
+                channels,
+                data,
                 rowstride: width * channels,
                 alpha: false,
-                bits_per_sample: bits_per_sample,
-                channels: channels,
-                data: data,
             })
         }
     }
