@@ -149,7 +149,7 @@
 extern crate dbus;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate image;
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use image::GenericImage;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use image::GenericImageView;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] use std::path::Path;
 
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
