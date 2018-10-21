@@ -1,6 +1,6 @@
 extern crate notify_rust;
-use std::thread;
 use std::time::Duration;
+use std::thread;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
@@ -13,8 +13,8 @@ fn main() {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
-    let mut server = NotificationServer::new();
-    thread::spawn(move || server.start(|notification| println!("{:#?}", notification)));
+    let server = NotificationServer::new();
+    thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
 
     std::thread::sleep(Duration::from_millis(500));
 
