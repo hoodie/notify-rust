@@ -22,7 +22,7 @@ fn freeze(message: &str) {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
-    let server = NotificationServer::new();
+    let server = NotificationServer::create();
     // thread::spawn(move || NotificationServer::start(&server,|notification| println!(" -- {:#?} --", notification)));
     thread::spawn(move || NotificationServer::start(&server,
         |notification|

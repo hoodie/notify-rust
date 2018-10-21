@@ -80,48 +80,40 @@
 //! ❌ = will not compile
 //!
 //! ## `Notification`
-//! <table>
-//! <thead>
-//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
-//!
-//!  <tr> <td> fn appname(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn summary(...)  </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn subtitle(...) </td>  <td>   </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn body(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn icon(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn auto_icon(...)</td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn hint(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn timeout(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn urgency(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn action(...)   </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn id(...)       </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn finalize(...) </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn show(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//! </table>
+//! | method              | XDG   | macOS |
+//! |---------------------|-------|-------|
+//! |  `fn appname(...)`  |  ✔︎    |       |
+//! |  `fn summary(...)`  |  ✔︎    | ✔︎     |
+//! |  `fn subtitle(...)` |       | ✔︎     |
+//! |  `fn body(...)`     |  ✔︎    | ✔︎     |
+//! |  `fn icon(...)`     |  ✔︎    |       |
+//! |  `fn auto_icon(...)`|  ✔︎    |       |
+//! |  `fn hint(...)`     |  ✔︎    |       |
+//! |  `fn timeout(...)`  |  ✔︎    |       |
+//! |  `fn urgency(...)`  |  ✔︎    |       |
+//! |  `fn action(...)`   |  ✔︎    |       |
+//! |  `fn id(...)`       |  ✔︎    |       |
+//! |  `fn finalize(...)` |  ✔︎    | ✔︎     |
+//! |  `fn show(...)`     |  ✔︎    | ✔︎     |
 //!
 //! ## `NotificationHandle`
-//! <table>
-//! <thead>
-//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
-//! <tr> <td> fn wait_for_action(...)</td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn close(...)          </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn on_close(...)       </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn update(...)         </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn id(...)             </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! </table>
+//!
+//! | method                   | XDG | macOS |
+//! |--------------------------|-----|-------|
+//! | `fn wait_for_action(...)`|  ✔︎  |  ❌   |
+//! | `fn close(...)`          |  ✔︎  |  ❌   |
+//! | `fn on_close(...)`       |  ✔︎  |  ❌   |
+//! | `fn update(...)`         |  ✔︎  |  ❌   |
+//! | `fn id(...)`             |  ✔︎  |  ❌   |
 //!
 //! ## Functions
-//! <table>
-//! <thead>
-//! <tr> <td></td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
 //!
-//! <tr> <td> fn get_capabilities(...)</td>                 <td> ✔︎ </td>  <td> ❌ </td> </tr>
-//! <tr> <td> fn get_server_information(...)</td>           <td> ✔︎ </td>  <td> ❌ </td> </tr>
-//! <tr> <td> fn set_application(...)</td>                  <td> ❌ </td>  <td> ✔︎ </td> </tr>
-//! <tr> <td> fn get_bundle_identifier_or_default(...)</td> <td> ❌ </td>  <td> ✔︎ </td> </tr>
+//! |                                            | XDG | macOS |
+//! |--------------------------------------------|-----|-------|
+//! | `fn get_capabilities(...)`                 | ✔︎   |    ❌ |
+//! | `fn get_server_information(...)`           | ✔︎   |    ❌ |
+//! | `fn set_application(...)`                  | ❌  |    ✔︎  |
+//! | `fn get_bundle_identifier_or_default(...)` | ❌  |    ✔︎  |
 //!
 //! </table>
 //!
@@ -166,8 +158,8 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
+#[macro_use] extern crate failure_derive;
 
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
@@ -179,7 +171,8 @@ pub use hints::NotificationHint;
 pub use hints::NotificationImage;
 
 pub mod error;
-pub use error::Error;
+pub use error::{Error, ErrorKind};
+
 use error::*;
 
 mod miniver;
@@ -495,12 +488,14 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<NotificationHandle> {
-        Ok(mac_notification_sys::send_notification(
+        mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
             &self.body, //message
             &self.sound_name.as_ref().map(|s| &**s) // sound
-        ).map(|_| NotificationHandle::new(self.clone()))?)
+        )?;
+
+        Ok(NotificationHandle::new(self.clone()))
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]

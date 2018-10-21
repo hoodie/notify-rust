@@ -360,7 +360,7 @@ impl<'a, A:RefArg> From<(&'a String, &'a A)> for NotificationHint {
 
 #[allow(missing_docs)]
 #[cfg(all(unix, not(target_os = "macos")))]
-pub fn hints_from_variants<A: RefArg>(hints: HashMap<String, A>) -> HashSet<NotificationHint> {
+pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<NotificationHint> {
     hints.iter().map(Into::into).collect()
 }
 
