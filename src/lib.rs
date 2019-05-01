@@ -158,9 +158,6 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
-extern crate failure;
-#[macro_use] extern crate failure_derive;
-
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
