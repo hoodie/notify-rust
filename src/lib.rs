@@ -159,9 +159,6 @@ extern crate dbus;
 #[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
 
 #[macro_use]
-extern crate error_chain;
-
-#[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
@@ -171,7 +168,8 @@ pub use hints::NotificationHint;
 pub use hints::NotificationImage;
 
 pub mod error;
-pub use error::Error;
+pub use error::{Error, ErrorKind};
+
 use error::*;
 
 mod miniver;
@@ -487,12 +485,14 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<NotificationHandle> {
-        Ok(mac_notification_sys::send_notification(
+        mac_notification_sys::send_notification(
             &self.summary, //title
             &self.subtitle.as_ref().map(|s| &**s), // subtitle
             &self.body, //message
             &self.sound_name.as_ref().map(|s| &**s) // sound
-        ).map(|_| NotificationHandle::new(self.clone()))?)
+        )?;
+
+        Ok(NotificationHandle::new(self.clone()))
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]

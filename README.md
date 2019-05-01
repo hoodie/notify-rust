@@ -13,14 +13,13 @@ The API shown below should be stable.
 
 
 ```toml
-#Cargo.toml
 [dependencies]
 notify-rust = "3"
 ```
 
 # Requirements
 
-* `rustc` >= 1.18.0
+* `rustc` >= 1.27
 * linux, with `libdbus-1`
 * macos
 * no windows support
@@ -62,6 +61,8 @@ Please see the [documentation](https://docs.rs/crate/notify-rust/) for current e
 ### Commandline tool
 Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
 
-### Platform support
+### macOS support
 
-This library shines on linux and bsd, which is it's original target platform. Lately it gained support for macOS, however this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features. Please refer to the You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
+This library shines on linux and bsd, which is it's original target platform.
+Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
+However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features. Please refer to the You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
