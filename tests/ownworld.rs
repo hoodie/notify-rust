@@ -14,7 +14,7 @@ use notify_rust::server::*;
 fn server_can_be_stopped() {
 
     let thread_handle = thread::spawn(move||{
-        let server = NotificationServer::new();
+        let server = NotificationServer::create();
         NotificationServer::start(&server, |_|{})
     });
 
@@ -27,7 +27,7 @@ fn server_can_be_stopped() {
 fn actions_vec() {
 
     let thread_handle = thread::spawn(move||{
-    let server = NotificationServer::new();
+    let server = NotificationServer::create();
         NotificationServer::start(&server, |notification|{
             assert_eq!(notification.actions[0], "actions_vec0");
             assert_eq!(notification.actions[1], "actions_vec1");
@@ -56,7 +56,7 @@ fn actions_vec() {
 #[ignore]
 fn actions_automatic() {
 
-    let server = NotificationServer::new();
+    let server = NotificationServer::create();
     let thread_handle = thread::spawn(move||{
         NotificationServer::start(&server, |notification|{
             assert_eq!(notification.actions[0], "actions_built0");
@@ -84,7 +84,7 @@ fn actions_automatic() {
 #[ignore]
 #[should_panic]
 fn no_server() {
-    let server = NotificationServer::new();
+    let server = NotificationServer::create();
     thread::spawn(move||{ NotificationServer::start(&server, |notification| println!("{:#?}", notification)) });
 
     stop_server();
@@ -100,7 +100,7 @@ fn no_server() {
 fn join_failed(){
 
     let thread_handle = thread::spawn(||{
-        let server = NotificationServer::new();
+        let server = NotificationServer::create();
         NotificationServer::start(&server, |notification|{
             assert_eq!(notification.timeout, Timeout::Milliseconds(6000));
             assert_eq!(notification.actions[0], "this is no action");
