@@ -80,48 +80,40 @@
 //! ❌ = will not compile
 //!
 //! ## `Notification`
-//! <table>
-//! <thead>
-//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
-//!
-//!  <tr> <td> fn appname(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn summary(...)  </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn subtitle(...) </td>  <td>   </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn body(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn icon(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn auto_icon(...)</td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn hint(...)     </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn timeout(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn urgency(...)  </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn action(...)   </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn id(...)       </td>  <td> ✔︎ </td>  <td>   </td>  </tr>
-//!  <tr> <td> fn finalize(...) </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//!  <tr> <td> fn show(...)     </td>  <td> ✔︎ </td>  <td> ✔︎ </td>  </tr>
-//! </table>
+//! | method              | XDG   | macOS |
+//! |---------------------|-------|-------|
+//! |  `fn appname(...)`  |  ✔︎    |       |
+//! |  `fn summary(...)`  |  ✔︎    | ✔︎     |
+//! |  `fn subtitle(...)` |       | ✔︎     |
+//! |  `fn body(...)`     |  ✔︎    | ✔︎     |
+//! |  `fn icon(...)`     |  ✔︎    |       |
+//! |  `fn auto_icon(...)`|  ✔︎    |       |
+//! |  `fn hint(...)`     |  ✔︎    |       |
+//! |  `fn timeout(...)`  |  ✔︎    |       |
+//! |  `fn urgency(...)`  |  ✔︎    |       |
+//! |  `fn action(...)`   |  ✔︎    |       |
+//! |  `fn id(...)`       |  ✔︎    |       |
+//! |  `fn finalize(...)` |  ✔︎    | ✔︎     |
+//! |  `fn show(...)`     |  ✔︎    | ✔︎     |
 //!
 //! ## `NotificationHandle`
-//! <table>
-//! <thead>
-//! <tr> <td>method</td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
-//! <tr> <td> fn wait_for_action(...)</td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn close(...)          </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn on_close(...)       </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn update(...)         </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! <tr> <td> fn id(...)             </td>  <td>  ✔︎  </td>  <td> ❌ </td>    </tr>
-//! </table>
+//!
+//! | method                   | XDG | macOS |
+//! |--------------------------|-----|-------|
+//! | `fn wait_for_action(...)`|  ✔︎  |  ❌   |
+//! | `fn close(...)`          |  ✔︎  |  ❌   |
+//! | `fn on_close(...)`       |  ✔︎  |  ❌   |
+//! | `fn update(...)`         |  ✔︎  |  ❌   |
+//! | `fn id(...)`             |  ✔︎  |  ❌   |
 //!
 //! ## Functions
-//! <table>
-//! <thead>
-//! <tr> <td></td> <td>XDG</td> <td>macOS</td> </tr>
-//! </thead>
 //!
-//! <tr> <td> fn get_capabilities(...)</td>                 <td> ✔︎ </td>  <td> ❌ </td> </tr>
-//! <tr> <td> fn get_server_information(...)</td>           <td> ✔︎ </td>  <td> ❌ </td> </tr>
-//! <tr> <td> fn set_application(...)</td>                  <td> ❌ </td>  <td> ✔︎ </td> </tr>
-//! <tr> <td> fn get_bundle_identifier_or_default(...)</td> <td> ❌ </td>  <td> ✔︎ </td> </tr>
+//! |                                            | XDG | macOS |
+//! |--------------------------------------------|-----|-------|
+//! | `fn get_capabilities(...)`                 | ✔︎   |    ❌ |
+//! | `fn get_server_information(...)`           | ✔︎   |    ❌ |
+//! | `fn set_application(...)`                  | ❌  |    ✔︎  |
+//! | `fn get_bundle_identifier_or_default(...)` | ❌  |    ✔︎  |
 //!
 //! </table>
 //!
