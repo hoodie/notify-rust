@@ -46,3 +46,17 @@ gnome-shell:
     "persistence",
     "sound"
 ]
+Xfce Notify Daemon:
+  ServerInformation:
+    name: Xfce Notify Daemon
+    vendor: Xfce
+    version: 0.4.3
+    spec_version: 1.2
+  capabilities:  [
+    "actions",
+    "body",
+    "body-hyperlinks",
+    "body-markup",
+    "icon-static",
+    "x-canonical-private-icon-only"
+]
