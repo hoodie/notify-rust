@@ -1,23 +1,18 @@
 #![allow(missing_docs)]
-#[cfg(all(unix, not(target_os = "macos")))]
-use dbus;
-
-#[cfg(target_os = "macos")]
-use mac_notification_sys::error::{ApplicationError, NotificationError};
 use std::{fmt, num};
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    // #[fail(display="{}", _0)]
     #[cfg(all(unix, not(target_os = "macos")))]
     Dbus(dbus::Error),
 
-    // #[fail(display="Parsing Error")]
+    #[cfg(target_os = "macos")]
+    MacNotificationSys(mac_notification_sys::error::Error),
+
     Parse(num::ParseIntError),
 
-    // #[fail(display="The running server supplied an unknown version: {}", _0 )]
     SpecVersion(String),
 }
 
@@ -29,7 +24,10 @@ pub struct Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
+            #[cfg(all(unix, not(target_os = "macos")))]
             ErrorKind::Dbus(ref e) => write!(f, "{}", e),
+            #[cfg(target_os = "macos")]
+            ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
         }
@@ -42,6 +40,13 @@ impl std::error::Error for Error {}
 impl From<dbus::Error> for Error {
     fn from(e: dbus::Error) -> Error {
         Error { kind: ErrorKind::Dbus(e) }
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl From<mac_notification_sys::error::Error> for Error {
+    fn from(e: mac_notification_sys::error::Error) -> Error {
+        Error { kind: ErrorKind::MacNotificationSys(e) }
     }
 }
 
