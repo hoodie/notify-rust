@@ -14,6 +14,9 @@ pub enum ErrorKind {
     Parse(num::ParseIntError),
 
     SpecVersion(String),
+
+    /// only here for backwards compatibility
+    Msg(String)
 }
 
 #[derive(Debug)]
@@ -30,6 +33,7 @@ impl fmt::Display for Error {
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
+            ErrorKind::Msg(ref e) => write!(f, "{}", e),
         }
     }
 }
