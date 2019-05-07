@@ -19,19 +19,15 @@ notify-rust = "3"
 
 # Requirements
 
-* `rustc` >= 1.27
-* linux, with `libdbus-1`
+* `rustc` >= 1.31
+* linux, with `libdbus` (see [dbus-rs](https://github.com/diwic/dbus-rs#requirements))
 * macos
-* no windows support
-
-## Compiletime requirements
-
-* `libdbus-1-dev`
+* no windows support, yet
 
 # Examples
+
 ## Example 1 (Simple Notification)
 ```rust
-extern crate notify_rust;
 use notify_rust::Notification;
 Notification::new()
     .summary("Firefox News")
@@ -42,7 +38,6 @@ Notification::new()
 
 ## Example 2 (Persistent Notification)
 ```rust
-extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 Notification::new()

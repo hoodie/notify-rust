@@ -1,10 +1,23 @@
 #![allow(missing_docs)]
 use std::{fmt, num};
 
+
+/// Convenient wrapper around `std::Result`. 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
+
+/// The Error type.
+#[derive(Debug)]
+pub struct Error {
+    kind: ErrorKind
+}
+
+/// The kind of an error.
 #[derive(Debug)]
 pub enum ErrorKind {
+    /// only here for backwards compatibility
+    Msg(String),
+
     #[cfg(all(unix, not(target_os = "macos")))]
     Dbus(dbus::Error),
 
@@ -16,11 +29,6 @@ pub enum ErrorKind {
     SpecVersion(String),
 }
 
-#[derive(Debug)]
-pub struct Error {
-    kind: ErrorKind
-}
-
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
@@ -30,6 +38,7 @@ impl fmt::Display for Error {
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
+            ErrorKind::Msg(ref e) => write!(f, "{}", e),
         }
     }
 }
