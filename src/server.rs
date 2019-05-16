@@ -86,7 +86,7 @@ impl NotificationServer {
                 .introspectable()
                 .add(factory
                     .interface(NOTIFICATION_NAMESPACE, ())
-                    .add_m(method_notify(&factory, Box::new(closure) ))
+                    .add_m(method_notify(&factory, closure))
                     .add_m(method_close_notification(&factory))
                     .add_m(Self::stop_server(mytex.clone(), &factory))
                     // .add_signal(method_notification_closed(&factory))
@@ -122,7 +122,7 @@ impl NotificationServer {
 
 }
 
-fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: Box<F>) -> tree::Method<MTFn<()>, ()>
+fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tree::Method<MTFn<()>, ()>
         where F: Fn(&Notification),
 {
     factory.method("Notify", (), move |minfo| {
