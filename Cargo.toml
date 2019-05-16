@@ -8,7 +8,7 @@ repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
 
 license = "MIT/Apache-2.0"
-keywords = ["desktop", "notification", "notify", "dbus", "libnotify", "linux", "macos"]
+keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
 
 include = [
