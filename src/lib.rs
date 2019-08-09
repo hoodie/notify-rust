@@ -32,7 +32,7 @@
 //! # use notify_rust::*;
 //! Notification::new()
 //!     .summary("Category:email")
-//!     .body("This has nothing to do with emails.\nIt should not go away until you acknoledge it.")
+//!     .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
 //!     .hint(NotificationHint::Category("email".to_owned()))
@@ -66,7 +66,7 @@
 //!
 //! ## Minimal Example
 //!
-//! You can ommit almost everything
+//! You can omit almost everything
 //!
 //! ```no_run
 //! # use notify_rust::Notification;
@@ -325,10 +325,10 @@ impl Notification {
 
     /// Set the `icon` field automatically.
     ///
-    /// This looks at your binaries name and uses it to set the icon.t
+    /// This looks at your binary's name and uses it to set the icon.
     ///
     /// # Platform support
-    /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
+    /// macOS does not support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn auto_icon(&mut self) -> &mut Notification {
         self.icon = exe_name();
         self
@@ -337,7 +337,7 @@ impl Notification {
     /// Adds a hint.
     ///
     /// This method will add a hint to the internal hint hashset.
-    /// Hints must be of type NotificationHint.
+    /// Hints must be of type `NotificationHint`.
     ///
     /// Many of these are again wrapped by more convenient functions such as:
     ///
@@ -386,7 +386,7 @@ impl Notification {
     /// Pick between Medium, Low and High.
     ///
     /// # Platform support
-    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS it to cool to even have something like this in it's spec 😊.
+    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS is too cool to even have something like this in its spec 😊.
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint(NotificationHint::Urgency(urgency)); // TODO impl as T where T: Into<NotificationUrgency>
         self
@@ -401,7 +401,7 @@ impl Notification {
     /// >  Each odd element in the list is the localized string that will be displayed to the user.
     ///
     /// There is nothing fancy going on here yet.
-    /// **Carefull! This replaces the internal list of actions!**
+    /// **Careful! This replaces the internal list of actions!**
     ///
     /// (xdg only)
     #[deprecated(note = "please use .action() only")]
