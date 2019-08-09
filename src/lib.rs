@@ -199,11 +199,11 @@ pub struct Notification {
     /// Subtitle for macOS
     pub subtitle: Option<String>,
     /// Multiple lines possible, may support simple markup,
-    /// checkout `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
+    /// check out `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
     pub body:    String,
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
-    /// Checkout `NotificationHint`
+    /// Check out `NotificationHint`
     pub hints:   HashSet<NotificationHint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
