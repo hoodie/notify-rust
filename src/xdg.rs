@@ -31,11 +31,11 @@ impl NotificationHandle {
     }
 
     /// Waits for the user to act on a notification and then calls
-    /// `invokation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invokation_closure: F)
+    /// `invocation_closure` with the name of the corresponding action.
+    pub fn wait_for_action<F>(self, invocation_closure: F)
         where F: FnOnce(&str)
     {
-        wait_for_action_signal(&self.connection, self.id, invokation_closure);
+        wait_for_action_signal(&self.connection, self.id, invocation_closure);
     }
 
     /// Manually close the notification
@@ -83,7 +83,7 @@ impl NotificationHandle {
     /// notification.update();
     /// ```
     /// Watch out for different implementations of the
-    /// notification server! On plasma5 or instance, you should also change the appname, so the old
+    /// notification server! On plasma5 for instance, you should also change the appname, so the old
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
     pub fn update(&mut self) {
@@ -105,7 +105,7 @@ impl Deref for NotificationHandle {
     }
 }
 
-/// Allow to easily modify notification properties
+/// Allow you to easily modify notification properties
 impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
         &mut self.notification
@@ -167,7 +167,7 @@ pub struct ServerInformation {
 }
 
 /// Strictly internal.
-/// The Notificationserver implemented here exposes a "Stop" function.
+/// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
 pub fn stop_server() {
     let message = build_message("Stop");

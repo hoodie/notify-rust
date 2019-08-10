@@ -42,7 +42,7 @@ use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 Notification::new()
     .summary("Category:email")
-    .body("This has nothing to do with emails.\nIt should not go away until you acknoledge it.")
+    .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
     .icon("thunderbird")
     .appname("thunderbird")
     .hint(Hint::Category("email".to_owned()))
@@ -58,6 +58,6 @@ Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the 
 
 ### macOS support
 
-This library shines on linux and bsd, which is it's original target platform.
+This library shines on linux and bsd, which is its original target platform.
 Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
 However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features. Please refer to the You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.

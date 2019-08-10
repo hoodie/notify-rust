@@ -1,4 +1,4 @@
-//! **Experimental** server taking the place of your Desktop Environments Notification Server.
+//! **Experimental** server taking the place of your Desktop Environment's Notification Server.
 //!
 //! This is not nearly meant for anything but testing, as it only prints notifications to stdout.
 //! It does not respond properly either yet.

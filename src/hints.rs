@@ -1,4 +1,4 @@
-//! `NotificationHints` allow to pass extra information to the server.
+//! `NotificationHints` allow you to pass extra information to the server.
 //!
 //! Many of these are standardized by either:
 //!
@@ -137,7 +137,7 @@ impl From<NotificationImage> for MessageItem {
     }
 }
 
-/// All currently implemented `NotificationHints` that can be send.
+/// All currently implemented `NotificationHints` that can be sent.
 ///
 /// as found on https://developer.gnome.org/notification-spec/
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -168,13 +168,13 @@ pub enum NotificationHint {
     /// Play the sound at this path.
     SoundFile(String),
 
-    /// 	A themeable named sound from the freedesktop.org [sound naming specification](http://0pointer.de/public/sound-naming-spec.html) to play when the notification pops up. Similar to icon-name, only for sounds. An example would be "message-new-instant".
+    /// A themeable named sound from the freedesktop.org [sound naming specification](http://0pointer.de/public/sound-naming-spec.html) to play when the notification pops up. Similar to icon-name, only for sounds. An example would be "message-new-instant".
     SoundName(String),
 
     /// Suppress the notification sound.
     SuppressSound(bool),
 
-    /// When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist. When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist.
+    /// When set the server will treat the notification as transient and by-pass the server's persistence capability, if it should exist.
     Transient(bool),
 
     /// Lets the notification point to a certain 'x' position on the screen.
@@ -230,7 +230,7 @@ impl NotificationHint {
     }
 }
 
-/// convinience converting a name and value into a hint
+/// convenience converting a name and value into a hint
 pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, String> {
     use NotificationHint as Hint;
     match (name,value){
