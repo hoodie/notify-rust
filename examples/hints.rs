@@ -3,6 +3,7 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 use notify_rust::NotificationUrgency::*;
+use notify_rust::NotificationImage;
 
 fn freeze(message: &str) {
     println!("{}\n", message);
@@ -54,8 +55,8 @@ fn main() {
         for i in 0..128 * 128 * 3 {
             image_data[i] = (i % 256) as u8;
         }
-        Notification::new().hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
-                           .summary("You should see stripes in this notification")
+        Notification::new().hint(Hint::ImageData(NotificationImage::from_rgb(128, 128, image_data).unwrap()))
+                           .summary("You should see stripes in this notification");
     }
 
     // freeze("Custom");
