@@ -1,4 +1,4 @@
-use error::*;
+use crate::error::*;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, Eq, Debug)]

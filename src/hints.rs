@@ -18,10 +18,10 @@ use super::NotificationUrgency;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use dbus::MessageItemArray;
 
-use miniver::Version;
+use crate::miniver::Version;
 
 #[cfg(all(unix, not(target_os = "macos")))]
-use util::*;
+use crate::util::*;
 
 use std::cmp::Ordering;
 
@@ -232,7 +232,7 @@ impl NotificationHint {
 
 /// convenience converting a name and value into a hint
 pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, String> {
-    use NotificationHint as Hint;
+    use crate::NotificationHint as Hint;
     match (name,value){
         (ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
         (CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),

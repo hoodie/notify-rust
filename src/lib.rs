@@ -153,24 +153,24 @@ extern crate dbus;
 #[cfg(target_os = "macos")] mod macos;
 #[cfg(target_os = "macos")] pub use macos::*;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
-#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::NotificationHandle;
-#[cfg(all(unix, not(target_os = "macos")))] pub use xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
+#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::NotificationHandle;
+#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
 
-#[cfg(all(unix, not(target_os = "macos")))] use xdg::build_message;
+#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::build_message;
 
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
 pub mod hints;
-pub use hints::NotificationHint;
+pub use crate::hints::NotificationHint;
 #[cfg(feature = "images")]
 pub use hints::NotificationImage;
 
 pub mod error;
-pub use error::{Error, ErrorKind};
+pub use crate::error::{Error, ErrorKind};
 
-use error::*;
+use crate::error::*;
 
 mod miniver;
 

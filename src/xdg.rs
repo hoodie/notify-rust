@@ -7,7 +7,7 @@ use std::thread;
 
 use super::Notification;
 use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem};
-use error::*;
+use crate::error::*;
 
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";

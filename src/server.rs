@@ -17,9 +17,9 @@ use dbus::tree::{self, Factory, Interface, MTFn, MTSync, Tree};
 use dbus::{arg, BusType, Connection, NameFlag, Path};
 
 use super::{Notification, NotificationHint, Timeout};
-use util::*;
-use xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
-use hints::hints_from_variants;
+use crate::util::*;
+use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
+use crate::hints::hints_from_variants;
 
 static DBUS_ERROR_FAILED: &str = "org.freedesktop.DBus.Error.Failed";
 /// Version of the crate equals the version server.
@@ -171,7 +171,7 @@ fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tre
 fn method_close_notification(factory: &Factory<MTFn>) -> tree::Method<MTFn<()>, ()> {
     factory.method("CloseNotification", (), |minfo| {
         let mut i = minfo.msg.iter_init();
-        let id: u32 = try!(i.read());
+        let id: u32 = r#try!(i.read());
 
         let rm = minfo.msg.method_return();
         Ok(vec!(rm))
