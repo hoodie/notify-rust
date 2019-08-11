@@ -416,11 +416,11 @@ mod test {
                 Item::Bool(false),
                 Item::Int32(8),
                 Item::Int32(3),
-                Item::Array(vec![
+                Item::Array(dbus::MessageItemArray::new(vec![
                     Item::Byte(0),
                     Item::Byte(0),
                     Item::Byte(0),
-                ],"y".into())
+                ],"ay".into()).unwrap())
             ]))))
         );
         assert_eq!(item, test_item);
