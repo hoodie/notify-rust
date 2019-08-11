@@ -3,6 +3,7 @@ extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::NotificationHint as Hint;
 use notify_rust::NotificationUrgency::*;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use notify_rust::NotificationImage;
 
 fn freeze(message: &str) {
