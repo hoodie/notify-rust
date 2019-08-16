@@ -133,7 +133,7 @@ fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tre
         let summary: String = i.read()?;
         let body: String = i.read()?;
         let actions: Vec<String> = i.read()?;
-        let hints: ::std::collections::HashMap<String, arg::Variant<Box<arg::RefArg>>> = i.read()?;
+        let hints: ::std::collections::HashMap<String, arg::Variant<Box<dyn arg::RefArg>>> = i.read()?;
         let timeout: i32 = i.read()?;
         println!("hints {:?} ", hints);
 
