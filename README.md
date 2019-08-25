@@ -22,7 +22,7 @@ notify-rust = "3"
 * `rustc` >= 1.32
 * linux, with `libdbus` (see [dbus-rs](https://github.com/diwic/dbus-rs#requirements))
 * macos
-* no windows support, yet
+* basic windows support
 
 # Examples
 
