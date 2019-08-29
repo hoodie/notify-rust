@@ -27,9 +27,6 @@ pub enum ErrorKind {
     Parse(num::ParseIntError),
 
     SpecVersion(String),
-
-    /// only here for backwards compatibility
-    Msg(String)
 }
 
 impl fmt::Display for Error {
