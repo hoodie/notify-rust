@@ -1,4 +1,4 @@
-use dbus::MessageItem;
+use dbus::arg::messageitem::MessageItem;
 
 // TODO get rid of the util functions
 

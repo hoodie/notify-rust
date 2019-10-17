@@ -14,7 +14,8 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use dbus::tree::{self, Factory, Interface, MTFn, MTSync, Tree};
-use dbus::{arg, BusType, Connection, NameFlag, Path};
+use dbus::{arg, Path};
+use dbus::ffidisp::{BusType, NameFlag, Connection};
 
 use super::{Notification, NotificationHint, Timeout};
 use crate::util::*;
