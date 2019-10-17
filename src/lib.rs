@@ -570,14 +570,11 @@ impl Into<i32> for Timeout {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> dbus::FromMessageItem<'a> for Timeout {
-    fn from(i: &'a MessageItem) -> std::result::Result<Timeout, ()> {
-        if let MessageItem::Int32(ref b) = *i {
-            let timeout_millis: i32 = *b;
-            Ok(timeout_millis.into())
-        } else {
-            Err(())
-        }
+impl std::convert::TryFrom<&MessageItem> for Timeout {
+    type Error = ();
+
+    fn try_from(mi: &MessageItem) -> std::result::Result<Timeout, ()> {
+        mi.inner::<i32>().map(|i| i.into())
     }
 }
 
