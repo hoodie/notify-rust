@@ -146,7 +146,8 @@ extern crate dbus;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::{Connection, BusType, MessageItem, MessageItemArray};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
 #[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 

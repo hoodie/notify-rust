@@ -6,7 +6,9 @@ use std::time::Duration;
 use std::thread;
 
 use super::Notification;
-use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem};
+use dbus::Message;
+use dbus::arg::messageitem::MessageItem;
+use dbus::ffidisp::{BusType, Connection, ConnectionItem};
 use crate::error::*;
 
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";

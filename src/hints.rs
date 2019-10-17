@@ -13,7 +13,7 @@
 use super::NotificationUrgency;
 
 #[cfg(all(unix, not(target_os = "macos")))] use std::collections::{HashMap, HashSet};
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::{MessageItem, arg::RefArg};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::{messageitem::MessageItem, RefArg};
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use dbus::MessageItemArray;
