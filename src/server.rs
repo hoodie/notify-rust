@@ -18,7 +18,6 @@ use dbus::{arg, Path};
 use dbus::ffidisp::{BusType, NameFlag, Connection};
 
 use super::{Notification, NotificationHint, Timeout};
-use crate::util::*;
 use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 use crate::hints::hints_from_variants;
 

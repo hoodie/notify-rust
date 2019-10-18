@@ -20,9 +20,6 @@ use dbus::MessageItemArray;
 
 use crate::miniver::Version;
 
-#[cfg(all(unix, not(target_os = "macos")))]
-use crate::util::*;
-
 use std::cmp::Ordering;
 
 /// "action-icons"
@@ -262,9 +259,10 @@ pub fn image_spec(version: Version) -> String {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> From<&'a NotificationHint> for MessageItem {
-    fn from(hint: &'a NotificationHint) -> Self {
-        let hint:(String,MessageItem) = match *hint {
+impl From<&NotificationHint> for (MessageItem, MessageItem) {
+    fn from(hint: &NotificationHint) -> Self {
+
+        let (key, value): (String, MessageItem) = match *hint {
             NotificationHint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
@@ -284,43 +282,58 @@ impl<'a> From<&'a NotificationHint> for MessageItem {
             NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
         };
 
-        MessageItem::DictEntry(
-            Box::new(hint.0.into()),
-            Box::new(MessageItem::Variant( Box::new(hint.1) ))
-            )
+        (MessageItem::Str(key), value)
     }
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-impl<'a> From<&'a MessageItem> for NotificationHint {
-    fn from (item: &MessageItem) -> NotificationHint {
-        match item{
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == CATEGORY       => NotificationHint::Category(unwrap_message_str(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == ACTION_ICONS   => NotificationHint::ActionIcons(unwrap_message_bool(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == DESKTOP_ENTRY  => NotificationHint::DesktopEntry(unwrap_message_str(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == IMAGE_PATH     => NotificationHint::ImagePath(unwrap_message_str(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == RESIDENT       => NotificationHint::Resident(unwrap_message_bool(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == SOUND_FILE     => NotificationHint::SoundFile(unwrap_message_str(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == SOUND_NAME     => NotificationHint::SoundName(unwrap_message_str(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == SUPPRESS_SOUND => NotificationHint::SuppressSound(unwrap_message_bool(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == TRANSIENT      => NotificationHint::Transient(unwrap_message_bool(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == X              => NotificationHint::X(unwrap_message_int(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == Y              => NotificationHint::Y(unwrap_message_int(&**value)),
-            &MessageItem::DictEntry(ref key, ref value) if unwrap_message_str(&**key) == URGENCY        => NotificationHint::Urgency(
-                match unwrap_message_int(&**value){
-                    0 => NotificationUrgency::Low,
-                    2 => NotificationUrgency::Critical,
-                    _ => NotificationUrgency::Normal
-                }),
-            &MessageItem::DictEntry(ref key, ref value) => match try_unwrap_message_int(value) {
-                    Some(num) => NotificationHint::CustomInt(unwrap_message_str(&**key), num),
-                    None => NotificationHint::Custom(unwrap_message_str(&**key), unwrap_message_str(&**value))
-            }
-            other => {
-                println!("Invalid {:#?} ", other);
-                NotificationHint::Invalid
-            }
+impl From<(&MessageItem, &MessageItem)> for NotificationHint {
+    fn from ((key, mut value): (&MessageItem, &MessageItem)) -> Self {
+        use NotificationHint::{
+            Category,
+            ActionIcons,
+            DesktopEntry,
+            ImagePath,
+            Resident,
+            SoundFile,
+            SoundName,
+            SuppressSound,
+            Transient,
+            Urgency,
+            CustomInt,
+            Custom,
+            Invalid,
+        };
+
+        // If this is a variant, consider the thing inside it
+        // If it's a nested variant, keep drilling down until we get a real value
+        while let MessageItem::Variant(inner) = value {
+            value = &*inner;
         }
+
+        let is_stringy = if let Ok(_) = value.inner::<&str>() { true } else { false };
+
+        match key.inner::<&str>() {
+            Ok(CATEGORY) => value.inner::<&str>().map(String::from).map(Category),
+            Ok(ACTION_ICONS) => value.inner().map(ActionIcons),
+            Ok(DESKTOP_ENTRY) => value.inner::<&str>().map(String::from).map(DesktopEntry),
+            Ok(IMAGE_PATH) => value.inner::<&str>().map(String::from).map(ImagePath),
+            Ok(RESIDENT) => value.inner().map(Resident),
+            Ok(SOUND_FILE) => value.inner::<&str>().map(String::from).map(SoundFile),
+            Ok(SOUND_NAME) => value.inner::<&str>().map(String::from).map(SoundName),
+            Ok(SUPPRESS_SOUND) => value.inner().map(SuppressSound),
+            Ok(TRANSIENT) => value.inner().map(Transient),
+            Ok(X) => value.inner().map(NotificationHint::X),
+            Ok(Y) => value.inner().map(NotificationHint::Y),
+            Ok(URGENCY) => value.inner().map(|i| match i {
+                0 => NotificationUrgency::Low,
+                2 => NotificationUrgency::Critical,
+                _ => NotificationUrgency::Normal
+            }).map(Urgency),
+            Ok(k) if is_stringy => value.inner::<&str>().map(|v| Custom(k.to_string(), v.to_string())),
+            Ok(k) => value.inner().map(|v| CustomInt(k.to_string(), v)),
+            _ => Err(()),
+        }.unwrap_or(Invalid)
     }
 }
 
@@ -366,7 +379,7 @@ pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> Hash
 
 #[cfg(all(test, unix, not(target_os = "macos")))]
 mod test {
-    use dbus::MessageItem as Item;
+    use dbus::arg::messageitem::MessageItem as Item;
 
     use super::*;
     use super::NotificationHint as Hint;
@@ -374,32 +387,36 @@ mod test {
 
     #[test]
     fn hint_to_item() {
-        let category  = &Hint::Category("testme".to_owned());
-        let item:Item = category.into();
-        let test_item = Item::DictEntry(
-            Box::new(Item::Str("category".into())),
-            Box::new(Item::Variant(  Box::new(Item::Str("testme".into()))  ))
-            );
-        assert_eq!(item, test_item);
+        let category = &Hint::Category("testme".to_owned());
+        let (k, v) = category.into();
+
+        let test_k = Item::Str("category".into());
+        let test_v = Item::Str("testme".into());
+
+        assert_eq!(k, test_k);
+        assert_eq!(v, test_v);
     }
 
     #[test]
     fn urgency() {
         let low = &Hint::Urgency(Low);
-        let low_item:Item = low.into();
-        let test_item = Item::DictEntry(
-            Box::new(Item::Str("urgency".into())),
-            Box::new(Item::Variant(  Box::new(Item::Byte(0)))  ));
-        assert_eq!(low_item, test_item);
+        let (k, v) = low.into();
+
+        let test_k = Item::Str("urgency".into());
+        let test_v = Item::Byte(0);
+
+        assert_eq!(k, test_k);
+        assert_eq!(v, test_v);
     }
 
     #[test]
     fn simple_hint_to_item() {
         let old_hint = &NotificationHint::Custom("foo".into(), "bar".into());
-        let item: MessageItem = old_hint.into();
-        let item_ref = &item;
-        let hint: NotificationHint = item_ref.into();
-        assert!(old_hint == &hint);
+
+        let (k, v) = old_hint.into();
+        let hint: NotificationHint = (&k, &v).into();
+
+        assert_eq!(old_hint, &hint);
     }
 
     #[test]
