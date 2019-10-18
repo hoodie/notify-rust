@@ -258,6 +258,7 @@ pub fn image_spec(version: Version) -> String {
     }
 }
 
+#[deprecated(note = "Prefer the DBus Arg and RefArg APIs")]
 #[cfg(all(unix, not(target_os = "macos")))]
 impl From<&NotificationHint> for (MessageItem, MessageItem) {
     fn from(hint: &NotificationHint) -> Self {
@@ -286,6 +287,20 @@ impl From<&NotificationHint> for (MessageItem, MessageItem) {
     }
 }
 
+#[deprecated(note = "To convert a key-value pair of MessageItems, use From<(&MessageItem, &MessageItem)>")]
+#[cfg(all(unix, not(target_os = "macos")))]
+impl From<&MessageItem> for NotificationHint {
+
+    fn from(_: &MessageItem) -> Self {
+
+        // This is kept for backwards-compatibility. The ability to transform
+        // a single MessageItem into a NotificationHint was removed in dbus 0.7
+        // when DictEntry was removed
+        Self::Invalid
+    }
+}
+
+#[deprecated(note = "Prefer the DBus Arg and RefArg APIs")]
 #[cfg(all(unix, not(target_os = "macos")))]
 impl From<(&MessageItem, &MessageItem)> for NotificationHint {
     fn from ((key, mut value): (&MessageItem, &MessageItem)) -> Self {
