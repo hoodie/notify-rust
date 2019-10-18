@@ -148,7 +148,6 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
-#[cfg(all(unix, not(target_os = "macos")))] mod util;
 #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
 #[cfg(target_os = "macos")] mod macos;
@@ -446,7 +445,7 @@ impl Notification {
         if !self.hints.is_empty() {
             let hints = self.hints.iter().map(|hint| hint.into()).collect::<Vec<_>>();
 
-            if let Ok(array) = MessageItem::new_array(hints) {
+            if let Ok(array) = MessageItem::new_dict(hints) {
                 return Ok(array);
             }
         }
