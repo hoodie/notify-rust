@@ -11,6 +11,13 @@ use notify_rust::NotificationUrgency::*;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use notify_rust::NotificationImage as Image;
 
+use ctor::ctor;
+
+#[ctor]
+fn init_color_backtrace() {
+    color_backtrace::install();
+}
+
 #[test]
 fn burst()
 {
@@ -20,14 +27,13 @@ fn burst()
         "If they don't than",
         "I will have to complain about it."
     ]{
-        assert!(
         Notification::new()
             .summary("burst")
             .appname(&msg)
             .body(&msg)
             .icon("media-floppy")
             .show()
-            .is_ok());
+            .unwrap();
     }
 
     for msg in &[
@@ -36,13 +42,13 @@ fn burst()
         "that is because the all have the same",
         "appname."
     ]{
-        assert!(
+
         Notification::new()
             .summary("merged burst")
             .body(&msg)
             .icon("applications-toys")
             .show()
-            .is_ok());
+            .unwrap();
     }
 }
 
@@ -61,8 +67,11 @@ fn closing()
 fn capabilities()
 {
     let capabilities:Vec<String> = get_capabilities().unwrap();
-    for capability in capabilities{
-        assert!(Notification::new().summary("capability").body(&capability).show().is_ok());
+    for capability in capabilities {
+            Notification::new()
+                .summary("capability")
+                .body(&capability)
+                .show().unwrap();
     }
 }
 
@@ -117,45 +126,42 @@ fn urgency()
         Hint::Urgency(Normal),
         Hint::Urgency(Critical)
     ]{
-        assert!(
         Notification::new()
             .summary(&format!("Urgency {:?}", urgency))
             .hint(urgency.clone())
-            .show().is_ok());
+            .show().unwrap();
     }
 }
 
 #[test]
 fn category()
 {
-    assert!(
     Notification::new()
         .appname("thunderbird")
         .summary("Category:email")
         .icon("thunderbird")
         .hint(Hint::Category("email".to_string()))
-        .show().is_ok());
+        .show().unwrap();
 }
 
 #[test]
 fn persistent() {
 
-    assert!(
+    
     Notification::new()
         .summary("Incoming Call: Your Mom!")
         .body("Resident:True")
         .icon("call-start")
         .hint(Hint::Resident(true))
-        .show().is_ok());
+        .show().unwrap();
 
-    assert!(
     Notification::new()
         .summary("Incoming Call: Your Mom!")
         .body("Resident:False, but Timeout=0")
         .icon("call-start")
         .hint(Hint::Resident(false))
         .timeout(0)
-        .show().is_ok());
+        .show().unwrap();
 
 }
 
@@ -172,11 +178,11 @@ fn imagedata() {
             data[ offset + 2 ] = y as u8;
         }
     }
-    assert!(
+
     Notification::new()
         .summary("I can haz image data!")
         .hint(Hint::ImageData(Image::from_rgb(64,64,data).unwrap()))
-        .show().is_ok());
+        .show().unwrap();
 }
 
 }

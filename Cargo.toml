@@ -35,3 +35,7 @@ mac-notification-sys = "0.3"
 default = []
 debug_namespace = []
 images = ["image", "lazy_static"]
+
+[dev-dependencies]
+color-backtrace = "0.2.3"
+ctor = "0.1.12"
