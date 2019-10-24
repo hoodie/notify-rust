@@ -108,7 +108,7 @@ impl NotificationImage {
     }
 }
 
-/// Errors that can occour when creating an Image
+/// Errors that can occur when creating an Image
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub enum ImageError {
@@ -283,7 +283,7 @@ impl From<&NotificationHint> for (MessageItem, MessageItem) {
             NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
         };
 
-        (MessageItem::Str(key), value)
+        (MessageItem::Str(key), MessageItem::Variant(Box::new(value)))
     }
 }
 
@@ -304,21 +304,7 @@ impl From<&MessageItem> for NotificationHint {
 #[cfg(all(unix, not(target_os = "macos")))]
 impl From<(&MessageItem, &MessageItem)> for NotificationHint {
     fn from ((key, mut value): (&MessageItem, &MessageItem)) -> Self {
-        use NotificationHint::{
-            Category,
-            ActionIcons,
-            DesktopEntry,
-            ImagePath,
-            Resident,
-            SoundFile,
-            SoundName,
-            SuppressSound,
-            Transient,
-            Urgency,
-            CustomInt,
-            Custom,
-            Invalid,
-        };
+        use NotificationHint as Hint;
 
         // If this is a variant, consider the thing inside it
         // If it's a nested variant, keep drilling down until we get a real value
@@ -326,29 +312,29 @@ impl From<(&MessageItem, &MessageItem)> for NotificationHint {
             value = &*inner;
         }
 
-        let is_stringy = if let Ok(_) = value.inner::<&str>() { true } else { false };
+        let is_stringy = value.inner::<&str>().is_ok();
 
         match key.inner::<&str>() {
-            Ok(CATEGORY) => value.inner::<&str>().map(String::from).map(Category),
-            Ok(ACTION_ICONS) => value.inner().map(ActionIcons),
-            Ok(DESKTOP_ENTRY) => value.inner::<&str>().map(String::from).map(DesktopEntry),
-            Ok(IMAGE_PATH) => value.inner::<&str>().map(String::from).map(ImagePath),
-            Ok(RESIDENT) => value.inner().map(Resident),
-            Ok(SOUND_FILE) => value.inner::<&str>().map(String::from).map(SoundFile),
-            Ok(SOUND_NAME) => value.inner::<&str>().map(String::from).map(SoundName),
-            Ok(SUPPRESS_SOUND) => value.inner().map(SuppressSound),
-            Ok(TRANSIENT) => value.inner().map(Transient),
-            Ok(X) => value.inner().map(NotificationHint::X),
-            Ok(Y) => value.inner().map(NotificationHint::Y),
+            Ok(CATEGORY) => value.inner::<&str>().map(String::from).map(Hint::Category),
+            Ok(ACTION_ICONS) => value.inner().map(Hint::ActionIcons),
+            Ok(DESKTOP_ENTRY) => value.inner::<&str>().map(String::from).map(Hint::DesktopEntry),
+            Ok(IMAGE_PATH) => value.inner::<&str>().map(String::from).map(Hint::ImagePath),
+            Ok(RESIDENT) => value.inner().map(Hint::Resident),
+            Ok(SOUND_FILE) => value.inner::<&str>().map(String::from).map(Hint::SoundFile),
+            Ok(SOUND_NAME) => value.inner::<&str>().map(String::from).map(Hint::SoundName),
+            Ok(SUPPRESS_SOUND) => value.inner().map(Hint::SuppressSound),
+            Ok(TRANSIENT) => value.inner().map(Hint::Transient),
+            Ok(X) => value.inner().map(Hint::X),
+            Ok(Y) => value.inner().map(Hint::Y),
             Ok(URGENCY) => value.inner().map(|i| match i {
                 0 => NotificationUrgency::Low,
                 2 => NotificationUrgency::Critical,
                 _ => NotificationUrgency::Normal
-            }).map(Urgency),
-            Ok(k) if is_stringy => value.inner::<&str>().map(|v| Custom(k.to_string(), v.to_string())),
-            Ok(k) => value.inner().map(|v| CustomInt(k.to_string(), v)),
+            }).map(Hint::Urgency),
+            Ok(k) if is_stringy => value.inner::<&str>().map(|v| Hint::Custom(k.to_string(), v.to_string())),
+            Ok(k) => value.inner().map(|v| Hint::CustomInt(k.to_string(), v)),
             _ => Err(()),
-        }.unwrap_or(Invalid)
+        }.unwrap_or(Hint::Invalid)
     }
 }
 
@@ -395,18 +381,25 @@ pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> Hash
 #[cfg(all(test, unix, not(target_os = "macos")))]
 mod test {
     use dbus::arg::messageitem::MessageItem as Item;
+    use ctor::ctor;
 
     use super::*;
     use super::NotificationHint as Hint;
     use super::NotificationUrgency::*;
 
+
+    #[ctor]
+    fn init_color_backtrace() {
+        color_backtrace::install();
+    }
+
     #[test]
     fn hint_to_item() {
-        let category = &Hint::Category("testme".to_owned());
+        let category = &Hint::Category("test-me".to_owned());
         let (k, v) = category.into();
 
         let test_k = Item::Str("category".into());
-        let test_v = Item::Str("testme".into());
+        let test_v = Item::Variant(Box::new(Item::Str("test-me".into())));
 
         assert_eq!(k, test_k);
         assert_eq!(v, test_v);
@@ -418,7 +411,7 @@ mod test {
         let (k, v) = low.into();
 
         let test_k = Item::Str("urgency".into());
-        let test_v = Item::Byte(0);
+        let test_v = Item::Variant(Box::new(Item::Byte(0)));
 
         assert_eq!(k, test_k);
         assert_eq!(v, test_v);

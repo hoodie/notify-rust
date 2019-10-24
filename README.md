@@ -8,7 +8,7 @@
 [![version](https://img.shields.io/crates/v/notify-rust.svg)](https://crates.io/crates/notify-rust/)
 [![documentation](https://docs.rs/notify-rust/badge.svg)](https://docs.rs/notify-rust/)
 ![maintenance](https://img.shields.io/maintenance/yes/2021)
-[![constributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
+[![contributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
 </div>
 
 A not so well-named library for displaying desktop notifications.
