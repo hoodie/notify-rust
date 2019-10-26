@@ -148,7 +148,7 @@ extern crate dbus;
 
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
-#[cfg(all(unix, not(target_os = "macos")))] pub mod server;
+// #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
 #[cfg(target_os = "macos")] mod macos;
 #[cfg(target_os = "macos")] pub use macos::*;
@@ -166,10 +166,12 @@ pub mod hints;
 pub use crate::hints::NotificationHint;
 #[cfg(feature = "images")]
 pub use hints::NotificationImage;
+pub use hints::urgency::NotificationUrgency;
 
 pub mod error;
 pub use crate::error::{Error, ErrorKind};
 
+use crate::hints::message::NotificationHintMessage;
 use crate::error::*;
 
 mod miniver;
@@ -443,7 +445,11 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_hints(&self) -> Result<MessageItem> {
         if !self.hints.is_empty() {
-            let hints = self.hints.iter().map(|hint| hint.into()).collect::<Vec<_>>();
+            let hints = self.hints
+                .iter()
+                .cloned()
+                .map(NotificationHintMessage::wrap_hint)
+                .collect::<Vec<(MessageItem, MessageItem)>>();
 
             if let Ok(array) = MessageItem::new_dict(hints) {
                 return Ok(array);
@@ -606,43 +612,6 @@ impl Default for Notification {
             timeout:    Timeout::Default,
             sound_name: Default::default(),
             id:         None
-        }
-    }
-}
-
-
-/// Levels of Urgency.
-#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency {
-    /// The behaviour for `Low` urgency depends on the notification server.
-    Low = 0,
-    /// The behaviour for `Normal` urgency depends on the notification server.
-    Normal = 1,
-    /// A critical notification will not time out.
-    Critical = 2
-}
-
-impl<'a> From<&'a str> for NotificationUrgency {
-    fn from(string: &'a str) -> NotificationUrgency {
-        match string.to_lowercase().as_ref() {
-            "low"      |
-            "lo"       => NotificationUrgency::Low,
-            "normal"   |
-            "medium"   => NotificationUrgency::Normal,
-            "critical" |
-            "high"     |
-            "hi"       => NotificationUrgency::Critical,
-            _ => unimplemented!()
-        }
-    }
-}
-
-impl From<Option<u64>> for NotificationUrgency {
-    fn from(maybe_int: Option<u64>) -> NotificationUrgency {
-        match maybe_int {
-            Some(0) => NotificationUrgency::Low,
-            Some(2) => NotificationUrgency::Critical,
-            _ => NotificationUrgency::Normal
         }
     }
 }
