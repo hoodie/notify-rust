@@ -88,7 +88,7 @@ impl From<NotificationHintMessage> for (MessageItem, MessageItem) {
             NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
             #[cfg(all(feature = "images", unix, not(target_os ="macos")))]
-            NotificationHint::ImageData(ref image)     => (image_spec(*crate::SPEC_VERSION), image.clone().into()),
+            NotificationHint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), NotificationImageMessage::from(image).into()),
             NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
             NotificationHint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),

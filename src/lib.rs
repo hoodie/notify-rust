@@ -162,19 +162,19 @@ extern crate dbus;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
-pub mod hints;
+pub mod error;
+mod miniver;
+mod timeout;
+mod hints;
+
 pub use crate::hints::NotificationHint;
 #[cfg(feature = "images")]
 pub use hints::NotificationImage;
 pub use hints::urgency::NotificationUrgency;
 
-pub mod error;
-pub use crate::error::{Error, ErrorKind};
-
 use crate::hints::message::NotificationHintMessage;
 use crate::error::*;
-
-mod miniver;
+pub use crate::timeout::Timeout;
 
 use std::collections::HashSet;
 use std::default::Default;
@@ -533,53 +533,6 @@ impl Notification {
                  hints = self.hints,
                  icon = self.icon,);
         self.show()
-    }
-}
-
-
-/// Describes the timeout of a notification
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Timeout {
-    /// Expires according to server default.
-    ///
-    /// Whatever that might be...
-    Default,
-    /// Do not expire, user will have to close this manually.
-    Never,
-    /// Expire after n milliseconds.
-    Milliseconds(u32)
-}
-
-impl Default for Timeout {
-    fn default() -> Self {
-        Timeout::Default
-    }
-}
-
-impl From<i32> for Timeout {
-    fn from(int: i32) -> Timeout {
-        if int < 0 { Timeout::Default }
-        else if int == 0 { Timeout::Never }
-        else { Timeout::Milliseconds(int as u32) }
-    }
-}
-
-impl Into<i32> for Timeout {
-    fn into(self) -> i32 {
-        match self {
-            Timeout::Default => -1,
-            Timeout::Never => 0,
-            Timeout::Milliseconds(ms) => ms as i32
-        }
-    }
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-impl std::convert::TryFrom<&MessageItem> for Timeout {
-    type Error = ();
-
-    fn try_from(mi: &MessageItem) -> std::result::Result<Timeout, ()> {
-        mi.inner::<i32>().map(|i| i.into())
     }
 }
 
