@@ -19,12 +19,12 @@ pub(crate) mod urgency;
 pub(crate) mod message;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-mod image;
+pub mod image;
 
 use self::urgency::NotificationUrgency;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-pub use self::image::{NotificationImage, image_spec};
+use self::image::NotificationImage;
 
 /// All currently implemented `NotificationHints` that can be sent.
 ///

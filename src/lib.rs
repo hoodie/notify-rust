@@ -58,7 +58,7 @@
 //!                    .wait_for_action(|action| match action {
 //!                                         "default" => println!("you clicked \"default\""),
 //!                                         "clicked" => println!("that was correct"),
-//!                                         // here "__closed" is a hardcoded keyword
+//!                                         // here "__closed" is a hard coded keyword
 //!                                         "__closed" => println!("the notification was closed"),
 //!                                         _ => ()
 //!                                     });
@@ -140,23 +140,10 @@
 extern crate dbus;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate image;
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use image::GenericImageView;
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))] use std::path::Path;
-
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
-#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
-
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
-// #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
 
 #[cfg(target_os = "macos")] mod macos;
-#[cfg(target_os = "macos")] pub use macos::*;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
-#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::NotificationHandle;
-#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
-
-#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::build_message;
 
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
@@ -167,9 +154,24 @@ mod miniver;
 mod timeout;
 mod hints;
 
+
+#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
+// #[cfg(all(unix, not(target_os = "macos")))] pub mod server;
+
+
+#[cfg(target_os = "macos")] pub use macos::*;
+
+#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::NotificationHandle;
+#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{ get_capabilities, get_server_information, handle_actions, stop_server };
+
+#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::build_message;
+
 pub use crate::hints::NotificationHint;
 #[cfg(feature = "images")]
-pub use hints::NotificationImage;
+pub use hints::image::NotificationImage;
 pub use hints::urgency::NotificationUrgency;
 
 use crate::hints::message::NotificationHintMessage;
@@ -267,25 +269,10 @@ impl Notification {
 
     /// Wrapper for `NotificationHint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    pub fn image<T: AsRef<Path> + Sized>(&mut self, path: T) -> &mut Notification {
-        if let Ok(img) = image::open(&path) {
-            if let Some(image_data) = img.as_rgb8() {
-                let (width, height) = img.dimensions();
-                let image_data = image_data.clone().into_raw();
-                self.hint(
-                    NotificationHint::ImageData(
-                        NotificationImage::from_rgb(
-                            width as i32,
-                            height as i32,
-                            image_data
-                            ).unwrap()
-                        )
-                    );
-            }
-        } else {
-            println!("notify-rust: could not open image {}", path.as_ref().display())
-        }
-        self
+    pub fn image<T: AsRef<std::path::Path> + Sized>(&mut self, path: T) -> Result<&mut Notification> {
+        let img = NotificationImage::open(&path)?;
+        self.hint(NotificationHint::ImageData(img));
+        Ok(self)
     }
 
     /// Wrapper for `NotificationHint::SoundName`
@@ -338,7 +325,7 @@ impl Notification {
 
     /// Adds a hint.
     ///
-    /// This method will add a hint to the internal hint hashset.
+    /// This method will add a hint to the internal hint HashSet.
     /// Hints must be of type `NotificationHint`.
     ///
     /// Many of these are again wrapped by more convenient functions such as:
@@ -353,7 +340,7 @@ impl Notification {
     /// # use notify_rust::Notification;
     /// # use notify_rust::NotificationHint;
     /// Notification::new().summary("Category:email")
-    ///                    .body("This should not go away until you acknoledge it.")
+    ///                    .body("This should not go away until you acknowledge it.")
     ///                    .icon("thunderbird")
     ///                    .appname("thunderbird")
     ///                    .hint(NotificationHint::Category("email".to_owned()))
