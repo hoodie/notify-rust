@@ -34,4 +34,4 @@ mac-notification-sys = "0.3"
 [features]
 default = []
 debug_namespace = []
-images = ["image"]
+images = ["image", "lazy_static"]
