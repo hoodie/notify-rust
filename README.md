@@ -7,7 +7,7 @@
 [![Crates.io](https://img.shields.io/crates/d/notify-rust.svg)](https://crates.io/crates/notify-rust)
 [![version](https://img.shields.io/crates/v/notify-rust.svg)](https://crates.io/crates/notify-rust/)
 [![documentation](https://docs.rs/notify-rust/badge.svg)](https://docs.rs/notify-rust/)
-![maintainance](https://img.shields.io/maintenance/yes/2020)
+![maintenance](https://img.shields.io/maintenance/yes/2021)
 [![constributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
 </div>
 
