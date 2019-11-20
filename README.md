@@ -3,10 +3,10 @@
 # notify-rust
 
 [![Travis](https://img.shields.io/travis/hoodie/notify-rust.svg)](https://travis-ci.org/hoodie/notify-rust/)
-[![license](https://img.shields.io/crates/l/notify-rust.svg)](https://crates.io/crates/notify-rust/)
-[![Crates.io](https://img.shields.io/crates/d/notify-rust.svg)](https://crates.io/crates/notify-rust)
-[![version](https://img.shields.io/crates/v/notify-rust.svg)](https://crates.io/crates/notify-rust/)
-[![documentation](https://docs.rs/notify-rust/badge.svg)](https://docs.rs/notify-rust/)
+[![license](https://img.shields.io/crates/l/notify-rust)](https://crates.io/crates/notify-rust/)
+[![Crates.io](https://img.shields.io/crates/d/notify-rust)](https://crates.io/crates/notify-rust)
+[![version](https://img.shields.io/crates/v/notify-rust)](https://crates.io/crates/notify-rust/)
+[![documentation](https://docs.rs/notify-rust/badge)](https://docs.rs/notify-rust/)
 ![maintenance](https://img.shields.io/maintenance/yes/2021)
 [![contributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
 </div>
@@ -23,7 +23,7 @@ notify-rust = "3"
 
 # Requirements
 
-* `rustc` >= 1.32
+* `rustc` >= 1.36
 * linux, with `libdbus` (see [dbus-rs](https://github.com/diwic/dbus-rs#requirements))
 * macos
 * no windows support, yet
