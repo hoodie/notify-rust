@@ -1,7 +1,7 @@
 #![allow(unused_must_use)]
 extern crate notify_rust;
 use notify_rust::Notification;
-use notify_rust::NotificationUrgency::*;
+use notify_rust::Urgency::*;
 
 fn main() {
     // use it this way

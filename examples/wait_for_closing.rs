@@ -1,11 +1,11 @@
 extern crate notify_rust;
 
-use notify_rust::{Notification, NotificationHint};
+use notify_rust::{Notification, Hint};
 
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new().summary("Don't Mind me")
-                       .hint(NotificationHint::Transient(true))
+                       .hint(Hint::Transient(true))
                        .body("I'll be gone soon enough.\nSorry for the inconvenience.")
                        .show()
                        .unwrap()

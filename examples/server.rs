@@ -2,7 +2,7 @@ extern crate notify_rust;
 use std::time::Duration;
 use std::thread;
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
 use notify_rust::Notification;
 
@@ -11,7 +11,12 @@ fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(not(feature = "server"), unix, not(target_os = "macos")))]
+fn main() {
+    println!("please build with '--features=server'")
+}
+
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 fn main() {
     let server = NotificationServer::create();
     thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));

@@ -3,7 +3,7 @@ extern crate notify_rust;
 #[cfg(test)]
 mod conversion{
 
-    use notify_rust::NotificationUrgency as Urgency;
+    use notify_rust::Urgency;
 
     #[test]
     fn urgency_from_str()

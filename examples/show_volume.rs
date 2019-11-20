@@ -5,7 +5,7 @@
 
 extern crate notify_rust;
 use self::notify_rust::Notification;
-use self::notify_rust::NotificationHint;
+use self::notify_rust::Hint;
 use std::time::Duration;
 
 enum Volume {
@@ -29,9 +29,9 @@ fn show_volume(percent: Volume) {
 
     Notification::new().summary(" ")
                        .icon(icon)
-                       .hint(NotificationHint::SoundName("audio-volume-change".into()))
-                       .hint(NotificationHint::Custom("synchronous".into(), "volume".into()))
-                       .hint(NotificationHint::CustomInt("value".into(), value))
+                       .hint(Hint::SoundName("audio-volume-change".into()))
+                       .hint(Hint::Custom("synchronous".into(), "volume".into()))
+                       .hint(Hint::CustomInt("value".into(), value))
                        .show()
                        .unwrap();
 }
