@@ -171,9 +171,7 @@ mod notification;
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
- pub use crate::xdg::{
-    stop_server
-};
+pub use crate::xdg::stop_server;
 
 pub use crate::hints::NotificationHint as Hint;
 #[cfg(feature = "images")]

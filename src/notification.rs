@@ -46,7 +46,7 @@ pub struct Notification {
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
-    id: Option<u32>
+    pub(crate) id: Option<u32>
 }
 
 impl Notification {
