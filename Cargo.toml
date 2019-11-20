@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "4.0.0-alpha"
+version = "4.0.0-alpha.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
 homepage = "https://github.com/hoodie/notify-rust"
@@ -18,7 +18,7 @@ include = [
   ".gitignore",
   ".travis.yml",
   "Cargo.toml",
-  "src/*.rs",
+  "src/**/*.rs",
   "tests/*.rs"
 ]
 
@@ -35,6 +35,7 @@ mac-notification-sys = "0.3"
 
 [features]
 default = ["images"]
+server = []
 debug_namespace = []
 images = ["image", "lazy_static"]
 

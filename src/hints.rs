@@ -117,24 +117,24 @@ impl NotificationHint {
             _ => None
         }
     }
-}
 
-/// convenience converting a name and value into a hint
-pub fn hint_from_key_val(name: &str, value: &str) -> Result<NotificationHint, String> {
-    use crate::NotificationHint as Hint;
-    match (name,value){
-        (constants::ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
-        (constants::CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
-        (constants::DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
-        (constants::IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
-        (constants::RESIDENT, val)       => val.parse::<bool>().map(Hint::Resident).map_err(|e|e.to_string()),
-        (constants::SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
-        (constants::SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
-        (constants::SUPPRESS_SOUND, val) => val.parse::<bool>().map(Hint::SuppressSound).map_err(|e|e.to_string()),
-        (constants::TRANSIENT, val)      => val.parse::<bool>().map(Hint::Transient).map_err(|e|e.to_string()),
-        (constants::X, val)              => val.parse::<i32>().map(Hint::X).map_err(|e|e.to_string()),
-        (constants::Y, val)              => val.parse::<i32>().map(Hint::Y).map_err(|e|e.to_string()),
-        _                                => Err(String::from("unknown name"))
+    /// convenience converting a name and value into a hint
+    pub fn from_key_val(name: &str, value: &str) -> Result<NotificationHint, String> {
+        use NotificationHint as Hint;
+        match (name,value){
+            (constants::ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
+            (constants::CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
+            (constants::DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
+            (constants::IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
+            (constants::RESIDENT, val)       => val.parse::<bool>().map(Hint::Resident).map_err(|e|e.to_string()),
+            (constants::SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
+            (constants::SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
+            (constants::SUPPRESS_SOUND, val) => val.parse::<bool>().map(Hint::SuppressSound).map_err(|e|e.to_string()),
+            (constants::TRANSIENT, val)      => val.parse::<bool>().map(Hint::Transient).map_err(|e|e.to_string()),
+            (constants::X, val)              => val.parse::<i32>().map(Hint::X).map_err(|e|e.to_string()),
+            (constants::Y, val)              => val.parse::<i32>().map(Hint::Y).map_err(|e|e.to_string()),
+            _                                => Err(String::from("unknown name"))
+        }
     }
 }
 

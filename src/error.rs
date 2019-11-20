@@ -1,8 +1,5 @@
 #![allow(missing_docs)]
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-pub use crate::hints::image::Error as ImageError;
-
 use std::{fmt, num};
 
 /// Convenient wrapper around `std::Result`. 

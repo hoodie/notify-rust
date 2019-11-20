@@ -1,7 +1,7 @@
 extern crate notify_rust;
 
 use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
+use notify_rust::Hint;
 
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]

@@ -1,6 +1,11 @@
-v4.0.0
+v4.0.0-alpha
 ==================
   * dbus message types are now hidden
+  * rename Notification{Hint, Image, Urgency}
+  * make `hint_from_key_val` a method
+  * reorganize modules
+  * make server an optional feature (was never stable)
+  * remove `handle_actions`
 
 v3.6.0 / 2019-05-16
 ==================
@@ -148,7 +153,7 @@ v3.0.1 / 2015-10-23
   * works with dbus 0.2.0
   * Add missing docs for ServerInformation
   * Add missing docs for NotificationUrgency
-  * Add missing docs to NotificationHint
+  * Add missing docs to Hint
   * Add missing documentation to NotificationServer
   * Document NotificationHandle::wait_for_action
   * why do I always forget the milk? no, the README :D

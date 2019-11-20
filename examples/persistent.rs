@@ -1,5 +1,5 @@
 extern crate notify_rust;
-use notify_rust::NotificationHint as Hint;
+use notify_rust::Hint as Hint;
 use notify_rust::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

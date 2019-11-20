@@ -2,9 +2,9 @@
 extern crate notify_rust;
 
 use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
+use notify_rust::Hint as Hint;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use notify_rust::NotificationImage as Image;
+use notify_rust::Image as Image;
 
 #[cfg(target_os = "macos")]
 fn main() {

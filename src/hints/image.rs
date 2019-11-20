@@ -10,6 +10,7 @@ use std::path::Path;
 use super::constants;
 use crate::miniver::Version;
 
+/// Image representation for images. Send via `Notification::image_data()` 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub struct NotificationImage {
     width: i32,

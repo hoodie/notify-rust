@@ -43,7 +43,7 @@ Notification::new()
 ## Example 2 (Persistent Notification)
 ```rust
 use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
+use notify_rust::Hint;
 Notification::new()
     .summary("Category:email")
     .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
