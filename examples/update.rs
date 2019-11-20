@@ -1,4 +1,3 @@
-extern crate notify_rust;
 use notify_rust::Notification;
 use std::time::Duration;
 

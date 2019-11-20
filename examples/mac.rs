@@ -1,6 +1,3 @@
-
-extern crate notify_rust;
-
 #[cfg(target_os = "macos")]
 fn main() -> Result<(), Box<std::error::Error>> {
     use notify_rust::{Notification, get_bundle_identifier_or_default, set_application};

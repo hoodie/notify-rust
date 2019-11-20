@@ -1,4 +1,4 @@
-extern crate notify_rust;
+use notify_rust;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
