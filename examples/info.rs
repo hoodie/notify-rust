@@ -9,8 +9,10 @@ fn main() {
         println!("    vendor: {}", info.vendor);
         println!("    version: {}", info.version);
         println!("    spec_version: {}", info.spec_version);
-        println!("  capabilities:  {:#?}",
-                 notify_rust::get_capabilities().unwrap_or(Vec::new()));
+        println!(
+            "  capabilities:  {:#?}",
+            notify_rust::get_capabilities().unwrap_or(Vec::new())
+        );
     } else {
         println!("Error getting ServerInformation");
     }

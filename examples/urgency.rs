@@ -5,11 +5,12 @@ use notify_rust::Urgency::*;
 fn main() {
     // use it this way
     for urgency in &[Low, Normal, Critical] {
-        Notification::new().summary(&format!("Urgency {:?}", urgency))
-                           .body("This notification uses hints")
-                           .icon("firefox")
-                           .urgency(*urgency)
-                           .show();
+        Notification::new()
+            .summary(&format!("Urgency {:?}", urgency))
+            .body("This notification uses hints")
+            .icon("firefox")
+            .urgency(*urgency)
+            .show();
     }
 
     Notification::new()

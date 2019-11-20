@@ -1,4 +1,4 @@
-use notify_rust::Hint as Hint;
+use notify_rust::Hint;
 use notify_rust::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
