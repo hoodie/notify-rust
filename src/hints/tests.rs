@@ -4,8 +4,8 @@ use dbus::arg::messageitem::MessageItem as Item;
 use ctor::ctor;
 
 use super::*;
-use self::NotificationHint as Hint;
-use super::NotificationUrgency::*;
+use self::Hint as Hint;
+use super::Urgency::*;
 
 
 #[ctor]
@@ -39,10 +39,10 @@ fn urgency() {
 
 #[test]
 fn simple_hint_to_item() {
-    let old_hint = &NotificationHint::Custom("foo".into(), "bar".into());
+    let old_hint = &Hint::Custom("foo".into(), "bar".into());
 
     let (k, v) = old_hint.into();
-    let hint: NotificationHint = (&k, &v).into();
+    let hint: Hint = (&k, &v).into();
 
     assert_eq!(old_hint, &hint);
 }
@@ -50,7 +50,7 @@ fn simple_hint_to_item() {
 #[test]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 fn imagedata_hint_to_item() {
-    let hint = &NotificationHint::ImageData(NotificationImage::from_rgb(1, 1, vec![0, 0, 0]).unwrap());
+    let hint = &Hint::ImageData(NotificationImage::from_rgb(1, 1, vec![0, 0, 0]).unwrap());
     let item: MessageItem = hint.into();
     let test_item = Item::DictEntry(
         Box::new(Item::Str(image_spec(*::SPEC_VERSION))),

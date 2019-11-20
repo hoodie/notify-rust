@@ -1,8 +1,8 @@
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
 
 #[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
-#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{urgency::NotificationUrgency, NotificationHint, message::NotificationHintMessage};
-#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::hints::image::NotificationImage;
+#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{urgency::Urgency, Hint, message::HintMessage};
+#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::hints::image::Image;
 
 #[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
 use crate::timeout::Timeout;
@@ -43,9 +43,9 @@ pub struct Notification {
     pub body:    String,
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
-    /// Check out `NotificationHint`
+    /// Check out `Hint`
     #[cfg(not(target_os = "macos"))]
-    pub hints:   HashSet<NotificationHint>,
+    pub hints:   HashSet<Hint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     #[cfg(target_os="macos")] sound_name: Option<String>,
@@ -90,32 +90,32 @@ impl Notification {
         self
     }
 
-    /// Manual wrapper for `NotificationHint::ImageData`
+    /// Manual wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     pub fn image_data(&mut self, image: NotificationImage) -> &mut Notification {
-        self.hint(NotificationHint::ImageData(image));
+        self.hint(Hint::ImageData(image));
         self
     }
 
-    /// Wrapper for `NotificationHint::ImagePath`
+    /// Wrapper for `Hint::ImagePath`
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn image_path(&mut self, path: &str) -> &mut Notification {
-        self.hint(NotificationHint::ImagePath(path.to_string()));
+        self.hint(Hint::ImagePath(path.to_string()));
         self
     }
 
-    /// Wrapper for `NotificationHint::ImageData`
+    /// Wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     pub fn image<T: AsRef<std::path::Path> + Sized>(&mut self, path: T) -> Result<&mut Notification> {
         let img = NotificationImage::open(&path)?;
-        self.hint(NotificationHint::ImageData(img));
+        self.hint(Hint::ImageData(img));
         Ok(self)
     }
 
-    /// Wrapper for `NotificationHint::SoundName`
+    /// Wrapper for `Hint::SoundName`
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
-        self.hint(NotificationHint::SoundName(name.to_owned()));
+        self.hint(Hint::SoundName(name.to_owned()));
         self
     }
 
@@ -163,7 +163,7 @@ impl Notification {
     /// Adds a hint.
     ///
     /// This method will add a hint to the internal hint HashSet.
-    /// Hints must be of type `NotificationHint`.
+    /// Hints must be of type `Hint`.
     ///
     /// Many of these are again wrapped by more convenient functions such as:
     ///
@@ -188,7 +188,7 @@ impl Notification {
     /// # Platform support
     /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn hint(&mut self, hint: NotificationHint) -> &mut Notification {
+    pub fn hint(&mut self, hint: Hint) -> &mut Notification {
         self.hints.insert(hint);
         self
     }
@@ -216,8 +216,8 @@ impl Notification {
     /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this.
     /// In macOS this does not exist
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
-        self.hint(NotificationHint::Urgency(urgency)); // TODO impl as T where T: Into<NotificationUrgency>
+    pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
+        self.hint(Hint::Urgency(urgency)); // TODO impl as T where T: Into<Urgency>
         self
     }
 
@@ -275,7 +275,7 @@ impl Notification {
             let hints = self.hints
                 .iter()
                 .cloned()
-                .map(NotificationHintMessage::wrap_hint)
+                .map(HintMessage::wrap_hint)
                 .collect::<Vec<(MessageItem, MessageItem)>>();
 
             if let Ok(array) = MessageItem::new_dict(hints) {
