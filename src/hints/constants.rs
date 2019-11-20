@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub const ACTION_ICONS: &str    = "action-icons";
 pub const CATEGORY: &str        = "category";
 pub const DESKTOP_ENTRY: &str   = "desktop-entry";

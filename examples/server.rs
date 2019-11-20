@@ -1,10 +1,5 @@
-extern crate notify_rust;
-use std::time::Duration;
-use std::thread;
-
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
-use notify_rust::Notification;
 
 #[cfg(target_os = "macos")]
 fn main() {
@@ -18,10 +13,14 @@ fn main() {
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 fn main() {
+    use std::time::Duration;
+    use std::thread;
+    use notify_rust::Notification;
+
     let server = NotificationServer::create();
     thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
 
-    std::thread::sleep(Duration::from_millis(500));
+    thread::sleep(Duration::from_millis(500));
 
     Notification::new().summary("Notification Logger")
                        .body("If you can read this in the console, the server works fine.")
