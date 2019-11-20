@@ -1,7 +1,7 @@
 
 /// Levels of Urgency.
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
-pub enum NotificationUrgency {
+pub enum Urgency {
     /// The behaviour for `Low` urgency depends on the notification server.
     Low = 0,
     /// The behaviour for `Normal` urgency depends on the notification server.
@@ -10,27 +10,27 @@ pub enum NotificationUrgency {
     Critical = 2
 }
 
-impl<'a> From<&'a str> for NotificationUrgency {
-    fn from(string: &'a str) -> NotificationUrgency {
+impl<'a> From<&'a str> for Urgency {
+    fn from(string: &'a str) -> Urgency {
         match string.to_lowercase().as_ref() {
             "low"      |
-            "lo"       => NotificationUrgency::Low,
+            "lo"       => Urgency::Low,
             "normal"   |
-            "medium"   => NotificationUrgency::Normal,
+            "medium"   => Urgency::Normal,
             "critical" |
             "high"     |
-            "hi"       => NotificationUrgency::Critical,
+            "hi"       => Urgency::Critical,
             _ => unimplemented!()
         }
     }
 }
 
-impl From<Option<u64>> for NotificationUrgency {
-    fn from(maybe_int: Option<u64>) -> NotificationUrgency {
+impl From<Option<u64>> for Urgency {
+    fn from(maybe_int: Option<u64>) -> Urgency {
         match maybe_int {
-            Some(0) => NotificationUrgency::Low,
-            Some(2) => NotificationUrgency::Critical,
-            _ => NotificationUrgency::Normal
+            Some(0) => Urgency::Low,
+            Some(2) => Urgency::Critical,
+            _ => Urgency::Normal
         }
     }
 }

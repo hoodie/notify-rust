@@ -35,8 +35,8 @@
 //!     .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
-//!     .hint(NotificationHint::Category("email".to_owned()))
-//!     .hint(NotificationHint::Resident(true)) // this is not supported by all implementations
+//!     .hint(Hint::Category("email".to_owned()))
+//!     .hint(Hint::Resident(true)) // this is not supported by all implementations
 //!     .timeout(Timeout::Never) // this however is
 //!     .show().unwrap();
 //! ```
@@ -52,7 +52,7 @@
 //! Notification::new().summary("click me")
 //!                    .action("default", "default")
 //!                    .action("clicked", "click here")
-//!                    .hint(NotificationHint::Resident(true))
+//!                    .hint(Hint::Resident(true))
 //!                    .show()
 //!                    .unwrap()
 //!                    .wait_for_action(|action| match action {
@@ -173,12 +173,12 @@ mod notification;
 pub use crate::xdg::stop_server;
 
 #[cfg(all(unix, not(target_os = "macos")))]
-pub use crate::hints::NotificationHint as Hint;
+pub use crate::hints::Hint;
 #[cfg(feature = "images")]
 #[cfg(all(unix, not(target_os = "macos")))]
-pub use crate::hints::image::NotificationImage as Image;
+pub use crate::hints::image::Image;
 #[cfg(all(unix, not(target_os = "macos")))]
-pub use crate::hints::urgency::NotificationUrgency as Urgency;
+pub use crate::hints::urgency::Urgency;
 
 
 pub use crate::timeout::Timeout;

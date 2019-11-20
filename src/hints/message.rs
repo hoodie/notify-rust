@@ -1,4 +1,4 @@
-//! `NotificationHints` allow you to pass extra information to the server.
+//! `Hints` allow you to pass extra information to the server.
 //!
 //! Many of these are standardized by either:
 //!
@@ -12,7 +12,7 @@
 #![allow(dead_code, unused_imports)]
 
 
-use super::{NotificationUrgency, NotificationHint, constants::*};
+use super::{Urgency, Hint, constants::*};
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use super::image::*;
@@ -20,87 +20,87 @@ use super::image::*;
 use std::collections::{HashMap, HashSet};
 use dbus::arg::{messageitem::MessageItem, RefArg};
 
-/// All currently implemented `NotificationHints` that can be sent.
+/// All currently implemented `Hints` that can be sent.
 ///
 /// as found on https://developer.gnome.org/notification-spec/
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub(crate) struct NotificationHintMessage(NotificationHint);
+pub(crate) struct HintMessage(Hint);
 
-impl NotificationHintMessage {
-    pub fn wrap_hint(hint: NotificationHint) -> (MessageItem, MessageItem) {
+impl HintMessage {
+    pub fn wrap_hint(hint: Hint) -> (MessageItem, MessageItem) {
         Self::from(hint).into()
     }
 }
 
-impl From<NotificationHint> for NotificationHintMessage {
-    fn from(hint: NotificationHint) -> Self {
-        NotificationHintMessage(hint)
+impl From<Hint> for HintMessage {
+    fn from(hint: Hint) -> Self {
+        HintMessage(hint)
     }
 }
 
-impl std::ops::Deref for NotificationHintMessage {
-    type Target = NotificationHint;
+impl std::ops::Deref for HintMessage {
+    type Target = Hint;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<'a, A: RefArg> From<(&'a String, &'a A)> for NotificationHintMessage {
+impl<'a, A: RefArg> From<(&'a String, &'a A)> for HintMessage {
     fn from(pair: (&String, &A)) -> Self {
 
         let (key, variant) = pair;
         match (key.as_ref(), variant.as_u64(), variant.as_i64(), variant.as_str().map(String::from)) {
 
-            (ACTION_ICONS,   Some(1),  _,       _          ) => NotificationHint::ActionIcons(true),
-            (ACTION_ICONS,   _,        _,       _          ) => NotificationHint::ActionIcons(false),
-            (URGENCY,        level,    _,       _          ) => NotificationHint::Urgency(level.into()),
-            (CATEGORY,       _,        _,       Some(name) ) => NotificationHint::Category(name),
+            (ACTION_ICONS,   Some(1),  _,       _          ) => Hint::ActionIcons(true),
+            (ACTION_ICONS,   _,        _,       _          ) => Hint::ActionIcons(false),
+            (URGENCY,        level,    _,       _          ) => Hint::Urgency(level.into()),
+            (CATEGORY,       _,        _,       Some(name) ) => Hint::Category(name),
 
-            (DESKTOP_ENTRY,  _,        _,       Some(entry)) => NotificationHint::DesktopEntry(entry),
-            (IMAGE_PATH,     _,        _,       Some(path) ) => NotificationHint::ImagePath(path),
-            (RESIDENT,       Some(1),  _,       _          ) => NotificationHint::Resident(true),
-            (RESIDENT,       _,        _,       _          ) => NotificationHint::Resident(false),
+            (DESKTOP_ENTRY,  _,        _,       Some(entry)) => Hint::DesktopEntry(entry),
+            (IMAGE_PATH,     _,        _,       Some(path) ) => Hint::ImagePath(path),
+            (RESIDENT,       Some(1),  _,       _          ) => Hint::Resident(true),
+            (RESIDENT,       _,        _,       _          ) => Hint::Resident(false),
 
-            (SOUND_FILE,     _,        _,       Some(path) ) => NotificationHint::SoundFile(path),
-            (SOUND_NAME,     _,        _,       Some(name) ) => NotificationHint::SoundName(name),
-            (SUPPRESS_SOUND, Some(1),  _,       _          ) => NotificationHint::SuppressSound(true),
-            (SUPPRESS_SOUND, _,        _,       _          ) => NotificationHint::SuppressSound(false),
-            (TRANSIENT,      Some(1),  _,       _          ) => NotificationHint::Transient(true),
-            (TRANSIENT,      _,        _,       _          ) => NotificationHint::Transient(false),
-            (X,              _,        Some(x), _          ) => NotificationHint::X(x as i32),
-            (Y,              _,        Some(y), _          ) => NotificationHint::Y(y as i32),
+            (SOUND_FILE,     _,        _,       Some(path) ) => Hint::SoundFile(path),
+            (SOUND_NAME,     _,        _,       Some(name) ) => Hint::SoundName(name),
+            (SUPPRESS_SOUND, Some(1),  _,       _          ) => Hint::SuppressSound(true),
+            (SUPPRESS_SOUND, _,        _,       _          ) => Hint::SuppressSound(false),
+            (TRANSIENT,      Some(1),  _,       _          ) => Hint::Transient(true),
+            (TRANSIENT,      _,        _,       _          ) => Hint::Transient(false),
+            (X,              _,        Some(x), _          ) => Hint::X(x as i32),
+            (Y,              _,        Some(y), _          ) => Hint::Y(y as i32),
 
             other => {
-                eprintln!("Invalid NotificationHint{:#?} ", other);
-                NotificationHint::Invalid
+                eprintln!("Invalid Hint{:#?} ", other);
+                Hint::Invalid
             }
         }.into()
     }
 }
 
 #[deprecated(note = "Prefer the DBus Arg and RefArg APIs")]
-impl From<NotificationHintMessage> for (MessageItem, MessageItem) {
-    fn from(hint: NotificationHintMessage) -> Self {
+impl From<HintMessage> for (MessageItem, MessageItem) {
+    fn from(hint: HintMessage) -> Self {
 
         let (key, value): (String, MessageItem) = match hint.0 {
-            NotificationHint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
-            NotificationHint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
+            Hint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
+            Hint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
+            Hint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
             #[cfg(all(feature = "images", unix, not(target_os ="macos")))]
-            NotificationHint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), NotificationImageMessage::from(image).into()),
-            NotificationHint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
-            NotificationHint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
-            NotificationHint::SuppressSound(value)     => (SUPPRESS_SOUND .to_owned(), MessageItem::Bool(value)),
-            NotificationHint::Transient(value)         => (TRANSIENT      .to_owned(), MessageItem::Bool(value)),
-            NotificationHint::X(value)                 => (X              .to_owned(), MessageItem::Int32(value)),
-            NotificationHint::Y(value)                 => (Y              .to_owned(), MessageItem::Int32(value)),
-            NotificationHint::Urgency(value)           => (URGENCY        .to_owned(), MessageItem::Byte(value as u8)),
-            NotificationHint::Custom(ref key, ref val) => (key            .to_owned(), MessageItem::Str(val.to_owned ())),
-            NotificationHint::CustomInt(ref key, val)  => (key            .to_owned(), MessageItem::Int32(val)),
-            NotificationHint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
+            Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), NotificationImageMessage::from(image).into()),
+            Hint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
+            Hint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
+            Hint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),
+            Hint::SoundName(ref value)     => (SOUND_NAME     .to_owned(), MessageItem::Str(value.clone())),
+            Hint::SuppressSound(value)     => (SUPPRESS_SOUND .to_owned(), MessageItem::Bool(value)),
+            Hint::Transient(value)         => (TRANSIENT      .to_owned(), MessageItem::Bool(value)),
+            Hint::X(value)                 => (X              .to_owned(), MessageItem::Int32(value)),
+            Hint::Y(value)                 => (Y              .to_owned(), MessageItem::Int32(value)),
+            Hint::Urgency(value)           => (URGENCY        .to_owned(), MessageItem::Byte(value as u8)),
+            Hint::Custom(ref key, ref val) => (key            .to_owned(), MessageItem::Str(val.to_owned ())),
+            Hint::CustomInt(ref key, val)  => (key            .to_owned(), MessageItem::Int32(val)),
+            Hint::Invalid                  => ("invalid"      .to_owned(), MessageItem::Str("Invalid".to_owned()))
         };
 
         (MessageItem::Str(key), MessageItem::Variant(Box::new(value)))
@@ -109,9 +109,9 @@ impl From<NotificationHintMessage> for (MessageItem, MessageItem) {
 
 
 // TODO: deprecated, Prefer the DBus Arg and RefArg APIs
-impl From<(&MessageItem, &MessageItem)> for NotificationHintMessage {
+impl From<(&MessageItem, &MessageItem)> for HintMessage {
     fn from ((key, mut value): (&MessageItem, &MessageItem)) -> Self {
-        use NotificationHint as Hint;
+        use Hint as Hint;
 
         // If this is a variant, consider the thing inside it
         // If it's a nested variant, keep drilling down until we get a real value
@@ -134,9 +134,9 @@ impl From<(&MessageItem, &MessageItem)> for NotificationHintMessage {
             Ok(X)               => value.inner().map(Hint::X),
             Ok(Y)               => value.inner().map(Hint::Y),
             Ok(URGENCY)         => value.inner().map(|i| match i {
-                0  => NotificationUrgency::Low,
-                2  => NotificationUrgency::Critical,
-                _  => NotificationUrgency::Normal
+                0  => Urgency::Low,
+                2  => Urgency::Critical,
+                _  => Urgency::Normal
             }).map(Hint::Urgency),
             Ok(k) if is_stringy => value.inner::<&str>().map(|v| Hint::Custom(k.to_string(), v.to_string())),
             Ok(k)               => value.inner().map(|v| Hint::CustomInt(k.to_string(), v)),
@@ -148,6 +148,6 @@ impl From<(&MessageItem, &MessageItem)> for NotificationHintMessage {
 
 
 #[allow(missing_docs)]
-pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<NotificationHintMessage> {
+pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<HintMessage> {
     hints.iter().map(Into::into).collect()
 }
