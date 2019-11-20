@@ -1,5 +1,3 @@
-use dbus::arg::messageitem::MessageItem;
-
 /// Describes the timeout of a notification
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Timeout {
@@ -58,6 +56,9 @@ impl std::ops::Deref for TimeoutMessage {
         &self.0
     }
 }
+
+#[cfg(all(unix, not(target_os = "macos")))]
+use dbus::arg::messageitem::MessageItem;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 impl std::convert::TryFrom<&MessageItem> for TimeoutMessage {

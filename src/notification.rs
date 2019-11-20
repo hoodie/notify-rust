@@ -1,16 +1,14 @@
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::arg::messageitem::{MessageItem, MessageItemArray};
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::ffidisp::{Connection, BusType};
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
 
-#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::NotificationHandle;
-#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::build_message;
-use crate::hints::urgency::NotificationUrgency;
-#[cfg(feature="images")]
-use crate::hints::image::NotificationImage;
-use crate::hints::NotificationHint;
+#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
+#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{urgency::NotificationUrgency, NotificationHint, message::NotificationHintMessage};
+#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::hints::image::NotificationImage;
+
+#[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
 use crate::timeout::Timeout;
-use crate::hints::message::NotificationHintMessage;
 use crate::error::*;
 
+#[cfg(all(unix, not(target_os = "macos")))]
 use std::collections::HashSet;
 use std::default::Default;
 use std::env;
@@ -25,6 +23,13 @@ fn exe_name() -> String {
 /// Desktop notification.
 ///
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
+///
+/// # Example
+/// ``` no-run
+///     Notification::new()
+///         .summary("☝️ A notification")
+///         .show()?;
+/// ```
 #[derive(Debug, Clone)]
 pub struct Notification {
     /// Filled by default with executable name.
@@ -39,6 +44,7 @@ pub struct Notification {
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
     /// Check out `NotificationHint`
+    #[cfg(not(target_os = "macos"))]
     pub hints:   HashSet<NotificationHint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
@@ -181,6 +187,7 @@ impl Notification {
     ///
     /// # Platform support
     /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn hint(&mut self, hint: NotificationHint) -> &mut Notification {
         self.hints.insert(hint);
         self
@@ -206,7 +213,9 @@ impl Notification {
     /// Pick between Medium, Low and High.
     ///
     /// # Platform support
-    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this. macOS is too cool to even have something like this in its spec 😊.
+    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this.
+    /// In macOS this does not exist
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: NotificationUrgency) -> &mut Notification {
         self.hint(NotificationHint::Urgency(urgency)); // TODO impl as T where T: Into<NotificationUrgency>
         self
@@ -378,7 +387,6 @@ impl Default for Notification {
             subtitle:   None,
             body:       String::new(),
             icon:       String::new(),
-            hints:      HashSet::new(),
             actions:    Vec::new(),
             timeout:    Timeout::Default,
             sound_name: Default::default(),
