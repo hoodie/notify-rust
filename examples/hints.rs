@@ -1,5 +1,4 @@
 #![allow(unused_must_use)]
-extern crate notify_rust;
 use notify_rust::Notification;
 use notify_rust::Hint;
 use notify_rust::Urgency::*;

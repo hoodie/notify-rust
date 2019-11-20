@@ -1,5 +1,3 @@
-extern crate notify_rust;
-
 use std::io;
 use std::thread;
 

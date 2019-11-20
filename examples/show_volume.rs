@@ -3,7 +3,7 @@
 //! Only works on unity
 //!
 
-extern crate notify_rust;
+use notify_rust;
 use self::notify_rust::Notification;
 use self::notify_rust::Hint;
 use std::time::Duration;

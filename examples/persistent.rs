@@ -1,4 +1,3 @@
-extern crate notify_rust;
 use notify_rust::Hint as Hint;
 use notify_rust::*;
 

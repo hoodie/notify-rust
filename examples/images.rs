@@ -1,5 +1,4 @@
 #![allow(unused_imports)]
-extern crate notify_rust;
 
 use notify_rust::Notification;
 use notify_rust::Hint as Hint;

@@ -1,4 +1,3 @@
-extern crate notify_rust;
 use notify_rust::Notification;
 fn main() {
     // here we create a notification and then reuse a second time
