@@ -34,7 +34,7 @@ displaydoc = "0.1"
 mac-notification-sys = "0.3"
 
 [features]
-default = ["images"]
+default = []
 server = []
 debug_namespace = []
 images = ["image", "lazy_static"]

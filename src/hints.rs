@@ -140,3 +140,38 @@ impl NotificationHint {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 impl NotificationHint {}
+
+
+#[cfg(all(unix, not(target_os = "macos")))]
+impl<'a, A: dbus::arg::RefArg> From<(&'a String, &'a A)> for NotificationHint {
+    fn from(pair: (&String, &A)) -> Self {
+
+        let (key, variant) = pair;
+        match (key.as_ref(), variant.as_u64(), variant.as_i64(), variant.as_str().map(String::from)) {
+
+            (constants::ACTION_ICONS,   Some(1),  _,       _          ) => NotificationHint::ActionIcons(true),
+            (constants::ACTION_ICONS,   _,        _,       _          ) => NotificationHint::ActionIcons(false),
+            (constants::URGENCY,        level,    _,       _          ) => NotificationHint::Urgency(level.into()),
+            (constants::CATEGORY,       _,        _,       Some(name) ) => NotificationHint::Category(name),
+
+            (constants::DESKTOP_ENTRY,  _,        _,       Some(entry)) => NotificationHint::DesktopEntry(entry),
+            (constants::IMAGE_PATH,     _,        _,       Some(path) ) => NotificationHint::ImagePath(path),
+            (constants::RESIDENT,       Some(1),  _,       _          ) => NotificationHint::Resident(true),
+            (constants::RESIDENT,       _,        _,       _          ) => NotificationHint::Resident(false),
+
+            (constants::SOUND_FILE,     _,        _,       Some(path) ) => NotificationHint::SoundFile(path),
+            (constants::SOUND_NAME,     _,        _,       Some(name) ) => NotificationHint::SoundName(name),
+            (constants::SUPPRESS_SOUND, Some(1),  _,       _          ) => NotificationHint::SuppressSound(true),
+            (constants::SUPPRESS_SOUND, _,        _,       _          ) => NotificationHint::SuppressSound(false),
+            (constants::TRANSIENT,      Some(1),  _,       _          ) => NotificationHint::Transient(true),
+            (constants::TRANSIENT,      _,        _,       _          ) => NotificationHint::Transient(false),
+            (constants::X,              _,        Some(x), _          ) => NotificationHint::X(x as i32),
+            (constants::Y,              _,        Some(y), _          ) => NotificationHint::Y(y as i32),
+
+            other => {
+                eprintln!("Invalid NotificationHint {:#?} ", other);
+                NotificationHint::Invalid
+            }
+        }
+    }
+}

@@ -10,16 +10,16 @@
 #![allow(unused_imports, unused_variables, dead_code)]
 
 use std::cell::Cell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use dbus::tree::{self, Factory, Interface, MTFn, MTSync, Tree};
 use dbus::{arg, Path};
 use dbus::ffidisp::{BusType, NameFlag, Connection};
+use dbus::arg::RefArg;
 
-use super::{Notification, NotificationHint, Timeout};
+use super::{Notification, Hint, Timeout};
 use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
-use crate::hints::hints_from_variants;
 
 static DBUS_ERROR_FAILED: &str = "org.freedesktop.DBus.Error.Failed";
 /// Version of the crate equals the version server.
@@ -122,6 +122,12 @@ impl NotificationServer {
 
 }
 
+fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<Hint> {
+    hints.iter()
+        .map(Into::into)
+        .collect()
+}
+
 fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tree::Method<MTFn<()>, ()>
         where F: Fn(&Notification),
 {
@@ -133,7 +139,7 @@ fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tre
         let summary: String = i.read()?;
         let body: String = i.read()?;
         let actions: Vec<String> = i.read()?;
-        let hints: ::std::collections::HashMap<String, arg::Variant<Box<dyn arg::RefArg>>> = i.read()?;
+        let hints: ::std::collections::HashMap<String, arg::Variant<Box<dyn RefArg>>> = i.read()?;
         let timeout: i32 = i.read()?;
         println!("hints {:?} ", hints);
 
@@ -144,7 +150,7 @@ fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tre
             summary,
             body,
             actions,
-            hints: hints_from_variants(&hints),
+            hints:hints_from_variants(&hints),
             timeout: Timeout::from(timeout),
             id: if replaces_id == 0 { None } else { Some(replaces_id) },
             subtitle: None,
@@ -170,9 +176,7 @@ fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tre
 
 fn method_close_notification(factory: &Factory<MTFn>) -> tree::Method<MTFn<()>, ()> {
     factory.method("CloseNotification", (), |minfo| {
-        let mut i = minfo.msg.iter_init();
-        let id: u32 = r#try!(i.read());
-
+        let i = minfo.msg.iter_init();
         let rm = minfo.msg.method_return();
         Ok(vec!(rm))
     })

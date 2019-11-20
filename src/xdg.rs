@@ -174,7 +174,7 @@ pub struct ServerInformation {
 pub fn stop_server() {
     let message = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    thread::sleep(Duration::from_millis(200));
+    std::thread::sleep(std::time::Duration::from_millis(200));
     connection.send(message).unwrap();
 }
 
