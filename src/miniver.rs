@@ -8,6 +8,7 @@ pub struct Version {
 }
 
 impl Version {
+    #[allow(dead_code)]
     pub fn new(major: u64, minor: u64) -> Self {
         Self { major, minor }
     }
