@@ -1,9 +1,9 @@
 #![allow(unused_must_use)]
-use notify_rust::Notification;
 use notify_rust::Hint;
-use notify_rust::Urgency::*;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use notify_rust::Image;
+use notify_rust::Notification;
+use notify_rust::Urgency::*;
 
 fn freeze(message: &str) {
     println!("{}\n", message);
@@ -30,17 +30,21 @@ fn main() {
     Notification::new().hint(Hint::DesktopEntry("firefox".into())).show();
 
     freeze("ImagePath");
-    Notification::new().hint(Hint::ImagePath("/usr/share/icons/hicolor/128x128/apps/firefox.png".into()))
-                       .show();
+    Notification::new()
+        .hint(Hint::ImagePath(
+            "/usr/share/icons/hicolor/128x128/apps/firefox.png".into(),
+        ))
+        .show();
 
     freeze("Resident");
     Notification::new().hint(Hint::Resident(true)).show();
 
     freeze("SoundFile");
-    Notification::new().hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
-                       .hint(Hint::SoundName("system sound".to_owned()))
-                       .hint(Hint::SuppressSound(false))
-                       .show();
+    Notification::new()
+        .hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
+        .hint(Hint::SoundName("system sound".to_owned()))
+        .hint(Hint::SuppressSound(false))
+        .show();
 
     freeze("Transient");
     Notification::new().hint(Hint::Transient(false)).show();
@@ -55,8 +59,9 @@ fn main() {
         for i in 0..128 * 128 * 3 {
             image_data[i] = (i % 256) as u8;
         }
-        Notification::new().hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
-                           .summary("You should see stripes in this notification");
+        Notification::new()
+            .hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
+            .summary("You should see stripes in this notification");
     }
 
     // freeze("Custom");

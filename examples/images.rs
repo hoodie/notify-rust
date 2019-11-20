@@ -1,9 +1,9 @@
 #![allow(unused_imports)]
 
-use notify_rust::Notification;
-use notify_rust::Hint as Hint;
+use notify_rust::Hint;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use notify_rust::Image as Image;
+use notify_rust::Image;
+use notify_rust::Notification;
 
 #[cfg(target_os = "macos")]
 fn main() {

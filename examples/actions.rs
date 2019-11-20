@@ -1,5 +1,5 @@
-use notify_rust::Notification;
 use notify_rust::Hint;
+use notify_rust::Notification;
 
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -21,9 +21,10 @@ fn main() {
         });
 
     #[cfg(target_os = "macos")]
-    Notification::new().summary("PLATFORM ERROR")
-                       .subtitle("unsupported functionality")
-                       .body("cannot wait for closing on macOS.")
-                       .show()
-                       .unwrap();
+    Notification::new()
+        .summary("PLATFORM ERROR")
+        .subtitle("unsupported functionality")
+        .body("cannot wait for closing on macOS.")
+        .show()
+        .unwrap();
 }

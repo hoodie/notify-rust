@@ -13,19 +13,20 @@ fn main() {
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 fn main() {
-    use std::time::Duration;
-    use std::thread;
     use notify_rust::Notification;
+    use std::thread;
+    use std::time::Duration;
 
     let server = NotificationServer::create();
     thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
 
     thread::sleep(Duration::from_millis(500));
 
-    Notification::new().summary("Notification Logger")
-                       .body("If you can read this in the console, the server works fine.")
-                       .show()
-                       .unwrap();
+    Notification::new()
+        .summary("Notification Logger")
+        .body("If you can read this in the console, the server works fine.")
+        .show()
+        .unwrap();
 
     println!("Press enter to exit.\n");
     let mut _devnull = String::new();
