@@ -1,4 +1,3 @@
-/*
 //! Desktop Notifications for Rust.
 //!
 //! Desktop notifications are popup messages generated to notify the user of certain events.
@@ -128,7 +127,6 @@
 //! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
 //!
-*/
 
 #![deny(missing_copy_implementations,
         trivial_casts,
@@ -136,7 +134,7 @@
         unsafe_code,
         unused_import_braces,
         unused_qualifications)]
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
@@ -154,6 +152,7 @@ extern crate lazy_static;
 pub mod error;
 mod miniver;
 mod timeout;
+#[cfg(all(unix, not(target_os = "macos")))]
 mod hints;
 mod notification;
 
@@ -173,9 +172,12 @@ mod notification;
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub use crate::xdg::stop_server;
 
+#[cfg(all(unix, not(target_os = "macos")))]
 pub use crate::hints::NotificationHint as Hint;
 #[cfg(feature = "images")]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub use crate::hints::image::NotificationImage as Image;
+#[cfg(all(unix, not(target_os = "macos")))]
 pub use crate::hints::urgency::NotificationUrgency as Urgency;
 
 
