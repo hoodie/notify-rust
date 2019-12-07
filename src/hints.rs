@@ -13,18 +13,12 @@
 mod constants;
 
 #[cfg(all(unix, not(target_os = "macos")))]
-pub(crate) mod urgency;
-
-#[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-pub mod image;
+use crate::image::Image;
+use crate::Urgency;
 
-use self::urgency::Urgency;
-
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use self::image::Image;
 
 /// All currently implemented `Hints` that can be sent.
 ///

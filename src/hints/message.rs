@@ -12,7 +12,8 @@
 #![allow(dead_code, unused_imports)]
 
 
-use super::{Urgency, Hint, constants::*};
+use super::{Hint, constants::*};
+use crate ::Urgency;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use super::image::*;

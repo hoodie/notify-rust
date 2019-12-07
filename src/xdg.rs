@@ -183,8 +183,6 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-/// ```no_run
-/// ```
 pub fn handle_action<F>(id: u32, func: F)
     where F: FnOnce(&str)
 {

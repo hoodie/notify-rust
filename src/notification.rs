@@ -1,7 +1,8 @@
 #[cfg(all(unix, not(target_os = "macos")))] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
 
 #[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
-#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{urgency::Urgency, Hint, message::HintMessage};
+#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{Hint, message::HintMessage};
+#[cfg(all(unix, not(target_os = "macos")))] use crate::urgency::Urgency;
 #[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::hints::image::Image;
 
 #[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
