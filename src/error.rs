@@ -1,10 +1,9 @@
 #![allow(missing_docs)]
-use std::{fmt, num};
 
+use std::{fmt, num};
 
 /// Convenient wrapper around `std::Result`. 
 pub type Result<T> = ::std::result::Result<T, Error>;
-
 
 /// The Error type.
 #[derive(Debug)]
@@ -27,6 +26,9 @@ pub enum ErrorKind {
     Parse(num::ParseIntError),
 
     SpecVersion(String),
+
+    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    Image(crate::hints::image::Error)
 }
 
 impl fmt::Display for Error {
@@ -39,6 +41,8 @@ impl fmt::Display for Error {
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
             ErrorKind::Msg(ref e) => write!(f, "{}", e),
+            #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+            ErrorKind::Image(ref e) => write!(f, "{}", e),
         }
     }
 }
@@ -56,6 +60,13 @@ impl From<dbus::Error> for Error {
 impl From<mac_notification_sys::error::Error> for Error {
     fn from(e: mac_notification_sys::error::Error) -> Error {
         Error { kind: ErrorKind::MacNotificationSys(e) }
+    }
+}
+
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+impl From<crate::hints::image::Error> for Error {
+    fn from(e: crate::hints::image::Error) -> Error {
+        Error { kind: ErrorKind::Image(e) }
     }
 }
 

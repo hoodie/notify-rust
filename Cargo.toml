@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "3.6.3"
+version = "4.0.0-alpha.3"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
 homepage = "https://github.com/hoodie/notify-rust"
@@ -18,13 +18,13 @@ include = [
   ".gitignore",
   ".travis.yml",
   "Cargo.toml",
-  "src/*.rs",
+  "src/**/*.rs",
   "tests/*.rs"
 ]
 
 [dependencies]
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
-dbus = "0.6"
+dbus = "0.7"
 lazy_static = {version = "1.4", optional = true}
 image = {version = "0.22", optional = true}
 
@@ -33,5 +33,10 @@ mac-notification-sys = "0.3"
 
 [features]
 default = []
+server = []
 debug_namespace = []
 images = ["image", "lazy_static"]
+
+[dev-dependencies]
+color-backtrace = "0.3"
+ctor = "0.1.12"

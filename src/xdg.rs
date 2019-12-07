@@ -1,12 +1,13 @@
 //! This module contains XDG and DBus specific code.
 //!
 //! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
-use std::ops::{Deref, DerefMut};
-use std::time::Duration;
-use std::thread;
+use dbus::Message;
+use dbus::arg::messageitem::MessageItem;
+use dbus::ffidisp::{BusType, Connection, ConnectionItem};
 
-use super::Notification;
-use dbus::{BusType, Connection, ConnectionItem, Message, MessageItem};
+use std::ops::{Deref, DerefMut};
+
+use crate::notification::Notification;
 use crate::error::*;
 
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
@@ -169,10 +170,11 @@ pub struct ServerInformation {
 /// Strictly internal.
 /// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub fn stop_server() {
     let message = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
-    thread::sleep(Duration::from_millis(200));
+    std::thread::sleep(std::time::Duration::from_millis(200));
     connection.send(message).unwrap();
 }
 
@@ -181,7 +183,7 @@ pub fn stop_server() {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_actions<F>(id: u32, func: F)
+pub fn handle_action<F>(id: u32, func: F)
     where F: FnOnce(&str)
 {
     let connection = Connection::get_private(BusType::Session).unwrap();
