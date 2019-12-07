@@ -18,7 +18,11 @@ fn main() {
     use std::time::Duration;
 
     let server = NotificationServer::create();
-    thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
+    thread::spawn(move || {
+        NotificationServer::start(&server, |notification| {
+            println!("{:#?}", notification)
+        })
+    });
 
     thread::sleep(Duration::from_millis(500));
 

@@ -13,6 +13,7 @@ enum Volume {
     Percent(i32),
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 fn show_volume(percent: Volume) {
     let icon = match percent {
         Volume::Muted => "notification-audio-volume-muted",
@@ -37,6 +38,12 @@ fn show_volume(percent: Volume) {
         .unwrap();
 }
 
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is an xdg only feature")
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     show_volume(Volume::Muted);
     for i in 1..11 {

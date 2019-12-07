@@ -152,9 +152,15 @@ extern crate lazy_static;
 pub mod error;
 mod miniver;
 mod timeout;
-#[cfg(all(unix, not(target_os = "macos")))]
 mod hints;
 mod notification;
+
+
+pub(crate) mod urgency;
+
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+pub mod image;
+
 
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
@@ -172,13 +178,15 @@ mod notification;
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub use crate::xdg::stop_server;
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
 pub use crate::hints::Hint;
+
 #[cfg(feature = "images")]
 #[cfg(all(unix, not(target_os = "macos")))]
 pub use crate::hints::image::Image;
-#[cfg(all(unix, not(target_os = "macos")))]
-pub use crate::hints::urgency::Urgency;
+
+#[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
+pub use crate::urgency::Urgency;
 
 
 pub use crate::timeout::Timeout;

@@ -2,6 +2,12 @@
 use notify_rust::Notification;
 use notify_rust::Urgency::*;
 
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is an xdg only feature")
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     // use it this way
     for urgency in &[Low, Normal, Critical] {
