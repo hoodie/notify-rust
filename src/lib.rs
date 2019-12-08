@@ -178,7 +178,7 @@ pub mod image;
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub use crate::xdg::stop_server;
 
-#[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
+#[cfg_attr(target_os = "macos", deprecated(note="Hints are not supported on macOS"))]
 pub use crate::hints::Hint;
 
 #[cfg(feature = "images")]
