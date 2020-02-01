@@ -206,10 +206,16 @@ fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
               .unwrap();
 
     for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(s) = item {
-            let (_, protocol, iface, member) = s.headers();
-            let items = s.get_items();
-            match (&*protocol.unwrap(), &*iface.unwrap(), &*member.unwrap()) {
+        if let ConnectionItem::Signal(message) = item {
+            let items = message.get_items();
+
+            let (path, interface, member) = (
+                message.path()     .map(|p| p.as_cstr().to_string_lossy().into_owned()).unwrap_or_else(String::new),
+                message.interface().map(|p| p.as_cstr().to_string_lossy().into_owned()).unwrap_or_else(String::new),
+                message.member()   .map(|p| p.as_cstr().to_string_lossy().into_owned()).unwrap_or_else(String::new)
+            );
+            match (path.as_ref(), interface.as_ref(), member.as_ref()) {
+            // match (protocol.unwrap(), iface.unwrap(), member.unwrap()) {
                 // Action Invoked
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
