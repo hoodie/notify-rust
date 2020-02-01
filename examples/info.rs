@@ -11,7 +11,7 @@ fn main() {
         println!("    spec_version: {}", info.spec_version);
         println!(
             "  capabilities:  {:#?}",
-            notify_rust::get_capabilities().unwrap_or(Vec::new())
+            notify_rust::get_capabilities().unwrap_or_default()
         );
     } else {
         println!("Error getting ServerInformation");
