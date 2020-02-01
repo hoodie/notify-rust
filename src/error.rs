@@ -13,6 +13,7 @@ pub struct Error {
 
 /// The kind of an error.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum ErrorKind {
     /// only here for backwards compatibility
     Msg(String),
