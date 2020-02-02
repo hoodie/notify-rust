@@ -1,6 +1,5 @@
-#![allow(unused_must_use)]
-use notify_rust::Notification;
-use notify_rust::Urgency::*;
+#![allow(unused_imports)]
+use notify_rust::{Notification, Urgency::*};
 
 #[cfg(target_os = "macos")]
 fn main() {

@@ -1,5 +1,5 @@
-use notify_rust::Hint;
-use notify_rust::Notification;
+#![allow(unused_imports)]
+use notify_rust::{Hint, Notification};
 
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]

@@ -3,6 +3,7 @@
 //! Only works on unity
 //!
 
+#![allow(unused_imports, dead_code)]
 use self::notify_rust::Hint;
 use self::notify_rust::Notification;
 use notify_rust;

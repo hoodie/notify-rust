@@ -1,5 +1,5 @@
-use std::io;
-use std::thread;
+#![allow(unused_imports, dead_code)]
+use std::{io, thread};
 
 use notify_rust::Notification;
 

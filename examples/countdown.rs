@@ -1,3 +1,4 @@
+#![allow(unused_imports, dead_code)]
 use notify_rust::Notification;
 use std::time::Duration;
 

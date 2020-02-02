@@ -1,3 +1,4 @@
+#![allow(unused_imports, dead_code)]
 use notify_rust::Hint;
 use notify_rust::*;
 

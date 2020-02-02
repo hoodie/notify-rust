@@ -1,9 +1,7 @@
-#![allow(unused_must_use)]
+#![allow(unused_imports, dead_code)]
 use notify_rust::Hint;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use notify_rust::Image;
-use notify_rust::Notification;
-use notify_rust::Urgency::*;
+use notify_rust::{Image, Notification, Urgency::*};
 
 fn freeze(message: &str) {
     println!("{}\n", message);

@@ -1,5 +1,5 @@
 #[cfg(target_os = "macos")]
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::{
         get_bundle_identifier_or_default, set_application, Notification,
     };
