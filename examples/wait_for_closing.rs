@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use notify_rust::{Hint, Notification};
 
 fn main() {
