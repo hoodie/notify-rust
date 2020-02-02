@@ -1,17 +1,15 @@
 [package]
 name = "notify-rust"
-version = "4.0.0-alpha.3"
+version = "4.0.0-beta.1"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
 homepage = "https://github.com/hoodie/notify-rust"
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
 edition = "2018"
-
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
-
 include = [
   "README.md",
   "History.md",
@@ -23,10 +21,11 @@ include = [
 ]
 
 [dependencies]
+
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = "0.8"
-lazy_static = {version = "1.4", optional = true}
-image = {version = "0.22", optional = true}
+lazy_static = { version = "1.4", optional = true }
+image = { version = "0.22", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.3"
@@ -43,8 +42,10 @@ ctor = "0.1.12"
 
 [[example]]
 name = "images"
-required-features=["images"]
+path = "examples/images.rs"
+required-features = ["images"]
 
 [[example]]
 name = "hints_server"
-required-features=["server"]
+path = "examples/hints_server.rs"
+required-features = ["server"]
