@@ -139,7 +139,6 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate image;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 
 #[cfg(target_os = "macos")] mod macos;
@@ -158,9 +157,7 @@ mod notification;
 
 pub(crate) mod urgency;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-pub mod image;
-
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
 
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
@@ -182,8 +179,8 @@ pub use crate::xdg::stop_server;
 pub use crate::hints::Hint;
 
 #[cfg(feature = "images")]
-#[cfg(all(unix, not(target_os = "macos")))]
-pub use crate::hints::image::Image;
+#[cfg_attr(target_os = "macos", deprecated(note="Hints are not supported on macOS"))]
+pub use crate::image::{Image, ImageError};
 
 #[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
 pub use crate::urgency::Urgency;
@@ -192,7 +189,7 @@ pub use crate::urgency::Urgency;
 pub use crate::timeout::Timeout;
 pub use crate::notification::Notification;
 
-#[cfg(feature = "images")]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 lazy_static!{
     /// Read once at runtime. Needed for Images
     pub static ref SPEC_VERSION: miniver::Version =

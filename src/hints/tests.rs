@@ -50,7 +50,7 @@ fn simple_hint_to_item() {
 #[test]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 fn imagedata_hint_to_item() {
-    let hint = &Hint::ImageData(NotificationImage::from_rgb(1, 1, vec![0, 0, 0]).unwrap());
+    let hint = &Hint::ImageData(Image::from_rgb(1, 1, vec![0, 0, 0]).unwrap());
     let item: MessageItem = hint.into();
     let test_item = Item::DictEntry(
         Box::new(Item::Str(image_spec(*::SPEC_VERSION))),

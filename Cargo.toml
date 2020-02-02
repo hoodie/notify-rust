@@ -40,3 +40,11 @@ images = ["image", "lazy_static"]
 [dev-dependencies]
 color-backtrace = "0.3"
 ctor = "0.1.12"
+
+[[example]]
+name = "images"
+required-features=["images"]
+
+[[example]]
+name = "hints_server"
+required-features=["server"]

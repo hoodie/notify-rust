@@ -1,7 +1,8 @@
 #![allow(missing_docs)]
 
 use std::{fmt, num};
-
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+use crate::image::ImageError;
 /// Convenient wrapper around `std::Result`. 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
@@ -29,7 +30,7 @@ pub enum ErrorKind {
     SpecVersion(String),
 
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    Image(crate::hints::image::Error)
+    Image(ImageError)
 }
 
 impl fmt::Display for Error {
@@ -65,8 +66,8 @@ impl From<mac_notification_sys::error::Error> for Error {
 }
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-impl From<crate::hints::image::Error> for Error {
-    fn from(e: crate::hints::image::Error) -> Error {
+impl From<ImageError> for Error {
+    fn from(e: ImageError) -> Error {
         Error { kind: ErrorKind::Image(e) }
     }
 }

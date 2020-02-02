@@ -1,18 +1,24 @@
 use dbus::arg::messageitem::{MessageItem, MessageItemArray};
+pub use image::DynamicImage;
 use image::GenericImageView as _;
-use thiserror::Error;
-use displaydoc::Display;
 
 use std::cmp::Ordering;
 use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt;
 use std::path::Path;
 
-use super::constants;
 use crate::miniver::Version;
 
-/// Image representation for images. Send via `Notification::image_data()` 
+mod constants {
+    pub const IMAGE_DATA: &str = "image-data";
+    pub const IMAGE_DATA_1_1: &str = "image_data";
+    pub const IMAGE_DATA_1_0: &str = "icon_data";
+}
+
+/// Image representation for images. Send via `Notification::image_data()`
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
-pub struct NotificationImage {
+pub struct Image {
     width: i32,
     height: i32,
     rowstride: i32,
@@ -22,19 +28,19 @@ pub struct NotificationImage {
     data: Vec<u8>,
 }
 
-impl NotificationImage {
+impl Image {
     /// Creates an image from a raw vector of bytes
-    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, Error> {
+    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
         const MAX_SIZE: i32 = 0x0fff_ffff;
         if width > MAX_SIZE || height > MAX_SIZE {
-            return Err(Error::TooBig);
+            return Err(ImageError::TooBig);
         }
 
         let channels = 3i32;
         let bits_per_sample = 8;
 
         if data.len() != (width * height * channels) as usize {
-            Err(Error::WrongDataSize)
+            Err(ImageError::WrongDataSize)
         } else {
             Ok(Self {
                 width,
@@ -49,43 +55,64 @@ impl NotificationImage {
     }
 
     ///  Attempts to open the given path as image
-    pub fn open<T: AsRef<Path> + Sized>(path: T) -> Result<Self, Error> {
-        let dyn_img = image::open(&path).map_err(Error::CantOpen)?;
-        NotificationImage::try_from(dyn_img)
+    pub fn open<T: AsRef<Path> + Sized>(path: T) -> Result<Self, ImageError> {
+        let dyn_img = image::open(&path).map_err(ImageError::CantOpen)?;
+        Image::try_from(dyn_img)
     }
 }
 
-impl TryFrom<image::DynamicImage> for NotificationImage {
-    type Error = Error;
+impl TryFrom<DynamicImage> for Image {
+    type Error = ImageError;
 
-    fn try_from (dyn_img: image::DynamicImage) -> Result<Self, Self::Error> {
+    fn try_from(dyn_img: DynamicImage) -> Result<Self, Self::Error> {
         if let Some(image_data) = dyn_img.as_rgb8() {
             let (width, height) = dyn_img.dimensions();
             let image_data = image_data.clone().into_raw();
-            Ok( NotificationImage::from_rgb(
-                width as i32,
-                height as i32,
-                image_data)?)
+            Ok(Image::from_rgb(width as i32, height as i32, image_data)?)
         } else {
-            Err(Error::CantConvert)
+            Err(ImageError::CantConvert)
         }
     }
 }
 
 /// Errors that can occur when creating an Image
-#[derive(Debug, Display, Error)]
-pub enum Error {
+#[derive(Debug)]
+pub enum ImageError {
     /// The given image is too big. DBus only has 32 bits for width / height
     TooBig,
-
     /// The given bytes don't match the width, height and channel count
     WrongDataSize,
-
     /// Can't open given path
-    CantOpen(#[from] image::ImageError),
-
-    /// Can't open given path
+    CantOpen(image::ImageError),
+    /// Can't convert from given input
     CantConvert,
+}
+
+impl Error for ImageError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        use ImageError::*;
+        match self {
+            TooBig => None,
+            WrongDataSize => None,
+            CantOpen(e) => Some(e),
+            CantConvert => None,
+        }
+    }
+}
+
+impl fmt::Display for ImageError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use ImageError::*;
+        match self {
+            TooBig => writeln!(
+                f,
+                "The given image is too big. DBus only has 32 bits for width / height"
+            ),
+            WrongDataSize => writeln!(f, "The given bytes don't match the width, height and channel count"),
+            CantOpen(e) => writeln!(f, "Can't open given path {}", e),
+            CantConvert => writeln!(f, "Can't convert from given input"),
+        }
+    }
 }
 
 /// matching image data key for each spec version
@@ -97,24 +124,30 @@ pub fn image_spec(version: Version) -> String {
     }
 }
 
-pub struct NotificationImageMessage(NotificationImage);
+pub struct ImageMessage(Image);
 
-impl From<NotificationImage> for NotificationImageMessage {
-    fn from(hint: NotificationImage) -> Self {
-        NotificationImageMessage(hint)
+impl From<Image> for ImageMessage {
+    fn from(hint: Image) -> Self {
+        ImageMessage(hint)
     }
 }
 
-impl std::ops::Deref for NotificationImageMessage {
-    type Target = NotificationImage;
+impl From<image::ImageError> for ImageError {
+    fn from(image_error: image::ImageError) -> Self {
+        ImageError::CantOpen(image_error)
+    }
+}
+
+impl std::ops::Deref for ImageMessage {
+    type Target = Image;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<NotificationImageMessage> for MessageItem {
-    fn from(img_msg: NotificationImageMessage) -> Self {
+impl From<ImageMessage> for MessageItem {
+    fn from(img_msg: ImageMessage) -> Self {
         let img = img_msg.0;
 
         let bytes = img.data.into_iter().map(MessageItem::Byte).collect();
