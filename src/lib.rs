@@ -169,7 +169,8 @@ pub(crate) mod urgency;
 #[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{
     get_capabilities,
     get_server_information,
-    handle_action
+    handle_action,
+    NotificationHandle
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
