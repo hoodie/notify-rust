@@ -7,7 +7,7 @@ fn main() {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // use it this way
     for urgency in &[Low, Normal, Critical] {
         Notification::new()
@@ -15,12 +15,14 @@ fn main() {
             .body("This notification uses hints")
             .icon("firefox")
             .urgency(*urgency)
-            .show();
+            .show()?;
     }
 
     Notification::new()
         .body("Urgency from String")
         .icon("dialog-warning")
         .urgency("high".into()) // only if you realy have to :D
-        .show();
+        .show()?;
+
+    Ok(())
 }
