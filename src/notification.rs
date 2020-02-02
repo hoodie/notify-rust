@@ -3,7 +3,7 @@
 #[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
 #[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{Hint, message::HintMessage};
 #[cfg(all(unix, not(target_os = "macos")))] use crate::urgency::Urgency;
-#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::hints::image::Image;
+#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::image::Image;
 
 #[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
 use crate::timeout::Timeout;
@@ -93,7 +93,7 @@ impl Notification {
 
     /// Manual wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    pub fn image_data(&mut self, image: NotificationImage) -> &mut Notification {
+    pub fn image_data(&mut self, image: Image) -> &mut Notification {
         self.hint(Hint::ImageData(image));
         self
     }
@@ -108,7 +108,7 @@ impl Notification {
     /// Wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     pub fn image<T: AsRef<std::path::Path> + Sized>(&mut self, path: T) -> Result<&mut Notification> {
-        let img = NotificationImage::open(&path)?;
+        let img = Image::open(&path)?;
         self.hint(Hint::ImageData(img));
         Ok(self)
     }

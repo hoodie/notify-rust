@@ -3,9 +3,6 @@
 pub const ACTION_ICONS: &str    = "action-icons";
 pub const CATEGORY: &str        = "category";
 pub const DESKTOP_ENTRY: &str   = "desktop-entry";
-pub const IMAGE_DATA: &str      = "image-data";
-pub const IMAGE_DATA_1_1: &str  = "image_data";
-pub const IMAGE_DATA_1_0: &str  = "icon_data";
 pub const IMAGE_PATH: &str      = "image-path";
 pub const RESIDENT: &str        = "resident";
 pub const SOUND_FILE: &str      = "sound-file";

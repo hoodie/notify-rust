@@ -16,7 +16,7 @@ use super::{Hint, constants::*};
 use crate ::Urgency;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use super::image::*;
+use crate::image::*;
 
 use std::collections::{HashMap, HashSet};
 use dbus::arg::{messageitem::MessageItem, RefArg};
@@ -89,7 +89,7 @@ impl From<HintMessage> for (MessageItem, MessageItem) {
             Hint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             Hint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
             #[cfg(all(feature = "images", unix, not(target_os ="macos")))]
-            Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), NotificationImageMessage::from(image).into()),
+            Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), ImageMessage::from(image).into()),
             Hint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
             Hint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool
             Hint::SoundFile(ref value)     => (SOUND_FILE     .to_owned(), MessageItem::Str(value.clone())),

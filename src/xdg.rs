@@ -171,6 +171,7 @@ pub struct ServerInformation {
 /// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+#[doc(hidden)]
 pub fn stop_server() {
     let message = build_message("Stop");
     let connection = Connection::get_private(BusType::Session).unwrap();
