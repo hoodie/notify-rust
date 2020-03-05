@@ -32,6 +32,7 @@ fn exe_name() -> String {
 ///         .show()?;
 /// ```
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Notification {
     /// Filled by default with executable name.
     pub appname: String,
