@@ -175,6 +175,7 @@ extern crate dbus;
 #[cfg(target_os = "windows")] extern crate winrt_notification;
 #[cfg(target_os = "windows")] use winrt_notification::Toast;
 #[cfg(target_os = "windows")] use std::str::FromStr;
+#[cfg(target_os = "windows")] use std::path::Path;
 
 #[macro_use]
 extern crate error_chain;
@@ -230,6 +231,7 @@ pub struct Notification {
     pub actions: Vec<String>,
     #[cfg(target_os="macos")] sound_name: Option<String>,
     #[cfg(target_os="windows")] sound_name: Option<String>,
+    #[cfg(target_os="windows")] path_to_image: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -281,6 +283,13 @@ impl Notification {
     #[cfg(all(unix,not(target_os="macos")))]
     pub fn image_path(&mut self, path:&str) -> &mut Notification {
         self.hint(NotificationHint::ImagePath(path.to_string()));
+        self
+    }
+
+     /// Wrapper for `NotificationHint::ImagePath`
+    #[cfg(target_os="windows")]
+    pub fn image_path(&mut self, path:&str) -> &mut Notification {
+        self.path_to_image = Some(path.to_string());
         self
     }
 
@@ -548,18 +557,20 @@ impl Notification {
             }
         };
 
-        let result = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
+        let mut toast = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
             .title(&self.summary)
             .text1(&self.subtitle.as_ref().map(|s| &**s).unwrap_or("")) // subtitle
             .text2(&self.body)
             .sound(sound)
-            .duration(duration)
-            .show();
-
-        match result {
-            Ok(_) => Ok(()),
-            Err(e) => Err(format!("{:?}",e).into())
+            .duration(duration);
+        if let Some(image_path) = &self.path_to_image {
+            toast = toast.image(&Path::new(&image_path), "");
         }
+
+        toast.show()
+            .map_err(|e| {
+                format!("{:?}",e).into()
+            })
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -669,7 +680,8 @@ impl Default for Notification {
             actions:  Vec::new(),
             timeout:  Timeout::Default,
             sound_name: Default::default(),
-            id:       None
+            id:       None,
+            path_to_image: None
         }
     }
     #[cfg(target_os="macos")]
