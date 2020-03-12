@@ -6,7 +6,7 @@ use std::time::Duration;
 #[cfg(target_os = "windows")]
 fn main() { println!("This is not a windows feature") }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn update_via_handle() {
     let mut notification_handle = Notification::new()
         .summary("First Notification")
@@ -26,7 +26,7 @@ fn update_via_handle() {
 }
 
 #[allow(dead_code)]
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn update_via_manually_stored_id() {
     let handle = Notification::new()
         .summary("First Notification")
@@ -65,7 +65,7 @@ fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     // please use the handle to update a notification
     update_via_handle();

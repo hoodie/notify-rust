@@ -63,10 +63,10 @@ impl std::ops::Deref for TimeoutMessage {
     }
 }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 use dbus::arg::messageitem::MessageItem;
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 impl std::convert::TryFrom<&MessageItem> for TimeoutMessage {
     type Error = ();
 

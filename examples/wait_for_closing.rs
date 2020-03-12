@@ -2,7 +2,7 @@
 use notify_rust::Notification;
 
 fn main() {
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     {
         let handle: notify_rust::NotificationHandle = Notification::new()
             .summary("Don't Mind me")

@@ -12,7 +12,7 @@
 
 mod constants;
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
@@ -131,11 +131,11 @@ impl Hint {
     }
 }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 impl Hint {}
 
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 impl<'a, A: dbus::arg::RefArg> From<(&'a String, &'a A)> for Hint {
     fn from(pair: (&String, &A)) -> Self {
 

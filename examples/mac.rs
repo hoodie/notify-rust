@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     println!("this is a mac only feature")
 }

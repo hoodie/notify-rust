@@ -17,7 +17,7 @@ fn print() {
 #[cfg(target_os = "windows")]
 fn main() { println!("this is a xdg only feature") }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     thread::spawn(|| {
         Notification::new()

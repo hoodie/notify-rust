@@ -1,8 +1,8 @@
-#[cfg(linux)] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
+#[cfg(all(unix, not(target_os = "macos")))] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
 
-#[cfg(linux)] use crate::xdg::{build_message, NotificationHandle};
-#[cfg(linux)] use crate::hints::{Hint, message::HintMessage};
-#[cfg(linux)] use crate::urgency::Urgency;
+#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
+#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{Hint, message::HintMessage};
+#[cfg(all(unix, not(target_os = "macos")))] use crate::urgency::Urgency;
 #[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::image::Image;
 
 #[cfg(target_os = "windows")] use winrt_notification::Toast;
@@ -13,7 +13,7 @@
 use crate::timeout::Timeout;
 use crate::error::*;
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 use std::collections::HashSet;
 use std::default::Default;
 use std::env;
@@ -50,7 +50,7 @@ pub struct Notification {
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
     /// Check out `Hint`
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub hints:   HashSet<Hint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
@@ -106,7 +106,7 @@ impl Notification {
     }
 
     /// Wrapper for `Hint::ImagePath`
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn image_path(&mut self, path: &str) -> &mut Notification {
         self.hint(Hint::ImagePath(path.to_string()));
         self
@@ -128,7 +128,7 @@ impl Notification {
     }
 
     /// Wrapper for `Hint::SoundName`
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.hint(Hint::SoundName(name.to_owned()));
         self
@@ -202,7 +202,7 @@ impl Notification {
     ///
     /// # Platform support
     /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn hint(&mut self, hint: Hint) -> &mut Notification {
         self.hints.insert(hint);
         self
@@ -230,7 +230,7 @@ impl Notification {
     /// # Platform support
     /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this.
     /// In macOS this does not exist
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
         self.hint(Hint::Urgency(urgency)); // TODO impl as T where T: Into<Urgency>
         self
@@ -284,7 +284,7 @@ impl Notification {
         self.clone()
     }
 
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_hints(&self) -> Result<MessageItem> {
         if !self.hints.is_empty() {
             let hints = self.hints
@@ -301,7 +301,7 @@ impl Notification {
         Ok(MessageItem::Array(MessageItemArray::new(vec![], "a{sv}".into()).unwrap()))
     }
 
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn pack_actions(&self) -> MessageItem {
         if !self.actions.is_empty() {
             let mut actions = vec![];
@@ -319,7 +319,7 @@ impl Notification {
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<NotificationHandle> {
         let connection = Connection::get_private(BusType::Session)?;
         let inner_id = self.id.unwrap_or(0);
@@ -381,7 +381,7 @@ impl Notification {
             })
     }
 
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) fn _show(&self, id: u32, connection: &Connection) -> Result<u32> {
         let mut message = build_message("Notify");
         let timeout: i32 = self.timeout.into();
@@ -404,7 +404,7 @@ impl Notification {
     }
 
     /// Wraps show() but prints notification to stdout.
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show_debug(&mut self) -> Result<NotificationHandle> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
                  appname = self.appname,
@@ -417,7 +417,7 @@ impl Notification {
 }
 
 impl Default for Notification {
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn default() -> Notification {
         Notification {
             appname:  exe_name(),

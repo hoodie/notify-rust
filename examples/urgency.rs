@@ -11,7 +11,7 @@ fn main() {
     println!("this is an xdg only feature")
 }
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // use it this way
     for urgency in &[Low, Normal, Critical] {

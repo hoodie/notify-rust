@@ -48,7 +48,7 @@
 //!
 //! ```no_run
 //! # use notify_rust::*;
-//! # #[cfg(linux)]
+//! # #[cfg(all(unix, not(target_os = "macos")))]
 //! Notification::new().summary("click me")
 //!                    .action("default", "default")
 //!                    .action("clicked", "click here")
@@ -124,7 +124,7 @@
 //! ```ignore
 //! #[cfg(target_os = "macos")]
 //! // or
-//! // #### #[cfg(linux)]
+//! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
 //!
 
@@ -136,13 +136,13 @@
         unused_qualifications)]
 #![warn(missing_docs)]
 
-#[cfg(linux)]
+#[cfg(all(unix, not(target_os = "macos")))]
 extern crate dbus;
 
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 
 #[cfg(target_os = "macos")] mod macos;
-#[cfg(linux)] mod xdg;
+#[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
 #[cfg(target_os = "windows")] extern crate winrt_notification;
 
@@ -167,7 +167,7 @@ pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")] pub use macos::*;
 
-#[cfg(linux)] pub use crate::xdg::{
+#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{
     get_capabilities,
     get_server_information,
     handle_action,
