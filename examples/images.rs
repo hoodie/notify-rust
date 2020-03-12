@@ -1,14 +1,9 @@
 #![allow(unused_imports)]
-extern crate notify_rust;
 
-use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
+use notify_rust::Hint;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use notify_rust::NotificationImage as Image;
-
-
-#[cfg(target_os = "macos")]
-fn main() { println!("this is a xdg only feature") }
+use notify_rust::Image;
+use notify_rust::Notification;
 
 #[cfg(target_os = "windows")]
 fn main() { println!("this is a xdg only feature") }
@@ -16,7 +11,7 @@ fn main() { println!("this is a xdg only feature") }
 #[cfg(all(not(feature = "images"), unix, not(target_os = "macos")))]
 fn main() { println!("please build with '--features=images'") }
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images", unix, not(target_os = "macos"), not(target_os = "windows")))]
 fn main()
 {
     let mut image_data = vec![0;128*128*3];
@@ -25,19 +20,28 @@ fn main()
     }
 
     Notification::new()
-        .summary("Generated Image")
+        .summary("Generated Image (.hint())")
         .body("You should see stripes in this notification")
-        //.hint(Hint::ImageData(Image::from_rgb(128,128,image_data).unwrap()))
-        .image_data(Image::from_rgb(128,128,image_data).unwrap())
-        .show()
-        .unwrap();
+        .hint(Hint::ImageData(Image::from_rgb(128, 128, image_data())?))
+        .show()?;
 
     Notification::new()
-        .summary("Images")
-        .body("Trying to open an image")
-        .image("./examples/octodex.jpg")
-        //.image_path("./examples/octodex.jpg")
-        .show()
-        .unwrap();
+        .summary("Generated Image (.image_data())")
+        .body("You should see stripes in this notification")
+        .image_data(Image::from_rgb(128, 128, image_data())?)
+        .show()?;
 
+    Notification::new()
+        .summary(".image()")
+        .body("Trying to open an image")
+        .image("./examples/octodex.jpg")?
+        .show()?;
+
+    Notification::new()
+        .summary(".image_path()")
+        .body("Trying to open an image")
+        .image_path("./examples/octodex.jpg")
+        .show()?;
+
+    Ok(())
 }

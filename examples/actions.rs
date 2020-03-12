@@ -1,16 +1,18 @@
-extern crate notify_rust;
+#![allow(unused_imports)]
+use notify_rust::{Hint, Notification};
 
-use notify_rust::Notification;
-use notify_rust::NotificationHint as Hint;
+#[cfg(windows)]
+fn main () {
+    println!("this is a unix only feature");
+}
 
+#[cfg(unix)]
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new()
         .summary("click me")
-
         .action("default", "default")    // IDENTIFIER, LABEL
         .action("clicked", "click here") // IDENTIFIER, LABEL
-
         .hint(Hint::Resident(true))
         .show()
         .unwrap()
@@ -29,5 +31,6 @@ fn main() {
         .summary("PLATFORM ERROR")
         .subtitle("unsupported functionality")
         .body("cannot wait for closing on macOS.")
-        .show().unwrap();
+        .show()
+        .unwrap();
 }

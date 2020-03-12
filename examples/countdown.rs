@@ -1,4 +1,4 @@
-extern crate notify_rust;
+#![allow(unused_imports, dead_code)]
 use notify_rust::Notification;
 use std::time::Duration;
 
@@ -17,19 +17,18 @@ fn main() {
         .show()
         .unwrap();
 
-
-    for i in 0..11{
+    for i in 0..11 {
         std::thread::sleep(Duration::from_millis(1_000));
-        notification.body(&format!("T-minus {}", 10-i))
-        .appname(&format!("countdown_{}", 10-i));
+        notification
+            .body(&format!("T-minus {}", 10 - i))
+            .appname(&format!("countdown_{}", 10 - i));
         notification.update();
-        println!("{}", 10-i);
+        println!("{}", 10 - i);
     }
 
-    notification.body("TAKE OFF")
-    .appname("countdown_takeoff")
-    .show()
-    .unwrap();
-
+    notification
+        .body("TAKE OFF")
+        .appname("countdown_takeoff")
+        .show()
+        .unwrap();
 }
-

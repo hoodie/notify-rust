@@ -1,6 +1,12 @@
-extern crate notify_rust;
+//! Show Volume example
+//!
+//! Only works on unity
+//!
+
+#![allow(unused_imports, dead_code)]
+use self::notify_rust::Hint;
 use self::notify_rust::Notification;
-use self::notify_rust::NotificationHint;
+use notify_rust;
 use std::time::Duration;
 
 enum Volume {
@@ -8,7 +14,8 @@ enum Volume {
     Percent(i32),
 }
 
-fn show_volume(percent: Volume){
+#[cfg(all(unix, not(target_os = "macos")))]
+fn show_volume(percent: Volume) {
     let icon = match percent {
         Volume::Muted => "notification-audio-volume-muted",
         Volume::Percent(x) if x == 0 => "notification-audio-volume-off",
@@ -25,16 +32,28 @@ fn show_volume(percent: Volume){
     Notification::new()
         .summary(" ")
         .icon(icon)
-        .hint(NotificationHint::SoundName("audio-volume-change".to_owned()))
-        .hint(NotificationHint::Custom("synchronous".to_owned(), "volume".to_owned()))
-        .hint(NotificationHint::CustomInt("value".to_owned(), value))
-        .show().unwrap();
+        .hint(Hint::SoundName("audio-volume-change".into()))
+        .hint(Hint::Custom("synchronous".into(), "volume".into()))
+        .hint(Hint::CustomInt("value".into(), value))
+        .show()
+        .unwrap();
 }
 
-fn main(){
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is an xdg only feature")
+}
+
+#[cfg(windows)]
+fn main() {
+    println!("this is a xdg only feature")
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn main() {
     show_volume(Volume::Muted);
-    for i in 1..11{
+    for i in 1..11 {
         std::thread::sleep(Duration::from_millis(1_000));
-        show_volume(Volume::Percent(i*10));
+        show_volume(Volume::Percent(i * 10));
     }
 }

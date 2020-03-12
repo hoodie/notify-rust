@@ -1,7 +1,5 @@
-extern crate notify_rust;
 use notify_rust::Notification;
 fn main() {
-
     // here we create a notification and then reuse a second time
 
     let mut notification = Notification::new()
@@ -16,5 +14,4 @@ fn main() {
 
     notification.body("just kidding, nothing happened");
     notification.show().unwrap();
-
 }
