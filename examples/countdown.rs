@@ -7,7 +7,7 @@ use std::time::Duration;
 #[cfg(target_os = "windows")]
 fn main() { println!("this is a xdg only feature") }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 fn main() {
     let mut notification = Notification::new()
         .summary("Rocket launch in ...")

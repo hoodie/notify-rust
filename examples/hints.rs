@@ -19,7 +19,7 @@ fn main() {
     println!("this is an xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Pay close attention to the output of:");
     println!("$ dbus-monitor \"interface=org.freedesktop.Notifications\"");

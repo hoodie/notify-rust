@@ -1,6 +1,6 @@
 #![cfg(feature = "server")]
 #![allow(unused_must_use)]
-#![cfg(all(unix, not(target_os = "macos")))]
+#![cfg(linux)]
 extern crate notify_rust;
 
 #[cfg(test)]

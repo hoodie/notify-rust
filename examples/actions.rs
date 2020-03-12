@@ -8,7 +8,7 @@ fn main () {
 
 #[cfg(unix)]
 fn main() {
-    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(linux)]
     Notification::new()
         .summary("click me")
         .action("default", "default")    // IDENTIFIER, LABEL

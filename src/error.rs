@@ -19,7 +19,7 @@ pub enum ErrorKind {
     /// only here for backwards compatibility
     Msg(String),
 
-    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(linux)]
     Dbus(dbus::Error),
 
     #[cfg(target_os = "macos")]
@@ -36,7 +36,7 @@ pub enum ErrorKind {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
-            #[cfg(all(unix, not(target_os = "macos")))]
+            #[cfg(linux)]
             ErrorKind::Dbus(ref e) => write!(f, "{}", e),
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
@@ -51,7 +51,7 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 impl From<dbus::Error> for Error {
     fn from(e: dbus::Error) -> Error {
         Error { kind: ErrorKind::Dbus(e) }

@@ -1,4 +1,4 @@
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 fn main() {
     if let Ok(info) = notify_rust::get_server_information() {
         println!("{}:", info.name);

@@ -13,7 +13,7 @@ fn main() {
 }
 
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     Notification::new()
         .summary("Persistent notification")

@@ -20,7 +20,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(linux)]
 fn main() {
     println!("this is a mac only feature")
 }
