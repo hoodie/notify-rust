@@ -4,10 +4,8 @@ extern crate notify_rust;
 #[cfg(test)]
 mod realworld {
 
-    use notify_rust::Hint;
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     use notify_rust::Image;
-    use notify_rust::Urgency::*;
     use notify_rust::*;
 
     use ctor::ctor;
