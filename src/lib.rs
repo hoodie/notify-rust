@@ -35,8 +35,8 @@
 //!     .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
 //!     .icon("thunderbird")
 //!     .appname("thunderbird")
-//!     .hint(Hint::Category("email".to_owned()))
-//!     .hint(Hint::Resident(true)) // this is not supported by all implementations
+//!     // .hint(Hint::Category("email".to_owned()))
+//!     // .hint(Hint::Resident(true)) // this is not supported by all implementations
 //!     .timeout(Timeout::Never) // this however is
 //!     .show().unwrap();
 //! ```
@@ -144,8 +144,11 @@ extern crate dbus;
 #[cfg(target_os = "macos")] mod macos;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
+#[cfg(target_os = "windows")] extern crate winrt_notification;
+
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+
 extern crate lazy_static;
 
 pub mod error;
@@ -154,7 +157,6 @@ mod timeout;
 mod hints;
 mod notification;
 
-
 pub(crate) mod urgency;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
@@ -162,7 +164,6 @@ pub(crate) mod urgency;
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))] pub mod server;
-
 
 #[cfg(target_os = "macos")] pub use macos::*;
 
@@ -198,8 +199,6 @@ lazy_static!{
         .and_then(|info| info.spec_version.parse::<miniver::Version>())
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
-
-
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation {

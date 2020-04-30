@@ -1,13 +1,12 @@
 #![allow(unused_imports)]
-// import `NotificationHandle` to test re-export
-use notify_rust::{Hint, Notification, NotificationHandle};
+use notify_rust::Notification;
 
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        let handle: NotificationHandle = Notification::new()
+        let handle: notify_rust::NotificationHandle = Notification::new()
             .summary("Don't Mind me")
-            .hint(Hint::Transient(true))
+            .hint(notify_rust::Hint::Transient(true))
             .body("I'll be gone soon enough.\nSorry for the inconvenience.")
             .show()
             .unwrap();

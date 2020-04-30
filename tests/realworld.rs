@@ -1,14 +1,11 @@
 #![allow(unused_must_use)]
-#![cfg(all(unix, not(target_os = "macos")))]
 extern crate notify_rust;
 
 #[cfg(test)]
 mod realworld {
 
-    use notify_rust::Hint;
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     use notify_rust::Image;
-    use notify_rust::Urgency::*;
     use notify_rust::*;
 
     use ctor::ctor;
@@ -51,6 +48,7 @@ mod realworld {
     }
 
     #[test]
+    #[cfg(linux)]
     fn closing() {
         Notification::new()
             .summary("You see me")
@@ -61,6 +59,7 @@ mod realworld {
     }
 
     #[test]
+    #[cfg(linux)]
     fn capabilities() {
         let capabilities: Vec<String> = get_capabilities().unwrap();
         for capability in capabilities {
@@ -114,6 +113,7 @@ mod realworld {
     }
 
     #[test]
+    #[cfg(linux)]
     fn urgency() {
         // use it this way
         for urgency in &[
@@ -130,6 +130,7 @@ mod realworld {
     }
 
     #[test]
+    #[cfg(linux)]
     fn category() {
         Notification::new()
             .appname("thunderbird")
@@ -141,6 +142,7 @@ mod realworld {
     }
 
     #[test]
+    #[cfg(linux)]
     fn persistent() {
         Notification::new()
             .summary("Incoming Call: Your Mom!")

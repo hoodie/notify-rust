@@ -7,6 +7,12 @@ fn main() {
     println!("this is an xdg only feature")
 }
 
+#[cfg(windows)]
+fn main() {
+    println!("this is a xdg only feature")
+}
+
+
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     Notification::new()
