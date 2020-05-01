@@ -24,3 +24,8 @@ fn main() -> Result<(), String> {
 fn main() {
     println!("this is a mac only feature")
 }
+
+#[cfg(windows)]
+fn main() {
+    println!("this is a mac only feature")
+}

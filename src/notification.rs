@@ -5,6 +5,10 @@
 #[cfg(all(unix, not(target_os = "macos")))] use crate::urgency::Urgency;
 #[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::image::Image;
 
+#[cfg(target_os = "windows")] use winrt_notification::Toast;
+#[cfg(target_os = "windows")] use std::str::FromStr;
+#[cfg(target_os = "windows")] use std::path::Path;
+
 #[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
 use crate::timeout::Timeout;
 use crate::error::*;
@@ -46,11 +50,13 @@ pub struct Notification {
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
     /// Check out `Hint`
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub hints:   HashSet<Hint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
     #[cfg(target_os="macos")] sound_name: Option<String>,
+    #[cfg(target_os="windows")] sound_name: Option<String>,
+    #[cfg(target_os="windows")] path_to_image: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -106,6 +112,13 @@ impl Notification {
         self
     }
 
+     /// Wrapper for `NotificationHint::ImagePath`
+    #[cfg(target_os="windows")]
+    pub fn image_path(&mut self, path:&str) -> &mut Notification {
+        self.path_to_image = Some(path.to_string());
+        self
+    }
+
     /// Wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     pub fn image<T: AsRef<std::path::Path> + Sized>(&mut self, path: T) -> Result<&mut Notification> {
@@ -122,7 +135,7 @@ impl Notification {
     }
 
     /// Set the sound_name for the NSUserNotification
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
         self
@@ -322,12 +335,49 @@ impl Notification {
     pub fn show(&self) -> Result<NotificationHandle> {
         mac_notification_sys::send_notification(
             &self.summary, //title
-            &self.subtitle.as_ref().map(|s| &**s), // subtitle
+            &self.subtitle.as_ref().map(AsRef::as_ref), // subtitle
             &self.body, //message
-            &self.sound_name.as_ref().map(|s| &**s) // sound
+            &self.sound_name.as_ref().map(AsRef::as_ref) // sound
         )?;
 
         Ok(NotificationHandle::new(self.clone()))
+    }
+
+     /// Sends Notification to NSUserNotificationCenter.
+    ///
+    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
+    /// the notification.
+    #[cfg(target_os = "windows")]
+    pub fn show(&self) -> Result<()> {
+        let sound = match &self.sound_name {
+            Some(chosen_sound_name) => winrt_notification::Sound::from_str(&chosen_sound_name).ok(),
+            None => None
+        };
+
+        let duration = match self.timeout {
+            Timeout::Default => winrt_notification::Duration::Short,
+            Timeout::Never => winrt_notification::Duration::Long,
+            Timeout::Milliseconds(t) => if t >= 25000 {
+                winrt_notification::Duration::Long
+            } else {
+                winrt_notification::Duration::Short
+            }
+        };
+
+        let mut toast = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
+            .title(&self.summary)
+            .text1(&self.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
+            .text2(&self.body)
+            .sound(sound)
+            .duration(duration);
+        if let Some(image_path) = &self.path_to_image {
+            toast = toast.image(&Path::new(&image_path), "");
+        }
+
+        toast.show()
+            .map_err(|e| {
+                Error::from(ErrorKind::Msg(format!("{:?}",e)))
+            })
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -393,6 +443,22 @@ impl Default for Notification {
             timeout:    Timeout::Default,
             sound_name: Default::default(),
             id:         None
+        }
+    }
+
+    #[cfg(target_os="windows")]
+    fn default() -> Notification {
+        Notification {
+            appname:  exe_name(),
+            summary:  String::new(),
+            subtitle:  None,
+            body:     String::new(),
+            icon:     String::new(),
+            actions:  Vec::new(),
+            timeout:  Timeout::Default,
+            sound_name: Default::default(),
+            id:       None,
+            path_to_image: None
         }
     }
 }

@@ -1,6 +1,12 @@
 #![allow(unused_imports)]
 use notify_rust::{Hint, Notification};
 
+#[cfg(windows)]
+fn main () {
+    println!("this is a unix only feature");
+}
+
+#[cfg(unix)]
 fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new()

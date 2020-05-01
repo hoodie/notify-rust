@@ -39,7 +39,7 @@ fn show_volume(percent: Volume) {
         .unwrap();
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(windows, target_os = "macos"))]
 fn main() {
     println!("this is an xdg only feature")
 }
