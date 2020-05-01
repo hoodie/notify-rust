@@ -48,7 +48,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn closing() {
         Notification::new()
             .summary("You see me")
@@ -59,7 +59,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn capabilities() {
         let capabilities: Vec<String> = get_capabilities().unwrap();
         for capability in capabilities {
@@ -113,7 +113,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn urgency() {
         // use it this way
         for urgency in &[
@@ -130,7 +130,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn category() {
         Notification::new()
             .appname("thunderbird")
@@ -142,7 +142,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(all(unix, not(target_os = "macos")))]
     fn persistent() {
         Notification::new()
             .summary("Incoming Call: Your Mom!")

@@ -2,9 +2,7 @@
 use notify_rust::Notification;
 use std::time::Duration;
 
-#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
-
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", taget_os = "macos"))]
 fn main() { println!("this is a xdg only feature") }
 
 #[cfg(all(unix, not(target_os = "macos")))]

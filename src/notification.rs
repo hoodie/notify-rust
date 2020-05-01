@@ -335,9 +335,9 @@ impl Notification {
     pub fn show(&self) -> Result<NotificationHandle> {
         mac_notification_sys::send_notification(
             &self.summary, //title
-            &self.subtitle.as_ref().map(|s| &**s), // subtitle
+            &self.subtitle.as_ref().map(AsRef::as_ref), // subtitle
             &self.body, //message
-            &self.sound_name.as_ref().map(|s| &**s) // sound
+            &self.sound_name.as_ref().map(AsRef::as_ref) // sound
         )?;
 
         Ok(NotificationHandle::new(self.clone()))
@@ -349,8 +349,7 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
-        let sound_name = self.sound_name.clone();
-        let sound = match sound_name {
+        let sound = match &self.sound_name {
             Some(chosen_sound_name) => winrt_notification::Sound::from_str(&chosen_sound_name).ok(),
             None => None
         };
@@ -367,7 +366,7 @@ impl Notification {
 
         let mut toast = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
             .title(&self.summary)
-            .text1(&self.subtitle.as_ref().map(|s| &**s).unwrap_or("")) // subtitle
+            .text1(&self.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
             .text2(&self.body)
             .sound(sound)
             .duration(duration);
