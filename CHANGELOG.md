@@ -1,16 +1,11 @@
 # Changelog
 
-## [Unreleased](///compare/v4.0.0-beta.2...HEAD) (2020-03-11)
+## [v4.0.0-beta.4](///compare/v3.6.3...v4.0.0-beta.4) (2020-05-02)
 
 ### Features
 
+* **windows:** additions to the API (#69) 65cc95b
 * make notification non-exhaustive d22cb41
-
-
-## [v4.0.0-beta.2](///compare/v3.6.3...v4.0.0-beta.2) (2020-02-02)
-
-### Features
-
 * make error non-exhaustive ff38f15
 * drop redundant name prefixes fce6cfd
 * rearranged modules a1b2b9a
