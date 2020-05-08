@@ -57,6 +57,7 @@ pub struct Notification {
     #[cfg(target_os="macos")] sound_name: Option<String>,
     #[cfg(target_os="windows")] sound_name: Option<String>,
     #[cfg(target_os="windows")] path_to_image: Option<String>,
+    #[cfg(target_os="windows")] app_id: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -114,8 +115,15 @@ impl Notification {
 
      /// Wrapper for `NotificationHint::ImagePath`
     #[cfg(target_os="windows")]
-    pub fn image_path(&mut self, path:&str) -> &mut Notification {
+    pub fn image_path(&mut self, path: &str) -> &mut Notification {
         self.path_to_image = Some(path.to_string());
+        self
+    }
+
+    /// app's System.AppUserModel.ID
+    #[cfg(target_os="windows")]
+    pub fn app_id(&mut self, app_id: &str) -> &mut Notification {
+        self.app_id = Some(app_id.to_string());
         self
     }
 
@@ -364,7 +372,9 @@ impl Notification {
             }
         };
 
-        let mut toast = Toast::new(Toast::POWERSHELL_APP_ID) //Not using app name due winrt-notification#1
+        let powershell_app_id = &Toast::POWERSHELL_APP_ID.to_string();
+        let app_id = &self.app_id.as_ref().unwrap_or(powershell_app_id);
+        let mut toast = Toast::new(app_id) //Not using app name due winrt-notification#1
             .title(&self.summary)
             .text1(&self.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
             .text2(&self.body)
@@ -449,16 +459,17 @@ impl Default for Notification {
     #[cfg(target_os="windows")]
     fn default() -> Notification {
         Notification {
-            appname:  exe_name(),
-            summary:  String::new(),
-            subtitle:  None,
-            body:     String::new(),
-            icon:     String::new(),
-            actions:  Vec::new(),
-            timeout:  Timeout::Default,
-            sound_name: Default::default(),
-            id:       None,
-            path_to_image: None
+            appname:       exe_name(),
+            summary:       String::new(),
+            subtitle:      None,
+            body:          String::new(),
+            icon:          String::new(),
+            actions:       Vec::new(),
+            timeout:       Timeout::Default,
+            sound_name:    Default::default(),
+            id:            None,
+            path_to_image: None,
+            app_id:        None
         }
     }
 }
