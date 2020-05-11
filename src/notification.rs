@@ -374,7 +374,7 @@ impl Notification {
 
         let powershell_app_id = &Toast::POWERSHELL_APP_ID.to_string();
         let app_id = &self.app_id.as_ref().unwrap_or(powershell_app_id);
-        let mut toast = Toast::new(app_id) //Not using app name due winrt-notification#1
+        let mut toast = Toast::new(app_id)
             .title(&self.summary)
             .text1(&self.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
             .text2(&self.body)
