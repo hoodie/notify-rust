@@ -7,7 +7,7 @@
 //! This library was originally conceived with the [XDG](https://en.wikipedia.org/wiki/XDG) notification specification in mind.
 //! Since version 3.3 this crate also builds on macOS, however the semantics of the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS NSNotifications
 //! are quite different.
-//! Therefore only the a very small subset of functions is supported on macOS.
+//! Therefore only a very small subset of functions is supported on macOS.
 //! Certain methods don't have any effect there, others will explicitly fail to compile,
 //! in these cases you will have to add platform specific toggles to your code.
 //! For more see [platform differences](#platform-differences)
