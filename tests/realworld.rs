@@ -116,6 +116,7 @@ mod realworld {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn urgency() {
         // use it this way
+        use Urgency::*;
         for urgency in &[
             Hint::Urgency(Low),
             Hint::Urgency(Normal),
