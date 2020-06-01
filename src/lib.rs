@@ -76,9 +76,10 @@
 //! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
 //!
 //! # Platform Differences
+//! <details>
 //! ✔︎ = works <br/>
 //! ❌ = will not compile
-//!
+//! 
 //! ## `Notification`
 //! | method              | XDG   | macOS |
 //! |---------------------|-------|-------|
@@ -115,7 +116,6 @@
 //! | `fn set_application(...)`                  | ❌  |    ✔︎  |
 //! | `fn get_bundle_identifier_or_default(...)` | ❌  |    ✔︎  |
 //!
-//! </table>
 //!
 //! ### Toggles
 //!
@@ -126,6 +126,7 @@
 //! // or
 //! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
+//! </details>
 //!
 
 #![deny(missing_copy_implementations,
