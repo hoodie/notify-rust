@@ -40,6 +40,21 @@ impl NotificationHandle {
     }
 
     /// Manually close the notification
+    /// 
+    /// # Example
+    /// see 
+    /// ```no_run
+    /// let handle: notify_rust::NotificationHandle = Notification::new()
+    ///     .summary("oh no")
+    ///     .hint(notify_rust::Hint::Transient(true))
+    ///     .body("I'll be here till you close me!")
+    ///     .hint(Hint::Resident(true)) // does not work on kde
+    ///     .timeout(Timeout::Never) // works on kde and gnome
+    ///     .show()
+    ///     .unwrap();
+    /// // ... and then later
+    /// handle.close();
+    /// ```
     pub fn close(self) {
         let mut message = build_message("CloseNotification");
         message.append_items(&[self.id.into()]);

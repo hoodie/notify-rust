@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 use notify_rust::{Notification, Urgency::*};
 
 #[cfg(target_os = "macos")]
