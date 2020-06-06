@@ -2,7 +2,6 @@
 
 # notify-rust
 
-[![Travis](https://img.shields.io/travis/hoodie/notify-rust.svg)](https://travis-ci.org/hoodie/notify-rust/)
 [![Crates.io](https://img.shields.io/crates/d/notify-rust)](https://crates.io/crates/notify-rust)
 [![contributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
 ![maintenance](https://img.shields.io/maintenance/yes/2021)
