@@ -12,11 +12,13 @@ fn main() { println!("this is a xdg only feature") }
 fn main() { println!("please build with '--features=images'") }
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos"), not(target_os = "windows")))]
-fn main()
-{
-    let mut image_data = vec![0;128*128*3];
-    for i in 0..128*128*3 {
-        image_data[i] = (i % 256) as u8;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    fn image_data() -> Vec<u8> {
+        let mut image_data = vec![0;128*128*3];
+        for i in 0..128*128*3 {
+            image_data[i] = (i % 256) as u8;
+        }
+        image_data
     }
 
     Notification::new()
