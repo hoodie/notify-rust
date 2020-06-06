@@ -1,9 +1,0 @@
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libdbus-1-dev
-language: rust
-rust:
-  - stable
-  - nightly
-script:
-  - cargo build --verbose
