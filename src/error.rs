@@ -29,6 +29,8 @@ pub enum ErrorKind {
 
     SpecVersion(String),
 
+    Conversion(String),
+
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     Image(ImageError)
 }
@@ -41,6 +43,7 @@ impl fmt::Display for Error {
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
+            ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
             ErrorKind::Msg(ref e) => write!(f, "{}", e),
             #[cfg(all(feature = "images", unix, not(target_os = "macos")))]

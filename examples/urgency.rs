@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use notify_rust::{Notification, Urgency::*};
 
 #[cfg(target_os = "macos")]
@@ -25,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Notification::new()
         .body("Urgency from String")
         .icon("dialog-warning")
-        .urgency("high".into()) // only if you realy have to :D
+        .urgency("high".try_into()?)
         .show()?;
 
     Ok(())
