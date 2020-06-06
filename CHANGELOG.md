@@ -1,22 +1,24 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.0.0-rc.1...HEAD) (2020-05-16)
+## [v4.0.0](https://github.com/hoodie/notify-rust/compare/v3.6.3...v4.0.0) (2020-06-06)
 
+### ⚠ BREAKING CHANGE
 
-## [v4.0.0-rc.1](https://github.com/hoodie/notify-rust/compare/v3.6.3...v4.0.0-rc.1) (2020-05-16)
+* **urgency:** remove `From<&str>`
+* restructure modules and exports
 
 ### Features
 
-* **windows:** additions to the API (#69) 65cc95b
-* make notification non-exhaustive d22cb41
-* make error non-exhaustive ff38f15
-* drop redundant name prefixes fce6cfd
-* rearranged modules a1b2b9a
+* **windows:** additions to the API (#69) 1d9cb0e
+* make notification non-exhaustive 0304274
+* make error non-exhaustive 26f96e4
+* drop redundant name prefixes faf3123
+* restructure modules and exports 45be84c
 * .image() no longer silently fails 8b215bd
 
 ### Fixes
 
-* reexport NotificationHandle dde1c5d
+* reexport NotificationHandle 00edbc9
 
 
 ### [v3.6.3](https://github.com/hoodie/notify-rust/compare/v3.6.2...v3.6.3) (2019-11-02)
