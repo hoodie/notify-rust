@@ -41,7 +41,7 @@ images = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.3"
-ctor = "0.1.12"
+ctor = "0.1.15"
 
 [[example]]
 name = "images"
