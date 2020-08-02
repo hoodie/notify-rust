@@ -73,7 +73,7 @@
 //! Notification::new().show();
 //! ```
 //!
-//! more [examples](https://github.com/hoodie/notify-rust/tree/master/examples) in the repository.
+//! more [examples](https://github.com/hoodie/notify-rust/tree/main/examples) in the repository.
 //!
 //! # Platform Differences
 //! <details>
