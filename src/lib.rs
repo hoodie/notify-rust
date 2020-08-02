@@ -137,20 +137,10 @@
         unused_qualifications)]
 #![warn(missing_docs)]
 
-#[cfg(all(unix, not(target_os = "macos")))]
-extern crate dbus;
-
+#[cfg(all(unix, not(target_os = "macos")))] extern crate dbus;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
-
-#[cfg(target_os = "macos")] mod macos;
-#[cfg(all(unix, not(target_os = "macos")))] mod xdg;
-
 #[cfg(target_os = "windows")] extern crate winrt_notification;
-
-#[macro_use]
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-
-extern crate lazy_static;
+#[macro_use] #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate lazy_static;
 
 pub mod error;
 mod miniver;
@@ -158,14 +148,16 @@ mod timeout;
 mod hints;
 mod notification;
 
-pub(crate) mod urgency;
+#[cfg(target_os = "macos")] mod macos;
+#[cfg(target_os = "windows")] mod windows;
+#[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
-
-#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
-
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))] pub mod server;
 
+pub(crate) mod urgency;
+
+#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 #[cfg(target_os = "macos")] pub use macos::*;
 
 #[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{
@@ -188,9 +180,10 @@ pub use crate::image::{Image, ImageError};
 #[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
 pub use crate::urgency::Urgency;
 
-
-pub use crate::timeout::Timeout;
-pub use crate::notification::Notification;
+pub use crate::{
+    notification::Notification,
+    timeout::Timeout
+};
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 lazy_static!{
