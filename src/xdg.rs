@@ -1,14 +1,19 @@
 //! This module contains XDG and DBus specific code.
 //!
 //! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
-use dbus::Message;
-use dbus::arg::messageitem::MessageItem;
-use dbus::ffidisp::{BusType, Connection, ConnectionItem};
+use dbus::{
+    arg::messageitem::MessageItem,
+    Message,
+    ffidisp::{BusType, Connection, ConnectionItem}
+};
+
+
+use crate::{
+    error::*,
+    notification::Notification
+};
 
 use std::ops::{Deref, DerefMut};
-
-use crate::notification::Notification;
-use crate::error::*;
 
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
 #[cfg(not(feature = "debug_namespace"))] pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
@@ -103,7 +108,7 @@ impl NotificationHandle {
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
     pub fn update(&mut self) {
-        self.id = self.notification._show(self.id, &self.connection).unwrap();
+        self.id = show_notification_dbus(&self.notification, self.id, &self.connection).unwrap();
     }
 
     /// Returns the Handle's id.
@@ -128,6 +133,70 @@ impl DerefMut for NotificationHandle {
     }
 }
 
+pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
+    let connection = Connection::get_private(BusType::Session)?;
+    let inner_id = notification.id.unwrap_or(0);
+    let id = show_notification_dbus(notification, inner_id, &connection)?;
+    Ok(NotificationHandle::new(id, connection, notification.clone()))
+}
+
+fn show_notification_dbus(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
+    let mut message = build_message("Notify");
+    let timeout: i32 = notification.timeout.into();
+    message.append_items(&[notification.appname.to_owned().into(),  // appname
+                            id.into(),                              // notification to update
+                            notification.icon.to_owned().into(),    // icon
+                            notification.summary.to_owned().into(), // summary (title)
+                            notification.body.to_owned().into(),    // body
+                            dbus_rs::pack_actions(notification),    // actions
+                            dbus_rs::pack_hints(notification)?,     // hints
+                            timeout.into()                          // timeout
+    ]);
+
+    let reply = connection.send_with_reply_and_block(message, 2000)?;
+
+    match reply.get_items().get(0) {
+        Some(&MessageItem::UInt32(ref id)) => Ok(*id),
+        _ => Ok(0)
+    }
+}
+
+mod dbus_rs {
+    #![allow(unused_imports)]
+    use super::*;
+    use crate::hints::{Hint, message::HintMessage};
+    use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
+
+    pub fn pack_hints(notification: &Notification) -> Result<MessageItem> {
+        if !notification.hints.is_empty() {
+            let hints = notification.hints
+                .iter()
+                .cloned()
+                .map(HintMessage::wrap_hint)
+                .collect::<Vec<(MessageItem, MessageItem)>>();
+
+            if let Ok(array) = MessageItem::new_dict(hints) {
+                return Ok(array);
+            }
+        }
+
+        Ok(MessageItem::Array(MessageItemArray::new(vec![], "a{sv}".into()).unwrap()))
+    }
+
+    pub fn pack_actions(notification: &Notification) -> MessageItem {
+        if !notification.actions.is_empty() {
+            let mut actions = vec![];
+            for action in &notification.actions {
+                actions.push(action.to_owned().into());
+            }
+            if let Ok(array) = MessageItem::new_array(actions) {
+                return array;
+            }
+        }
+
+        MessageItem::Array(MessageItemArray::new(vec![], "as".into()).unwrap())
+    }
+}
 
 // here be public functions
 

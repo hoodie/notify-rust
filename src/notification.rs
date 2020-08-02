@@ -1,20 +1,20 @@
-#[cfg(all(unix, not(target_os = "macos")))] use dbus::{arg::messageitem::{MessageItem, MessageItemArray}, ffidisp::{Connection, BusType} };
 
-#[cfg(all(unix, not(target_os = "macos")))] use crate::xdg::{build_message, NotificationHandle};
-#[cfg(all(unix, not(target_os = "macos")))] use crate::hints::{Hint, message::HintMessage};
-#[cfg(all(unix, not(target_os = "macos")))] use crate::urgency::Urgency;
+#[cfg(all(unix, not(target_os = "macos")))] use crate::{
+    hints::Hint,
+    urgency::Urgency,
+    xdg,
+};
+
 #[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::image::Image;
 
-#[cfg(target_os = "windows")] use winrt_notification::Toast;
-#[cfg(target_os = "windows")] use std::str::FromStr;
-#[cfg(target_os = "windows")] use std::path::Path;
+#[cfg(all(unix, target_os = "macos"))] use crate::macos;
+#[cfg(target_os = "windows")] use crate::windows;
 
-#[cfg(all(unix, target_os = "macos"))] use crate::macos::NotificationHandle;
 use crate::timeout::Timeout;
 use crate::error::*;
 
-#[cfg(all(unix, not(target_os = "macos")))]
-use std::collections::HashSet;
+#[cfg(all(unix, not(target_os = "macos")))] use std::collections::HashSet;
+
 use std::default::Default;
 use std::env;
 
@@ -54,10 +54,10 @@ pub struct Notification {
     pub hints:   HashSet<Hint>,
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
-    #[cfg(target_os="macos")] sound_name: Option<String>,
-    #[cfg(target_os="windows")] sound_name: Option<String>,
-    #[cfg(target_os="windows")] path_to_image: Option<String>,
-    #[cfg(target_os="windows")] app_id: Option<String>,
+    #[cfg(target_os="macos")]   pub(crate) sound_name: Option<String>,
+    #[cfg(target_os="windows")] pub(crate) sound_name: Option<String>,
+    #[cfg(target_os="windows")] pub(crate) path_to_image: Option<String>,
+    #[cfg(target_os="windows")] pub(crate) app_id: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
     /// Only to be used on the receive end. Use Notification hand for updating.
@@ -292,47 +292,13 @@ impl Notification {
         self.clone()
     }
 
-    #[cfg(all(unix, not(target_os = "macos")))]
-    fn pack_hints(&self) -> Result<MessageItem> {
-        if !self.hints.is_empty() {
-            let hints = self.hints
-                .iter()
-                .cloned()
-                .map(HintMessage::wrap_hint)
-                .collect::<Vec<(MessageItem, MessageItem)>>();
-
-            if let Ok(array) = MessageItem::new_dict(hints) {
-                return Ok(array);
-            }
-        }
-
-        Ok(MessageItem::Array(MessageItemArray::new(vec![], "a{sv}".into()).unwrap()))
-    }
-
-    #[cfg(all(unix, not(target_os = "macos")))]
-    fn pack_actions(&self) -> MessageItem {
-        if !self.actions.is_empty() {
-            let mut actions = vec![];
-            for action in &self.actions {
-                actions.push(action.to_owned().into());
-            }
-            if let Ok(array) = MessageItem::new_array(actions) {
-                return array;
-            }
-        }
-
-        MessageItem::Array(MessageItemArray::new(vec![], "as".into()).unwrap())
-    }
 
     /// Sends Notification to D-Bus.
     ///
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn show(&self) -> Result<NotificationHandle> {
-        let connection = Connection::get_private(BusType::Session)?;
-        let inner_id = self.id.unwrap_or(0);
-        let id = self._show(inner_id, &connection)?;
-        Ok(NotificationHandle::new(id, connection, self.clone()))
+    pub fn show(&self) -> Result<xdg::NotificationHandle> {
+        xdg::show_notification(self)
     }
 
     /// Sends Notification to NSUserNotificationCenter.
@@ -340,15 +306,8 @@ impl Notification {
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> Result<NotificationHandle> {
-        mac_notification_sys::send_notification(
-            &self.summary, //title
-            &self.subtitle.as_ref().map(AsRef::as_ref), // subtitle
-            &self.body, //message
-            &self.sound_name.as_ref().map(AsRef::as_ref) // sound
-        )?;
-
-        Ok(NotificationHandle::new(self.clone()))
+    pub fn show(&self) -> Result<macos::NotificationHandle> {
+        macos::show_notification(self)
     }
 
      /// Sends Notification to NSUserNotificationCenter.
@@ -357,64 +316,13 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
-        let sound = match &self.sound_name {
-            Some(chosen_sound_name) => winrt_notification::Sound::from_str(&chosen_sound_name).ok(),
-            None => None
-        };
-
-        let duration = match self.timeout {
-            Timeout::Default => winrt_notification::Duration::Short,
-            Timeout::Never => winrt_notification::Duration::Long,
-            Timeout::Milliseconds(t) => if t >= 25000 {
-                winrt_notification::Duration::Long
-            } else {
-                winrt_notification::Duration::Short
-            }
-        };
-
-        let powershell_app_id = &Toast::POWERSHELL_APP_ID.to_string();
-        let app_id = &self.app_id.as_ref().unwrap_or(powershell_app_id);
-        let mut toast = Toast::new(app_id)
-            .title(&self.summary)
-            .text1(&self.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
-            .text2(&self.body)
-            .sound(sound)
-            .duration(duration);
-        if let Some(image_path) = &self.path_to_image {
-            toast = toast.image(&Path::new(&image_path), "");
-        }
-
-        toast.show()
-            .map_err(|e| {
-                Error::from(ErrorKind::Msg(format!("{:?}",e)))
-            })
-    }
-
-    #[cfg(all(unix, not(target_os = "macos")))]
-    pub(crate) fn _show(&self, id: u32, connection: &Connection) -> Result<u32> {
-        let mut message = build_message("Notify");
-        let timeout: i32 = self.timeout.into();
-        message.append_items(&[self.appname.to_owned().into(), // appname
-                               id.into(),                      // notification to update
-                               self.icon.to_owned().into(),    // icon
-                               self.summary.to_owned().into(), // summary (title)
-                               self.body.to_owned().into(),    // body
-                               self.pack_actions(),            // actions
-                               self.pack_hints()?,             // hints
-                               timeout.into()                  // timeout
-        ]);
-
-        let reply = connection.send_with_reply_and_block(message, 2000)?;
-
-        match reply.get_items().get(0) {
-            Some(&MessageItem::UInt32(ref id)) => Ok(*id),
-            _ => Ok(0)
-        }
+        windows::show_notification(self)
     }
 
     /// Wraps show() but prints notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn show_debug(&mut self) -> Result<NotificationHandle> {
+    #[deprecated = "this was never meant to be public API"]
+    pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
                  appname = self.appname,
                  summary = self.summary,
@@ -423,6 +331,7 @@ impl Notification {
                  icon = self.icon,);
         self.show()
     }
+
 }
 
 impl Default for Notification {

@@ -1,4 +1,8 @@
-use super::Notification;
+pub use crate::{
+    error::*,
+    notification::Notification,
+};
+
 use std::ops::{Deref, DerefMut};
 
 /// A handle to a shown notification.
@@ -6,7 +10,7 @@ use std::ops::{Deref, DerefMut};
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct NotificationHandle {
-    notification: Notification
+    notification: Notification,
 }
 
 impl NotificationHandle {
@@ -29,4 +33,15 @@ impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
         &mut self.notification
     }
+}
+
+pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
+    mac_notification_sys::send_notification(
+        &notification.summary,                                //title
+        &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
+        &notification.body,                                   //message
+        &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
+    )?;
+
+    Ok(NotificationHandle::new(notification.clone()))
 }
