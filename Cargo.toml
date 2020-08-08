@@ -34,7 +34,7 @@ mac-notification-sys = "0.3"
 winrt-notification = "0.2"
 
 [features]
-default = []
+default = ["images", "server"]
 server = []
 debug_namespace = []
 images = ["image", "lazy_static"]
