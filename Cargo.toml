@@ -40,7 +40,7 @@ debug_namespace = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]
-color-backtrace = "0.4"
+color-backtrace = "0.5"
 ctor = "0.1.15"
 
 [[example]]
