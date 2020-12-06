@@ -13,6 +13,12 @@ pub enum Timeout {
     Milliseconds(u32),
 }
 
+impl Timeout {
+    pub(crate) fn into_i32(self) -> i32 {
+        self.into()
+    }
+}
+
 impl Default for Timeout {
     fn default() -> Self {
         Timeout::Default

@@ -13,3 +13,5 @@ pub const X: &str               = "x";
 pub const Y: &str               = "y";
 pub const URGENCY: &str         = "urgency";
 
+
+pub const INVALID: &str    = "invalid";

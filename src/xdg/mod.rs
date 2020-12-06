@@ -9,6 +9,7 @@ use crate::{error::*, notification::Notification};
 use std::ops::{Deref, DerefMut};
 
 mod dbus_rs;
+mod zbus_rs;
 
 #[cfg(not(feature = "debug_namespace"))]
 pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
@@ -20,22 +21,31 @@ pub static NOTIFICATION_NAMESPACE: &str = "de.hoodie.Notifications";
 #[cfg(feature = "debug_namespace")]
 pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
 
+#[derive(Debug)]
+enum NotificationHandleInner {
+    Dbus(dbus_rs::DbusNotificationHandle),
+    Zbus(zbus_rs::ZbusNotificationHandle),
+}
+
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct NotificationHandle {
-    id: u32,
-    connection: DbusConnection,
-    notification: Notification,
+    inner: NotificationHandleInner,
 }
 
+#[allow(dead_code)]
 impl NotificationHandle {
-    pub(crate) fn new(id: u32, connection: DbusConnection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn for_dbus(id: u32, connection: DbusConnection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
-            id,
-            connection,
-            notification,
+            inner: dbus_rs::DbusNotificationHandle::new(id, connection, notification).into(),
+        }
+    }
+
+    pub(crate) fn for_zbus(id: u32, connection: zbus::Connection, notification: Notification) -> NotificationHandle {
+        NotificationHandle {
+            inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
         }
     }
 
@@ -45,7 +55,10 @@ impl NotificationHandle {
     where
         F: FnOnce(&str),
     {
-        dbus_rs::wait_for_action_signal(&self.connection, self.id, invocation_closure);
+        match self.inner {
+            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(invocation_closure),
+            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(invocation_closure),
+        }
     }
 
     /// Manually close the notification
@@ -65,9 +78,10 @@ impl NotificationHandle {
     /// handle.close();
     /// ```
     pub fn close(self) {
-        let mut message = dbus_rs::build_message("CloseNotification");
-        message.append_items(&[self.id.into()]);
-        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
+        match self.inner {
+            NotificationHandleInner::Dbus(inner) => inner.close(),
+            NotificationHandleInner::Zbus(inner) => inner.close(),
+        }
     }
 
     /// Executes a closure after the notification has closed.
@@ -85,11 +99,18 @@ impl NotificationHandle {
     where
         F: FnOnce(),
     {
-        self.wait_for_action(|action| {
-            if action == "__closed" {
-                closure();
-            }
-        });
+        match self.inner {
+            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action| {
+                if action == "__closed" {
+                    closure();
+                }
+            }),
+            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action| {
+                if action == "__closed" {
+                    closure();
+                }
+            }),
+        }
     }
 
     /// Replace the original notification with an updated version
@@ -113,12 +134,18 @@ impl NotificationHandle {
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
     pub fn update(&mut self) {
-        self.id = dbus_rs::send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+        match self.inner {
+            NotificationHandleInner::Dbus(ref mut inner) => inner.update(),
+            NotificationHandleInner::Zbus(ref mut inner) => inner.update(),
+        }
     }
 
     /// Returns the Handle's id.
     pub fn id(&self) -> u32 {
-        self.id
+        match self.inner {
+            NotificationHandleInner::Dbus(ref inner) => inner.id,
+            NotificationHandleInner::Zbus(ref inner) => inner.id,
+        }
     }
 }
 
@@ -127,19 +154,54 @@ impl Deref for NotificationHandle {
     type Target = Notification;
 
     fn deref(&self) -> &Notification {
-        &self.notification
+        match self.inner {
+            NotificationHandleInner::Dbus(ref inner) => &inner.notification,
+            NotificationHandleInner::Zbus(ref inner) => &inner.notification,
+        }
     }
 }
 
 /// Allow you to easily modify notification properties
 impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
-        &mut self.notification
+        match self.inner {
+            NotificationHandleInner::Dbus(ref mut inner) => &mut inner.notification,
+            NotificationHandleInner::Zbus(ref mut inner) => &mut inner.notification,
+        }
+    }
+}
+
+impl From<dbus_rs::DbusNotificationHandle> for NotificationHandleInner {
+    fn from(handle: dbus_rs::DbusNotificationHandle) -> NotificationHandleInner {
+        NotificationHandleInner::Dbus(handle)
+    }
+}
+
+impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandleInner {
+    fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandleInner {
+        NotificationHandleInner::Zbus(handle)
+    }
+}
+
+impl From<dbus_rs::DbusNotificationHandle> for NotificationHandle {
+    fn from(handle: dbus_rs::DbusNotificationHandle) -> NotificationHandle {
+        NotificationHandle { inner: handle.into() }
+    }
+}
+
+impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
+    fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandle {
+        NotificationHandle { inner: handle.into() }
     }
 }
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    dbus_rs::connect_and_send_notification(notification)
+    if std::env::var("ZBUS").is_ok() {
+        eprintln!("using zbus");
+        zbus_rs::connect_and_send_notification(notification).map(Into::into)
+    } else {
+        dbus_rs::connect_and_send_notification(notification).map(Into::into)
+    }
 }
 
 // here be public functions
@@ -155,11 +217,15 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 /// running.
 /// TODO dbus stuff module!!!
 pub fn get_server_information() -> Result<ServerInformation> {
-    dbus_rs::get_server_information()
+    if std::env::var("ZBUS").is_ok() {
+        eprintln!("using zbus");
+        zbus_rs::get_server_information()
+    } else {
+        dbus_rs::get_server_information()
+    }
 }
-
 /// Return value of `get_server_information()`.
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize, zvariant_derive::Type)]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,

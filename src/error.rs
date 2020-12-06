@@ -21,6 +21,7 @@ pub enum ErrorKind {
 
     #[cfg(all(unix, not(target_os = "macos")))]
     Dbus(dbus::Error),
+    Zbus(zbus::Error),
 
     #[cfg(target_os = "macos")]
     MacNotificationSys(mac_notification_sys::error::Error),
@@ -40,6 +41,7 @@ impl fmt::Display for Error {
         match self.kind {
             #[cfg(all(unix, not(target_os = "macos")))]
             ErrorKind::Dbus(ref e) => write!(f, "{}", e),
+            ErrorKind::Zbus(ref e) => write!(f, "{}", e),
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
@@ -58,6 +60,13 @@ impl std::error::Error for Error {}
 impl From<dbus::Error> for Error {
     fn from(e: dbus::Error) -> Error {
         Error { kind: ErrorKind::Dbus(e) }
+    }
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+impl From<zbus::Error> for Error {
+    fn from(e: zbus::Error) -> Error {
+        Error { kind: ErrorKind::Zbus(e) }
     }
 }
 
