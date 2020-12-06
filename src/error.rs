@@ -19,8 +19,9 @@ pub enum ErrorKind {
     /// only here for backwards compatibility
     Msg(String),
 
-    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
     Dbus(dbus::Error),
+
     #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
     Zbus(zbus::Error),
 
@@ -60,6 +61,14 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+impl From<&str> for Error {
+    fn from(e: &str) -> Error {
+        Error {
+            kind: ErrorKind::Msg(e.into()),
+        }
+    }
+}
 
 #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl From<dbus::Error> for Error {

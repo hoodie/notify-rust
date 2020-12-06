@@ -166,7 +166,7 @@ impl<'a> Into<(&'a str, zvariant::Value<'a>)> for &'a Hint {
 }
 
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl<'a, A: dbus::arg::RefArg> From<(&'a String, &'a A)> for Hint {
     fn from(pair: (&String, &A)) -> Self {
 

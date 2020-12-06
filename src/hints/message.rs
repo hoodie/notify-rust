@@ -19,6 +19,7 @@ use crate ::Urgency;
 use crate::image::*;
 
 use std::collections::{HashMap, HashSet};
+#[cfg(feature = "dbus")]
 use dbus::arg::{messageitem::MessageItem, RefArg};
 
 /// All currently implemented `Hints` that can be sent.
@@ -27,6 +28,7 @@ use dbus::arg::{messageitem::MessageItem, RefArg};
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub(crate) struct HintMessage(Hint);
 
+#[cfg(feature = "dbus")]
 impl HintMessage {
     pub fn wrap_hint(hint: Hint) -> (MessageItem, MessageItem) {
         Self::from(hint).into()
@@ -47,6 +49,7 @@ impl std::ops::Deref for HintMessage {
     }
 }
 
+#[cfg(feature = "dbus")]
 impl<'a, A: RefArg> From<(&'a String, &'a A)> for HintMessage {
     fn from(pair: (&String, &A)) -> Self {
 
@@ -81,6 +84,7 @@ impl<'a, A: RefArg> From<(&'a String, &'a A)> for HintMessage {
 }
 
 #[deprecated(note = "Prefer the DBus Arg and RefArg APIs")]
+#[cfg(feature = "dbus")]
 impl From<HintMessage> for (MessageItem, MessageItem) {
     fn from(hint: HintMessage) -> Self {
 
@@ -110,6 +114,7 @@ impl From<HintMessage> for (MessageItem, MessageItem) {
 
 
 // TODO: deprecated, Prefer the DBus Arg and RefArg APIs
+#[cfg(feature = "dbus")]
 impl From<(&MessageItem, &MessageItem)> for HintMessage {
     fn from ((key, mut value): (&MessageItem, &MessageItem)) -> Self {
         use Hint as Hint;
@@ -149,6 +154,7 @@ impl From<(&MessageItem, &MessageItem)> for HintMessage {
 
 
 #[allow(missing_docs)]
+#[cfg(feature = "dbus")]
 pub(crate) fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<HintMessage> {
     hints.iter().map(Into::into).collect()
 }

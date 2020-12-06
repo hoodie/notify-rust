@@ -70,10 +70,10 @@ impl std::ops::Deref for TimeoutMessage {
     }
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 use dbus::arg::messageitem::MessageItem;
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl std::convert::TryFrom<&MessageItem> for TimeoutMessage {
     type Error = ();
 

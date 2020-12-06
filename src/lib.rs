@@ -137,7 +137,7 @@
         unused_qualifications)]
 #![warn(missing_docs)]
 
-#[cfg(all(unix, not(target_os = "macos")))] extern crate dbus;
+#[cfg(all(feature="dbus", unix, not(target_os = "macos")))] extern crate dbus;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 #[cfg(target_os = "windows")] extern crate winrt_notification;
 #[macro_use] #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate lazy_static;
@@ -153,7 +153,7 @@ mod notification;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))] pub mod server;
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))] pub mod server;
 
 pub(crate) mod urgency;
 
