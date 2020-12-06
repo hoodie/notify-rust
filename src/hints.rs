@@ -10,7 +10,6 @@
 //! than is actually available.
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-use std::collections::{HashMap, HashSet};
 mod constants;
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -135,11 +134,12 @@ impl Hint {
 #[cfg(all(unix, not(target_os = "macos")))]
 impl Hint {}
 
-pub(crate) fn hints_to_map<'a>(set: &'a HashSet<Hint>) -> HashMap::<&'a str, zvariant::Value<'a>> {
+#[cfg(feature = "zbus")]
+pub(crate) fn hints_to_map<'a>(set: &'a std::collections::HashSet<Hint>) -> std::collections::HashMap::<&'a str, zvariant::Value<'a>> {
     set.iter().map(Into::into).collect()
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
 impl<'a> Into<(&'a str, zvariant::Value<'a>)> for &'a Hint {
     fn into(self) -> (&'a str, zvariant::Value<'a>) {
         use self::constants::*;

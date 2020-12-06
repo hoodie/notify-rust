@@ -9,6 +9,7 @@ use crate::{error::*, notification::Notification};
 use std::ops::{Deref, DerefMut};
 
 mod dbus_rs;
+#[cfg(feature = "zbus")]
 mod zbus_rs;
 
 #[cfg(not(feature = "debug_namespace"))]
@@ -24,6 +25,7 @@ pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
 #[derive(Debug)]
 enum NotificationHandleInner {
     Dbus(dbus_rs::DbusNotificationHandle),
+    #[cfg(feature = "zbus")]
     Zbus(zbus_rs::ZbusNotificationHandle),
 }
 
@@ -43,6 +45,7 @@ impl NotificationHandle {
         }
     }
 
+    #[cfg(feature = "zbus")]
     pub(crate) fn for_zbus(id: u32, connection: zbus::Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
             inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
@@ -57,6 +60,8 @@ impl NotificationHandle {
     {
         match self.inner {
             NotificationHandleInner::Dbus(inner) => inner.wait_for_action(invocation_closure),
+
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => inner.wait_for_action(invocation_closure),
         }
     }
@@ -80,6 +85,7 @@ impl NotificationHandle {
     pub fn close(self) {
         match self.inner {
             NotificationHandleInner::Dbus(inner) => inner.close(),
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => inner.close(),
         }
     }
@@ -105,6 +111,7 @@ impl NotificationHandle {
                     closure();
                 }
             }),
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action| {
                 if action == "__closed" {
                     closure();
@@ -136,6 +143,7 @@ impl NotificationHandle {
     pub fn update(&mut self) {
         match self.inner {
             NotificationHandleInner::Dbus(ref mut inner) => inner.update(),
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref mut inner) => inner.update(),
         }
     }
@@ -144,6 +152,7 @@ impl NotificationHandle {
     pub fn id(&self) -> u32 {
         match self.inner {
             NotificationHandleInner::Dbus(ref inner) => inner.id,
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref inner) => inner.id,
         }
     }
@@ -156,6 +165,7 @@ impl Deref for NotificationHandle {
     fn deref(&self) -> &Notification {
         match self.inner {
             NotificationHandleInner::Dbus(ref inner) => &inner.notification,
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref inner) => &inner.notification,
         }
     }
@@ -166,6 +176,7 @@ impl DerefMut for NotificationHandle {
     fn deref_mut(&mut self) -> &mut Notification {
         match self.inner {
             NotificationHandleInner::Dbus(ref mut inner) => &mut inner.notification,
+            #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref mut inner) => &mut inner.notification,
         }
     }
@@ -177,6 +188,7 @@ impl From<dbus_rs::DbusNotificationHandle> for NotificationHandleInner {
     }
 }
 
+#[cfg(feature = "zbus")]
 impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandleInner {
     fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandleInner {
         NotificationHandleInner::Zbus(handle)
@@ -189,6 +201,7 @@ impl From<dbus_rs::DbusNotificationHandle> for NotificationHandle {
     }
 }
 
+#[cfg(feature = "zbus")]
 impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
     fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandle {
         NotificationHandle { inner: handle.into() }
@@ -198,6 +211,9 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     if std::env::var("ZBUS").is_ok() {
         eprintln!("using zbus");
+        #[cfg(not(feature = "zbus"))]
+        unimplemented!("build with feature=z please!");
+        #[cfg(feature = "zbus")]
         zbus_rs::connect_and_send_notification(notification).map(Into::into)
     } else {
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
@@ -219,13 +235,18 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 pub fn get_server_information() -> Result<ServerInformation> {
     if std::env::var("ZBUS").is_ok() {
         eprintln!("using zbus");
+        #[cfg(not(feature = "zbus"))]
+        unimplemented!("build with feature=z please!");
+        #[cfg(feature = "zbus")]
         zbus_rs::get_server_information()
     } else {
         dbus_rs::get_server_information()
     }
 }
 /// Return value of `get_server_information()`.
-#[derive(Debug, serde::Deserialize, zvariant_derive::Type)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "zbus", derive(zvariant_derive::Type))]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,

@@ -21,7 +21,7 @@ include = [
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
-dbus = "0.8"
+dbus = { version = "0.8", optional = true }
 lazy_static = { version = "1.4", optional = true }
 image = { version = "0.23", optional = true }
 zvariant = { version = "2.3", optional = true }
@@ -36,8 +36,13 @@ mac-notification-sys = "0.3"
 winrt-notification = "0.2"
 
 [features]
-default = ["images", "server"]
+default = [
+  "d", #"images",
+  "server",
+  "z"
+]
 server = []
+d = ["dbus"]
 z = ["zbus", "zvariant", "zvariant_derive", "serde"]
 debug_namespace = []
 images = ["image", "lazy_static"]
