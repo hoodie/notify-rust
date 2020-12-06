@@ -2,7 +2,7 @@
 use notify_rust::{Hint, Notification};
 
 #[cfg(windows)]
-fn main () {
+fn main() {
     println!("this is a unix only feature");
 }
 

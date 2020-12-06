@@ -8,8 +8,58 @@ use crate::{
     error::*,
     hints::message::HintMessage,
     notification::Notification,
-    xdg::{NotificationHandle, ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH},
+    xdg::{ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH},
 };
+
+/// A handle to a shown notification.
+///
+/// This keeps a connection alive to ensure actions work on certain desktops.
+#[derive(Debug)]
+pub struct DbusNotificationHandle {
+    pub(crate) id: u32,
+    pub(crate) connection: Connection,
+    pub(crate) notification: Notification,
+}
+
+
+impl DbusNotificationHandle {
+    pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> DbusNotificationHandle {
+        DbusNotificationHandle {
+            id,
+            connection,
+            notification,
+        }
+    }
+
+    pub fn wait_for_action<F>(self, invocation_closure: F)
+    where
+        F: FnOnce(&str),
+    {
+        wait_for_action_signal(&self.connection, self.id, invocation_closure);
+    }
+
+    pub fn close(self) {
+        let mut message = build_message("CloseNotification");
+        message.append_items(&[self.id.into()]);
+        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
+    }
+
+    pub fn on_close<F>(self, closure: F)
+    where
+        F: FnOnce(),
+    {
+        self.wait_for_action(|action| {
+            if action == "__closed" {
+                closure();
+            }
+        });
+    }
+
+    pub fn update(&mut self) {
+        self.id = send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+    }
+
+}
 
 pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
     let mut message = build_message("Notify");
@@ -33,11 +83,11 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
     }
 }
 
-pub fn connect_and_send_notification(notification: &Notification) -> Result<NotificationHandle> {
+pub fn connect_and_send_notification(notification: &Notification) -> Result<DbusNotificationHandle> {
     let connection = Connection::get_private(BusType::Session)?;
     let inner_id = notification.id.unwrap_or(0);
     let id = send_notificaion_via_connection(notification, inner_id, &connection)?;
-    Ok(NotificationHandle::new(id, connection, notification.clone()))
+    Ok(DbusNotificationHandle::new(id, connection, notification.clone()))
 }
 
 pub fn build_message(method_name: &str) -> Message {
@@ -135,7 +185,7 @@ where
 }
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-pub fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
+fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
 where
     F: FnOnce(&str),
 {
@@ -150,7 +200,7 @@ where
         .unwrap();
 
     for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(message) = item {
+        if let ConnectionItem::Signal(message) = dbg!(item) {
             let items = message.get_items();
 
             let (path, interface, member) = (
