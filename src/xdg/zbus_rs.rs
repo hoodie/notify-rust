@@ -85,6 +85,22 @@ pub fn connect_and_send_notification(notification: &Notification) -> Result<Zbus
     Ok(ZbusNotificationHandle::new(id, connection, notification.clone()))
 }
 
+pub fn get_capabilities() -> Result<Vec<String>> {
+    let connection = zbus::Connection::new_session()?;
+    let info: Vec<String> = connection
+        .call_method(
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            crate::xdg::NOTIFICATION_OBJECTPATH,
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            "GetCapabilities",
+            &(),
+        )?
+        .body()
+        .unwrap();
+
+    Ok(info)
+}
+
 pub fn get_server_information() -> Result<xdg::ServerInformation> {
     let connection = zbus::Connection::new_session()?;
     let info: xdg::ServerInformation = connection

@@ -249,7 +249,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     return Err("can't get capabilities, no dbus connection possible in this build".into());
 
     #[cfg(feature = "zbus")]
-    todo!("add zbus support for get capabilities");
+    return zbus_rs::get_capabilities();
 
     #[cfg(feature = "dbus")]
     dbus_rs::get_capabilities()
