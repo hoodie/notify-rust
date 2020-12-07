@@ -226,15 +226,15 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 //compile_error!("you have to build with eiter zbus or dbus turned on");
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    if std::env::var("ZBUS").is_ok() {
+    if std::env::var("ZBUS").is_ok() || !cfg!(feature = "dbus") {
         eprintln!("using zbus");
         #[cfg(not(feature = "zbus"))]
         unimplemented!("build with feature=z please!");
         #[cfg(feature = "zbus")]
         zbus_rs::connect_and_send_notification(notification).map(Into::into)
     } else {
-        #[cfg(not(any(feature = "dbus", feature = "zbus")))]
-        return Err("can't show notification, no dbus connection possible in this build".into());
+        #[cfg(not(feature = "dbus"))]
+        unimplemented!("build with feature=d please!");
 
         #[cfg(feature = "dbus")]
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
@@ -261,15 +261,17 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 /// running.
 /// TODO dbus stuff module!!!
 pub fn get_server_information() -> Result<ServerInformation> {
-    if std::env::var("ZBUS").is_ok() {
+    if std::env::var("ZBUS").is_ok() || !cfg!(feature = "dbus") {
         eprintln!("using zbus");
+
         #[cfg(not(feature = "zbus"))]
         unimplemented!("build with feature=z please!");
+
         #[cfg(feature = "zbus")]
         zbus_rs::get_server_information()
     } else {
-        #[cfg(not(any(feature = "dbus", feature = "zbus")))]
-        return Err("can't show notification, no dbus connection possible in this build".into());
+        #[cfg(not(feature = "dbus"))]
+        unimplemented!("build with feature=d please!");
 
         #[cfg(feature = "dbus")]
         dbus_rs::get_server_information()
@@ -307,6 +309,9 @@ pub fn handle_action<F>(id: u32, func: F)
 where
     F: FnOnce(&str),
 {
+    #[cfg(feature = "zbus")]
+    return zbus_rs::handle_action(id, func);
+
     #[cfg(feature = "dbus")]
     dbus_rs::handle_action(id, func)
 }

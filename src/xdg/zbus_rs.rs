@@ -101,6 +101,18 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
     Ok(info)
 }
 
+/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+///
+/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
+pub fn handle_action<F>(id: u32, func: F)
+where
+    F: FnOnce(&str),
+{
+    let mut connection = Connection::new_session().unwrap();
+    wait_for_action_signal(&mut connection, id, func);
+}
+
+
 fn wait_for_action_signal<F>(connection: &mut Connection, id: u32, func: F)
 where
     F: FnOnce(&str),
