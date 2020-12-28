@@ -15,8 +15,10 @@ mod constants;
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-use crate::image::{Image, image_spec, ImageMessage};
+#[cfg(all(feature = "images", feature = "dbus", unix, not(target_os = "macos")))]
+use crate::image::Image;
+#[cfg(all(feature = "images", feature = "zbus", unix, not(target_os = "macos")))]
+use crate::image::{ Image, image_spec_str };
 use crate::Urgency;
 
 
@@ -85,7 +87,7 @@ impl Hint {
     /// Get the `bool` representation of this hint.
     pub fn as_bool(&self) -> Option<bool> {
         match *self {
-            Hint::ActionIcons(inner)
+            | Hint::ActionIcons(inner)
             | Hint::Resident(inner)
             | Hint::SuppressSound(inner)
             | Hint::Transient(inner) => Some(inner),
@@ -147,8 +149,17 @@ impl<'a> Into<(&'a str, zvariant::Value<'a>)> for &'a Hint {
             Hint::ActionIcons(value)       => (ACTION_ICONS   , zvariant::Value::Bool(*value)), // bool
             Hint::Category(value)          => (CATEGORY       , zvariant::Value::Str(value.as_str().into())),
             Hint::DesktopEntry(value)      => (DESKTOP_ENTRY  , zvariant::Value::Str(value.as_str().into())),
-            #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-            Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION).as_str(), ImageMessage::from(image).into()),
+
+            #[cfg(all(feature = "zbus", feature = "images", unix, not(target_os = "macos")))]
+            //Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION).as_str(), ImagePayload::from(*image).into()),
+            Hint::ImageData(image)         => (
+                image_spec_str(*crate::SPEC_VERSION),
+                zvariant::Value::Structure(
+                    image.to_tuple().into()
+                )
+            ),
+
+
             Hint::ImagePath(value)         => (IMAGE_PATH     , zvariant::Value::Str(value.as_str().into())),
             Hint::Resident(value)          => (RESIDENT       , zvariant::Value::Bool(*value)), // bool
             Hint::SoundFile(value)         => (SOUND_FILE     , zvariant::Value::Str(value.as_str().into())),

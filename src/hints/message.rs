@@ -83,7 +83,6 @@ impl<'a, A: RefArg> From<(&'a String, &'a A)> for HintMessage {
     }
 }
 
-#[deprecated(note = "Prefer the DBus Arg and RefArg APIs")]
 #[cfg(feature = "dbus")]
 impl From<HintMessage> for (MessageItem, MessageItem) {
     fn from(hint: HintMessage) -> Self {

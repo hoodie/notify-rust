@@ -37,10 +37,10 @@ winrt-notification = "0.2"
 
 [features]
 default = [
-  "d",
+  #"d",
   "images",
   "server",
-  #"z"
+  "z"
 
 ]
 server = []

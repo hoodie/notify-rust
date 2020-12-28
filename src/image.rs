@@ -1,3 +1,4 @@
+#[cfg(feature = "dbus")]
 use dbus::arg::messageitem::{MessageItem, MessageItemArray};
 pub use image::DynamicImage;
 use image::GenericImageView as _;
@@ -59,6 +60,19 @@ impl Image {
         let dyn_img = image::open(&path).map_err(ImageError::CantOpen)?;
         Image::try_from(dyn_img)
     }
+
+    #[cfg(all(feature = "images", feature = "zbus"))]
+    pub(crate) fn to_tuple(&self) -> (i32, i32, i32, bool, i32, i32, Vec<u8>) {
+        (
+            self.width,
+            self.height,
+            self.rowstride,
+            self.alpha,
+            self.bits_per_sample,
+            self.channels,
+            self.data.clone(),
+        )
+    }
 }
 
 impl TryFrom<DynamicImage> for Image {
@@ -116,7 +130,8 @@ impl fmt::Display for ImageError {
 }
 
 /// matching image data key for each spec version
-pub fn image_spec(version: Version) -> String {
+#[cfg(feature = "dbus")]
+pub(crate) fn image_spec(version: Version) -> String {
     match version.cmp(&Version::new(1, 1)) {
         Ordering::Less => constants::IMAGE_DATA_1_0.to_owned(),
         Ordering::Equal => constants::IMAGE_DATA_1_1.to_owned(),
@@ -124,8 +139,20 @@ pub fn image_spec(version: Version) -> String {
     }
 }
 
+/// matching image data key for each spec version
+#[cfg(feature = "zbus")]
+pub(crate) fn image_spec_str(version: Version) -> &'static str{
+    match version.cmp(&Version::new(1, 1)) {
+        Ordering::Less => constants::IMAGE_DATA_1_0,
+        Ordering::Equal => constants::IMAGE_DATA_1_1,
+        Ordering::Greater => constants::IMAGE_DATA,
+    }
+}
+
+#[cfg(feature = "dbus")]
 pub struct ImageMessage(Image);
 
+#[cfg(feature = "dbus")]
 impl From<Image> for ImageMessage {
     fn from(hint: Image) -> Self {
         ImageMessage(hint)
@@ -138,6 +165,7 @@ impl From<image::ImageError> for ImageError {
     }
 }
 
+#[cfg(feature = "dbus")]
 impl std::ops::Deref for ImageMessage {
     type Target = Image;
 
@@ -146,6 +174,7 @@ impl std::ops::Deref for ImageMessage {
     }
 }
 
+#[cfg(feature = "dbus")]
 impl From<ImageMessage> for MessageItem {
     fn from(img_msg: ImageMessage) -> Self {
         let img = img_msg.0;
