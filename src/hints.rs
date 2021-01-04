@@ -136,7 +136,7 @@ impl Hint {
 #[cfg(all(unix, not(target_os = "macos")))]
 impl Hint {}
 
-#[cfg(feature = "zbus")]
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
 pub(crate) fn hints_to_map<'a>(set: &'a std::collections::HashSet<Hint>) -> std::collections::HashMap::<&'a str, zvariant::Value<'a>> {
     set.iter().map(Into::into).collect()
 }

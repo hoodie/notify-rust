@@ -24,16 +24,30 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
+
       - name: test
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --no-run
+      - name: test (zbus)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-run --no-default-features --features z
+
       - name: test_features_images
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --no-run --features images
+
+      - name: test_features_images (zbus)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-run --no-default-features --features "z images"
+
       - name: clippy
         uses: actions-rs/cargo@v1
         with:
