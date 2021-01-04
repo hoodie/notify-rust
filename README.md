@@ -53,7 +53,7 @@ Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the 
 
 ## Requirements
 
-* `rustc` >= 1.44
+* `rustc` >= 1.48
 * libdbus (linux)
 
 ### macOS support
