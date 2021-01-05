@@ -30,7 +30,7 @@ fn exe_name() -> String {
 /// A desktop notification is configured via builder pattern, before it is launched with `show()`.
 ///
 /// # Example
-/// ``` no-run
+/// ``` no_run
 ///     Notification::new()
 ///         .summary("☝️ A notification")
 ///         .show()?;

@@ -15,10 +15,11 @@ mod constants;
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
-#[cfg(all(feature = "images", feature = "dbus", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images", any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
 use crate::image::Image;
+
 #[cfg(all(feature = "images", feature = "zbus", unix, not(target_os = "macos")))]
-use crate::image::{ Image, image_spec_str };
+use crate::image::image_spec_str;
 use crate::Urgency;
 
 
@@ -137,7 +138,7 @@ impl Hint {
 impl Hint {}
 
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
-pub(crate) fn hints_to_map<'a>(set: &'a std::collections::HashSet<Hint>) -> std::collections::HashMap::<&'a str, zvariant::Value<'a>> {
+pub(crate) fn hints_to_map(set: &std::collections::HashSet<Hint>) -> std::collections::HashMap::<&str, zvariant::Value<'_>> {
     set.iter().map(Into::into).collect()
 }
 

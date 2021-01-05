@@ -36,6 +36,8 @@ pub enum ErrorKind {
 
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     Image(ImageError),
+
+    ImplementationMissing,
 }
 
 impl fmt::Display for Error {
@@ -56,6 +58,7 @@ impl fmt::Display for Error {
             ErrorKind::Msg(ref e) => write!(f, "{}", e),
             #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
             ErrorKind::Image(ref e) => write!(f, "{}", e),
+            ErrorKind::ImplementationMissing => write!(f, r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#),
         }
     }
 }

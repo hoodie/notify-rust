@@ -3,14 +3,15 @@ on: [push]
 name: Continuous Integration
 
 jobs:
-  linux:
-    name: Test and Lint (Linux)
+
+  linux_dbus:
+    name: linux (dbus)
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
           - stable
-          - 1.48.0
+          - 1.44.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -20,6 +21,7 @@ jobs:
           override: true
       - run: rustup component add clippy
       - run: sudo apt-get install -y libdbus-1-dev
+
       - name: check
         uses: actions-rs/cargo@v1
         with:
@@ -30,17 +32,48 @@ jobs:
         with:
           command: test
           args: --no-run
-      - name: test (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-run --no-default-features --features z
 
       - name: test_features_images
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --no-run --features images
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+  linux_zbus:
+    name: linux (zbus)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - 1.46.0
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: rustup component add clippy
+      - run: sudo apt-get install -y libdbus-1-dev
+
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --no-default-features --features z
+
+      - name: test (zbus)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-run --no-default-features --features z
 
       - name: test_features_images (zbus)
         uses: actions-rs/cargo@v1
@@ -52,16 +85,16 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --no-default-features --features "z images" -- -D warnings
 
   windows:
-    name: Test and Lint (Windows)
+    name: windows
     runs-on: windows-latest
     strategy:
       matrix:
         rust:
           - stable
-          - 1.48.0
+          - 1.44.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -86,13 +119,13 @@ jobs:
           args: -- -D warnings
 
   macos:
-    name: Test and Lint (macos)
+    name: macos
     runs-on: macos-latest
     strategy:
       matrix:
         rust:
           - stable
-          - 1.48.0
+          - 1.44.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

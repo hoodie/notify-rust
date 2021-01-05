@@ -160,17 +160,19 @@ pub(crate) mod urgency;
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 #[cfg(target_os = "macos")] pub use macos::*;
 
-#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{
+#[cfg(all(any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
+pub use crate::xdg::{
     get_capabilities,
     get_server_information,
     handle_action,
-    NotificationHandle
+    NotificationHandle,
+    dbus_stack,
+    DbusStack,
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub use crate::xdg::stop_server;
 
-#[cfg_attr(target_os = "macos", deprecated(note="Hints are not supported on macOS"))]
 pub use crate::hints::Hint;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
