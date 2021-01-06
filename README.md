@@ -48,21 +48,41 @@ Notification::new()
     .timeout(0) // this however is
     .show()?;
 ```
-### Commandline tool
-Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
 
-## Requirements
+## Linux/BSD support
+The main audience of this library are Linux/BSD based desktop environments that follow the XDG specification (see [gnome dev docs](https://developer.gnome.org/notification-spec/) or [libnotify docs](https://www.galago-project.org/specs/notification/0.9/index.html)). These include KDE, Gnome, XFCE, LXDC, Mate (and probably also most others that I haven't personally tested).
 
-* `rustc` >= 1.48
-* libdbus (linux)
+### Features
 
-### macOS support
+#### `images`
+Enables sending of images with notifications. This is only supported on XDG. This will add the [**image** crate](https://lib.rs/image) as a dependency as well as [**lazy_static**](https://lib.rs/lazy_static) to determine the supported spec spec-version on startup.
+
+#### `z`
+Enables the usage of [**zbus**](https://lib.rs/zbus) instead of [**dbus-rs**](https://lib.rs/dbus) (also XDG only).
+This is functionally identical to the default feature set.
+**As long as you still compile with default-features this will only enable zbus usage, but not default to it!** In order to use the ZBUS implementation set the environment variable **`ZBUS_NOTIFICATION`** or compile notify-rust with **`--no-default-features`**.
+It is planned that this becomes the default after a certain grace period.
+
+### Requirements
+
+|         | with dbus | with zbus|
+|   ---   | ---       |   ---    |
+| **`rustc`** | >= 1.44   |  >= 1.46 |
+| **libdbus** | **yes**   |  nope!   |
+
+## macOS support
 This library shines on linux and bsd, which is its original target platform.
 Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
-However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features. Please refer to the You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
+However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features.
 
-### windows support
+**call for participation:** You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
+
+## Windows support
 Similar to macOS we support windows via the help of [winrt-notification](https://crates.io/crates/winrt-notification).
+
+
+## Commandline tool
+Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
 
 ## Contribution
 Any help in form of descriptive and friendly [issues](https://github.com/hoodie/notify-rust/issues) or comprehensive pull requests are welcome! 
