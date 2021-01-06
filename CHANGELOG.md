@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.0.0...HEAD) (2021-01-06)
+
+### Features
+
+* add zbus version 58d38ba
+
+### Fixes
+
+* **deps:** update rust crate image to 0.23 1dd236d
+
+
 ## [v4.0.0](https://github.com/hoodie/notify-rust/compare/v3.6.3...v4.0.0) (2020-06-06)
 
 ### ⚠ BREAKING CHANGE
