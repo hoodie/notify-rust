@@ -1,15 +1,15 @@
 #![allow(missing_docs)]
 
-use std::{fmt, num};
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 use crate::image::ImageError;
-/// Convenient wrapper around `std::Result`. 
+use std::{fmt, num};
+/// Convenient wrapper around `std::Result`.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// The Error type.
 #[derive(Debug)]
 pub struct Error {
-    kind: ErrorKind
+    kind: ErrorKind,
 }
 
 /// The kind of an error.
@@ -19,8 +19,11 @@ pub enum ErrorKind {
     /// only here for backwards compatibility
     Msg(String),
 
-    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
     Dbus(dbus::Error),
+
+    #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+    Zbus(zbus::Error),
 
     #[cfg(target_os = "macos")]
     MacNotificationSys(mac_notification_sys::error::Error),
@@ -32,52 +35,85 @@ pub enum ErrorKind {
     Conversion(String),
 
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-    Image(ImageError)
+    Image(ImageError),
+
+    ImplementationMissing,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
-            #[cfg(all(unix, not(target_os = "macos")))]
+            #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
             ErrorKind::Dbus(ref e) => write!(f, "{}", e),
+
+            #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+            ErrorKind::Zbus(ref e) => write!(f, "{}", e),
+
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
+
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {}", e),
             ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
             ErrorKind::Msg(ref e) => write!(f, "{}", e),
             #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
             ErrorKind::Image(ref e) => write!(f, "{}", e),
+            ErrorKind::ImplementationMissing => write!(f, r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#),
         }
     }
 }
 
 impl std::error::Error for Error {}
 
-#[cfg(all(unix, not(target_os = "macos")))]
+impl From<&str> for Error {
+    fn from(e: &str) -> Error {
+        Error {
+            kind: ErrorKind::Msg(e.into()),
+        }
+    }
+}
+
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl From<dbus::Error> for Error {
     fn from(e: dbus::Error) -> Error {
-        Error { kind: ErrorKind::Dbus(e) }
+        Error {
+            kind: ErrorKind::Dbus(e),
+        }
+    }
+}
+
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+impl From<zbus::Error> for Error {
+    fn from(e: zbus::Error) -> Error {
+        Error {
+            kind: ErrorKind::Zbus(e),
+        }
     }
 }
 
 #[cfg(target_os = "macos")]
 impl From<mac_notification_sys::error::Error> for Error {
     fn from(e: mac_notification_sys::error::Error) -> Error {
-        Error { kind: ErrorKind::MacNotificationSys(e) }
+        Error {
+            kind: ErrorKind::MacNotificationSys(e),
+        }
     }
 }
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 impl From<ImageError> for Error {
     fn from(e: ImageError) -> Error {
-        Error { kind: ErrorKind::Image(e) }
+        Error {
+            kind: ErrorKind::Image(e),
+        }
     }
 }
 
 impl From<num::ParseIntError> for Error {
     fn from(e: num::ParseIntError) -> Error {
-        Error { kind: ErrorKind::Parse(e) }
+        Error {
+            kind: ErrorKind::Parse(e),
+        }
     }
 }
 

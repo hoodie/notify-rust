@@ -4,9 +4,8 @@
 //!
 
 #![allow(unused_imports, dead_code)]
-use self::notify_rust::Hint;
-use self::notify_rust::Notification;
-use notify_rust;
+use notify_rust::Hint;
+use notify_rust::Notification;
 use std::time::Duration;
 
 enum Volume {

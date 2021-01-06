@@ -2,7 +2,7 @@
 use notify_rust::{Hint, Notification};
 
 #[cfg(windows)]
-fn main () {
+fn main() {
     println!("this is a unix only feature");
 }
 
@@ -12,14 +12,16 @@ fn main() {
     Notification::new()
         .summary("click me")
         .action("default", "default")    // IDENTIFIER, LABEL
-        .action("clicked", "click here") // IDENTIFIER, LABEL
+        .action("clicked_a", "button a") // IDENTIFIER, LABEL
+        .action("clicked_b", "button b") // IDENTIFIER, LABEL
         .hint(Hint::Resident(true))
         .show()
         .unwrap()
         .wait_for_action({|action|
             match action {
-                "default"  => println!("so boring"),
-                "clicked"  => println!("that was correct"),
+                "default"  => println!("default"),
+                "clicked_a"  => println!("clicked a"),
+                "clicked_b"  => println!("clicked b"),
                 // here "__closed" is a hardcoded keyword
                 "__closed" => println!("the notification was closed"),
                 _ => ()

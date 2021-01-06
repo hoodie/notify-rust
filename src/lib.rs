@@ -137,7 +137,7 @@
         unused_qualifications)]
 #![warn(missing_docs)]
 
-#[cfg(all(unix, not(target_os = "macos")))] extern crate dbus;
+#[cfg(all(feature="dbus", unix, not(target_os = "macos")))] extern crate dbus;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;
 #[cfg(target_os = "windows")] extern crate winrt_notification;
 #[macro_use] #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate lazy_static;
@@ -153,28 +153,29 @@ mod notification;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))] pub mod server;
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))] pub mod server;
 
 pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 #[cfg(target_os = "macos")] pub use macos::*;
 
-#[cfg(all(unix, not(target_os = "macos")))] pub use crate::xdg::{
+#[cfg(all(any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
+pub use crate::xdg::{
     get_capabilities,
     get_server_information,
     handle_action,
-    NotificationHandle
+    NotificationHandle,
+    dbus_stack,
+    DbusStack,
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub use crate::xdg::stop_server;
 
-#[cfg_attr(target_os = "macos", deprecated(note="Hints are not supported on macOS"))]
 pub use crate::hints::Hint;
 
-#[cfg(feature = "images")]
-#[cfg_attr(target_os = "macos", deprecated(note="Hints are not supported on macOS"))]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub use crate::image::{Image, ImageError};
 
 #[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]

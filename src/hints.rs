@@ -15,8 +15,11 @@ mod constants;
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images", any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
 use crate::image::Image;
+
+#[cfg(all(feature = "images", feature = "zbus", unix, not(target_os = "macos")))]
+use crate::image::image_spec_str;
 use crate::Urgency;
 
 
@@ -85,7 +88,7 @@ impl Hint {
     /// Get the `bool` representation of this hint.
     pub fn as_bool(&self) -> Option<bool> {
         match *self {
-            Hint::ActionIcons(inner)
+            | Hint::ActionIcons(inner)
             | Hint::Resident(inner)
             | Hint::SuppressSound(inner)
             | Hint::Transient(inner) => Some(inner),
@@ -134,8 +137,48 @@ impl Hint {
 #[cfg(all(unix, not(target_os = "macos")))]
 impl Hint {}
 
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+pub(crate) fn hints_to_map(set: &std::collections::HashSet<Hint>) -> std::collections::HashMap::<&str, zvariant::Value<'_>> {
+    set.iter().map(Into::into).collect()
+}
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+impl<'a> Into<(&'a str, zvariant::Value<'a>)> for &'a Hint {
+    fn into(self) -> (&'a str, zvariant::Value<'a>) {
+        use self::constants::*;
+        match self {
+            Hint::ActionIcons(value)       => (ACTION_ICONS   , zvariant::Value::Bool(*value)), // bool
+            Hint::Category(value)          => (CATEGORY       , zvariant::Value::Str(value.as_str().into())),
+            Hint::DesktopEntry(value)      => (DESKTOP_ENTRY  , zvariant::Value::Str(value.as_str().into())),
+
+            #[cfg(all(feature = "zbus", feature = "images", unix, not(target_os = "macos")))]
+            //Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION).as_str(), ImagePayload::from(*image).into()),
+            Hint::ImageData(image)         => (
+                image_spec_str(*crate::SPEC_VERSION),
+                zvariant::Value::Structure(
+                    image.to_tuple().into()
+                )
+            ),
+
+
+            Hint::ImagePath(value)         => (IMAGE_PATH     , zvariant::Value::Str(value.as_str().into())),
+            Hint::Resident(value)          => (RESIDENT       , zvariant::Value::Bool(*value)), // bool
+            Hint::SoundFile(value)         => (SOUND_FILE     , zvariant::Value::Str(value.as_str().into())),
+            Hint::SoundName(value)         => (SOUND_NAME     , zvariant::Value::Str(value.as_str().into())),
+            Hint::SuppressSound(value)     => (SUPPRESS_SOUND , zvariant::Value::Bool(*value)),
+            Hint::Transient(value)         => (TRANSIENT      , zvariant::Value::Bool(*value)),
+            Hint::X(value)                 => (X              , zvariant::Value::I32(*value)),
+            Hint::Y(value)                 => (Y              , zvariant::Value::I32(*value)),
+            Hint::Urgency(value)           => (URGENCY        , zvariant::Value::U8(*value as u8)),
+            Hint::Custom(key, val)         => (key.as_str()   , zvariant::Value::Str(val.as_str().into())),
+            Hint::CustomInt(key, val)      => (key.as_str()   , zvariant::Value::I32(*val)),
+            Hint::Invalid                  => (INVALID        , zvariant::Value::Str(INVALID.into()))
+        }
+    }
+}
+
+
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl<'a, A: dbus::arg::RefArg> From<(&'a String, &'a A)> for Hint {
     fn from(pair: (&String, &A)) -> Self {
 
