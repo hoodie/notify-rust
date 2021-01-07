@@ -81,7 +81,6 @@ pub fn connect_and_send_notification(notification: &Notification) -> Result<Zbus
     let connection = zbus::Connection::new_session()?;
     let inner_id = notification.id.unwrap_or(0);
     let id = send_notificaion_via_connection(notification, inner_id, &connection)?;
-    println!("sent a message on connection {}", connection.server_guid());
     Ok(ZbusNotificationHandle::new(id, connection, notification.clone()))
 }
 
