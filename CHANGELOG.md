@@ -1,5 +1,12 @@
 # Changelog
 
+### [v4.1.1](https://github.com/hoodie/notify-rust/compare/v4.1.0...v4.1.1) (2021-01-07)
+
+#### Fixes
+
+* remove stray println 15b3ecd
+
+
 ## [v4.1.0](https://github.com/hoodie/notify-rust/compare/v4.0.0...v4.1.0) (2021-01-06)
 
 ### Features
