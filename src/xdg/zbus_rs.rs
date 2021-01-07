@@ -74,7 +74,7 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
         )?
         .body()
         .unwrap();
-    Ok(dbg!(reply))
+    Ok(reply)
 }
 
 pub fn connect_and_send_notification(notification: &Notification) -> Result<ZbusNotificationHandle> {
