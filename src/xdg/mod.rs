@@ -77,7 +77,8 @@ impl NotificationHandle {
     /// # Example
     /// see
     /// ```no_run
-    /// let handle: notify_rust::NotificationHandle = Notification::new()
+    /// # use notify_rust::*;
+    /// let handle: NotificationHandle = Notification::new()
     ///     .summary("oh no")
     ///     .hint(notify_rust::Hint::Transient(true))
     ///     .body("I'll be here till you close me!")

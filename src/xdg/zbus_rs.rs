@@ -68,13 +68,13 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
                 &notification.summary,
                 &notification.body,
                 &notification.actions,
-                crate::hints::hints_to_map(&notification.hints),
+                crate::hints::hints_to_map(&notification),
                 notification.timeout.into_i32(),
             ),
         )?
         .body()
         .unwrap();
-    Ok(dbg!(reply))
+    Ok(reply)
 }
 
 pub fn connect_and_send_notification(notification: &Notification) -> Result<ZbusNotificationHandle> {

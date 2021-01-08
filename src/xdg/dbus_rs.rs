@@ -101,10 +101,9 @@ pub fn build_message(method_name: &str) -> Message {
 }
 
 pub fn pack_hints(notification: &Notification) -> Result<MessageItem> {
-    if !notification.hints.is_empty() {
+    if !notification.hints.is_empty() || !notification.hints_unique.is_empty()  {
         let hints = notification
-            .hints
-            .iter()
+            .get_hints()
             .cloned()
             .map(HintMessage::wrap_hint)
             .collect::<Vec<(MessageItem, MessageItem)>>();

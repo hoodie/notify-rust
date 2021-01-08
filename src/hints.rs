@@ -22,6 +22,15 @@ use crate::image::Image;
 use crate::image::image_spec_str;
 use crate::Urgency;
 
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use crate::notification::Notification;
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use std::collections::HashMap;
+
+
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+pub(crate) enum CustomHintType {
+    Int,
+    String,
+}
 
 /// All currently implemented `Hints` that can be sent.
 ///
@@ -138,8 +147,28 @@ impl Hint {
 impl Hint {}
 
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
-pub(crate) fn hints_to_map(set: &std::collections::HashSet<Hint>) -> std::collections::HashMap::<&str, zvariant::Value<'_>> {
-    set.iter().map(Into::into).collect()
+#[test]
+fn test_hints_to_map() {
+
+    // custom value should only be there once if the names are identical
+    let n1 = crate::Notification::new()
+        .hint(Hint::Custom("foo".into(), "bar1".into()))
+        .hint(Hint::Custom("foo".into(), "bar2".into()))
+        .hint(Hint::Custom("f00".into(), "bar3".into()))
+        .finalize();
+
+     assert_eq!(hints_to_map(&n1), maplit::hashmap!{
+         "foo" => zvariant::Value::Str("bar2".into()),
+         "f00" => zvariant::Value::Str("bar3".into())
+     });
+}
+
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+pub(crate) fn hints_to_map(notification: &Notification) -> HashMap::<&str, zvariant::Value<'_>> {
+    notification
+        .get_hints()
+        .map(Into::into)
+        .collect()
 }
 
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
