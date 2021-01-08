@@ -199,21 +199,21 @@ where
         .unwrap();
 
     for item in connection.iter(1000) {
-        if let ConnectionItem::Signal(message) = dbg!(item) {
+        if let ConnectionItem::Signal(message) = item {
             let items = message.get_items();
 
             let (path, interface, member) = (
                 message
                     .path()
-                    .map(|p| p.as_cstr().to_string_lossy().into_owned())
+                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
                     .unwrap_or_else(String::new),
                 message
                     .interface()
-                    .map(|p| p.as_cstr().to_string_lossy().into_owned())
+                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
                     .unwrap_or_else(String::new),
                 message
                     .member()
-                    .map(|p| p.as_cstr().to_string_lossy().into_owned())
+                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
                     .unwrap_or_else(String::new),
             );
             match (path.as_ref(), interface.as_ref(), member.as_ref()) {
