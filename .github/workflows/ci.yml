@@ -31,13 +31,25 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-run
+          args: --lib
+
+      - name: doc_test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc
 
       - name: test_features_images
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-run --features images
+          args: --lib --features images
+
+      - name: doc_test_features_images
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --features images
 
       - name: clippy
         uses: actions-rs/cargo@v1
@@ -73,13 +85,25 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-run --no-default-features --features z
+          args: --lib --no-default-features --features z
+
+      - name: doc_test (zbus)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --no-default-features --features z
 
       - name: test_features_images (zbus)
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-run --no-default-features --features "z images"
+          args: --lib --no-default-features --features "z images"
+
+      - name: doctest_features_images (zbus)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc --no-default-features --features "z images"
 
       - name: clippy
         uses: actions-rs/cargo@v1

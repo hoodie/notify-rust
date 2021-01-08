@@ -31,9 +31,13 @@ fn exe_name() -> String {
 ///
 /// # Example
 /// ``` no_run
+/// # use notify_rust::*;
+/// # fn _doc() -> Result<(), Box<dyn std::error::Error>> {
 ///     Notification::new()
 ///         .summary("☝️ A notification")
 ///         .show()?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 #[non_exhaustive]

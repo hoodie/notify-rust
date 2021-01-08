@@ -15,11 +15,14 @@ use std::convert::TryFrom;
 /// # Example
 /// ```no_run
 /// # use notify_rust::*;
+/// # fn _doc() -> Result<(), Box<dyn std::error::Error>> {
 /// Notification::new()
 ///     .summary("oh no")
 ///     .icon("dialog-warning")
 ///     .urgency(Urgency::Critical)
 ///     .show()?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
