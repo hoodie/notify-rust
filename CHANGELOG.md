@@ -1,9 +1,14 @@
 # Changelog
 
-### [v4.1.1](https://github.com/hoodie/notify-rust/compare/v4.1.0...v4.1.1) (2021-01-07)
+## [v4.2.0](https://github.com/hoodie/notify-rust/compare/v4.1.0...v4.2.0) (2021-01-08)
 
-#### Fixes
+### Features
 
+* make custom hints unique f6ec445
+
+### Fixes
+
+* remove stray dbug!() b67c1d5
 * remove stray println 15b3ecd
 
 
