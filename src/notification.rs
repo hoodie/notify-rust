@@ -252,8 +252,6 @@ impl Notification {
 
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) fn get_hints(&self) -> impl Iterator<Item=&Hint>{
-        println!("       hints: {:#?}", self.hints);
-        println!("unique hints: {:#?}", self.hints_unique);
         self
             .hints
             .iter()
