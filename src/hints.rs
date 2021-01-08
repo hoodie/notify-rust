@@ -26,6 +26,7 @@ use crate::Urgency;
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use std::collections::HashMap;
 
 
+#[cfg(all(unix, not(target_os = "macos")))]
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub(crate) enum CustomHintType {
     Int,
