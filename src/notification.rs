@@ -1,6 +1,5 @@
-
 #[cfg(all(unix, not(target_os = "macos")))] use crate::{
-    hints::Hint,
+    hints::{CustomHintType, Hint},
     urgency::Urgency,
     xdg,
 };
@@ -13,7 +12,7 @@
 use crate::timeout::Timeout;
 use crate::error::*;
 
-#[cfg(all(unix, not(target_os = "macos")))] use std::collections::HashSet;
+#[cfg(all(unix, not(target_os = "macos")))] use std::collections::{HashMap, HashSet};
 
 use std::default::Default;
 use std::env;
@@ -44,26 +43,41 @@ fn exe_name() -> String {
 pub struct Notification {
     /// Filled by default with executable name.
     pub appname: String,
+
     /// Single line to summarize the content.
     pub summary: String,
+
     /// Subtitle for macOS
     pub subtitle: Option<String>,
+
     /// Multiple lines possible, may support simple markup,
     /// check out `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
     pub body:    String,
+
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
+    
     /// Check out `Hint`
+    ///
+    /// # warning
+    /// this does not hold all hints, [`Hint::Custom`] and [`Hint::CustomInt`] are held elsewhere,
+    /// please access hints via [`Notification::get_hints`].
     #[cfg(all(unix, not(target_os = "macos")))]
     pub hints:   HashSet<Hint>,
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub(crate) hints_unique: HashMap<(String, CustomHintType), Hint>,
+
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
+
     #[cfg(target_os="macos")]   pub(crate) sound_name: Option<String>,
     #[cfg(target_os="windows")] pub(crate) sound_name: Option<String>,
     #[cfg(target_os="windows")] pub(crate) path_to_image: Option<String>,
     #[cfg(target_os="windows")] pub(crate) app_id: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
+
     /// Only to be used on the receive end. Use Notification hand for updating.
     pub(crate) id: Option<u32>
 }
@@ -216,8 +230,34 @@ impl Notification {
     /// Most of these hints don't even have an effect on the big XDG Desktops, they are completely tossed on macOS.
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn hint(&mut self, hint: Hint) -> &mut Notification {
-        self.hints.insert(hint);
+        match hint {
+            Hint::CustomInt(k, v) => {
+                self.hints_unique.insert(
+                    (k.clone(), CustomHintType::Int),
+                    Hint::CustomInt(k, v)
+                    );
+            },
+            Hint::Custom(k, v) => {
+                self.hints_unique.insert(
+                    (k.clone(), CustomHintType::String),
+                    Hint::Custom(k, v)
+                    );
+            },
+            _ => {
+                self.hints.insert(hint);
+            }
+        }
         self
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub(crate) fn get_hints(&self) -> impl Iterator<Item=&Hint>{
+        println!("       hints: {:#?}", self.hints);
+        println!("unique hints: {:#?}", self.hints_unique);
+        self
+            .hints
+            .iter()
+            .chain(self.hints_unique.values())
     }
 
     /// Set the `timeout`.
@@ -348,6 +388,7 @@ impl Default for Notification {
             body:     String::new(),
             icon:     String::new(),
             hints:    HashSet::new(),
+            hints_unique: HashMap::new(),
             actions:  Vec::new(),
             timeout:  Timeout::Default,
             id:       None

@@ -44,7 +44,8 @@ images = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.5"
-ctor = "0.1.15"
+ctor = "0.1"
+maplit = "1.0"
 
 [[example]]
 name = "images"

@@ -68,7 +68,7 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
                 &notification.summary,
                 &notification.body,
                 &notification.actions,
-                crate::hints::hints_to_map(&notification.hints),
+                crate::hints::hints_to_map(&notification),
                 notification.timeout.into_i32(),
             ),
         )?
