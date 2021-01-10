@@ -12,8 +12,8 @@ readme = "README.md"
 include = [
   "README.md",
   "History.md",
-  ".gitignore",
-  ".travis.yml",
+  "CHANGELOG.md",
+  "LICENSE-*",
   "Cargo.toml",
   "src/**/*.rs",
   "tests/*.rs"
