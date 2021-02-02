@@ -24,7 +24,7 @@ dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1.4", optional = true }
 image = { version = "0.23", optional = true }
 zvariant = { version = "2.4", optional = true }
-zvariant_derive = { version = "2.4", optional = true }
+zvariant_derive = { version = "2.5", optional = true }
 zbus = { version = "1.8", optional = true }
 serde = { version = "1.0", optional = true }
 
