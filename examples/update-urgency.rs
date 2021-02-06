@@ -13,6 +13,7 @@ fn update_via_handle() {
         ("low", Urgency::Low, Timeout::Milliseconds(5_000)),
         ("normal", Urgency::Normal, Timeout::Milliseconds(6_000)),
         ("critical", Urgency::Critical, Timeout::Milliseconds(10_000)),
+        ("normal", Urgency::Normal, Timeout::Milliseconds(6_000)),
     ];
 
     let mut notification_handle = Notification::new()
