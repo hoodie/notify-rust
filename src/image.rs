@@ -30,15 +30,18 @@ pub struct Image {
 }
 
 impl Image {
-    /// Creates an image from a raw vector of bytes
-    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+    fn from_raw_data(
+        width: i32,
+        height: i32,
+        data: Vec<u8>,
+        channels: i32,
+        bits_per_sample: i32,
+        alpha: bool,
+    ) -> Result<Self, ImageError> {
         const MAX_SIZE: i32 = 0x0fff_ffff;
         if width > MAX_SIZE || height > MAX_SIZE {
             return Err(ImageError::TooBig);
         }
-
-        let channels = 3i32;
-        let bits_per_sample = 8;
 
         if data.len() != (width * height * channels) as usize {
             Err(ImageError::WrongDataSize)
@@ -50,9 +53,23 @@ impl Image {
                 channels,
                 data,
                 rowstride: width * channels,
-                alpha: false,
+                alpha,
             })
         }
+    }
+
+    /// Creates an image from a raw vector of bytes
+    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+        let channels = 3i32;
+        let bits_per_sample = 8;
+        Self::from_raw_data(width, height, data, channels, bits_per_sample, false)
+    }
+
+    /// Creates an image from a raw vector of bytes with alpha
+    pub fn from_rgba(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+        let channels = 4i32;
+        let bits_per_sample = 8;
+        Self::from_raw_data(width, height, data, channels, bits_per_sample, true)
     }
 
     ///  Attempts to open the given path as image
