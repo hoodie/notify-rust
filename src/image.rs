@@ -106,6 +106,26 @@ impl TryFrom<DynamicImage> for Image {
     }
 }
 
+impl TryFrom<image::RgbImage> for Image {
+    type Error = ImageError;
+
+    fn try_from(img: image::RgbImage) -> Result<Self, Self::Error> {
+        let (width, height) = img.dimensions();
+        let image_data = img.into_raw();
+        Image::from_rgb(width as i32, height as i32, image_data)
+    }
+}
+
+impl TryFrom<image::RgbaImage> for Image {
+    type Error = ImageError;
+
+    fn try_from(img: image::RgbaImage) -> Result<Self, Self::Error> {
+        let (width, height) = img.dimensions();
+        let image_data = img.into_raw();
+        Image::from_rgba(width as i32, height as i32, image_data)
+    }
+}
+
 /// Errors that can occur when creating an Image
 #[derive(Debug)]
 pub enum ImageError {
