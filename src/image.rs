@@ -1,7 +1,6 @@
 #[cfg(feature = "dbus")]
 use dbus::arg::messageitem::{MessageItem, MessageItemArray};
 pub use image::DynamicImage;
-use image::GenericImageView as _;
 
 use std::cmp::Ordering;
 use std::convert::TryFrom;
@@ -96,12 +95,10 @@ impl TryFrom<DynamicImage> for Image {
     type Error = ImageError;
 
     fn try_from(dyn_img: DynamicImage) -> Result<Self, Self::Error> {
-        if let Some(image_data) = dyn_img.as_rgb8() {
-            let (width, height) = dyn_img.dimensions();
-            let image_data = image_data.clone().into_raw();
-            Ok(Image::from_rgb(width as i32, height as i32, image_data)?)
-        } else {
-            Err(ImageError::CantConvert)
+        match dyn_img {
+            DynamicImage::ImageRgb8(img) => Self::try_from(img),
+            DynamicImage::ImageRgba8(img) => Self::try_from(img),
+            _ => Err(ImageError::CantConvert),
         }
     }
 }
