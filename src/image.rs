@@ -1,7 +1,6 @@
 #[cfg(feature = "dbus")]
 use dbus::arg::messageitem::{MessageItem, MessageItemArray};
 pub use image::DynamicImage;
-use image::GenericImageView as _;
 
 use std::cmp::Ordering;
 use std::convert::TryFrom;
@@ -30,15 +29,18 @@ pub struct Image {
 }
 
 impl Image {
-    /// Creates an image from a raw vector of bytes
-    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+    fn from_raw_data(
+        width: i32,
+        height: i32,
+        data: Vec<u8>,
+        channels: i32,
+        bits_per_sample: i32,
+        alpha: bool,
+    ) -> Result<Self, ImageError> {
         const MAX_SIZE: i32 = 0x0fff_ffff;
         if width > MAX_SIZE || height > MAX_SIZE {
             return Err(ImageError::TooBig);
         }
-
-        let channels = 3i32;
-        let bits_per_sample = 8;
 
         if data.len() != (width * height * channels) as usize {
             Err(ImageError::WrongDataSize)
@@ -50,9 +52,23 @@ impl Image {
                 channels,
                 data,
                 rowstride: width * channels,
-                alpha: false,
+                alpha,
             })
         }
+    }
+
+    /// Creates an image from a raw vector of bytes
+    pub fn from_rgb(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+        let channels = 3i32;
+        let bits_per_sample = 8;
+        Self::from_raw_data(width, height, data, channels, bits_per_sample, false)
+    }
+
+    /// Creates an image from a raw vector of bytes with alpha
+    pub fn from_rgba(width: i32, height: i32, data: Vec<u8>) -> Result<Self, ImageError> {
+        let channels = 4i32;
+        let bits_per_sample = 8;
+        Self::from_raw_data(width, height, data, channels, bits_per_sample, true)
     }
 
     ///  Attempts to open the given path as image
@@ -79,13 +95,31 @@ impl TryFrom<DynamicImage> for Image {
     type Error = ImageError;
 
     fn try_from(dyn_img: DynamicImage) -> Result<Self, Self::Error> {
-        if let Some(image_data) = dyn_img.as_rgb8() {
-            let (width, height) = dyn_img.dimensions();
-            let image_data = image_data.clone().into_raw();
-            Ok(Image::from_rgb(width as i32, height as i32, image_data)?)
-        } else {
-            Err(ImageError::CantConvert)
+        match dyn_img {
+            DynamicImage::ImageRgb8(img) => Self::try_from(img),
+            DynamicImage::ImageRgba8(img) => Self::try_from(img),
+            _ => Err(ImageError::CantConvert),
         }
+    }
+}
+
+impl TryFrom<image::RgbImage> for Image {
+    type Error = ImageError;
+
+    fn try_from(img: image::RgbImage) -> Result<Self, Self::Error> {
+        let (width, height) = img.dimensions();
+        let image_data = img.into_raw();
+        Image::from_rgb(width as i32, height as i32, image_data)
+    }
+}
+
+impl TryFrom<image::RgbaImage> for Image {
+    type Error = ImageError;
+
+    fn try_from(img: image::RgbaImage) -> Result<Self, Self::Error> {
+        let (width, height) = img.dimensions();
+        let image_data = img.into_raw();
+        Image::from_rgba(width as i32, height as i32, image_data)
     }
 }
 
