@@ -1,5 +1,15 @@
 # Changelog
 
+## [v4.3.0](https://github.com/hoodie/notify-rust/compare/v4.2.2...v4.3.0) (2021-02-27)
+
+### Features
+
+* Convert DynamicImage::ImageRgba8 87e92b5
+* Implement TryFrom trait for RgbImage and RgbaImage 69c2b1e
+* Implement converting image with alpha d25ab47
+* make zbus backend the default 582b87e
+
+
 ### [v4.2.2](https://github.com/hoodie/notify-rust/compare/v4.2.1...v4.2.2) (2021-01-08)
 
 #### Fixes
