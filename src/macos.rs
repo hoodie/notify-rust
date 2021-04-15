@@ -52,7 +52,7 @@ pub(crate) fn schedule_notification(notification: &Notification, delivery_date: 
         &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
         &notification.body,                                   // message
         &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
-        delivery_date, // schedule_time
+        delivery_date,
     )?;
 
     Ok(NotificationHandle::new(notification.clone()))
