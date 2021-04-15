@@ -56,7 +56,7 @@ pub struct Notification {
 
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
     pub icon:    String,
-    
+
     /// Check out `Hint`
     ///
     /// # warning

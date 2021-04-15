@@ -37,10 +37,22 @@ impl DerefMut for NotificationHandle {
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     mac_notification_sys::send_notification(
-        &notification.summary,                                //title
+        &notification.summary,                                // title
         &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
-        &notification.body,                                   //message
+        &notification.body,                                   // message
         &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
+    )?;
+
+    Ok(NotificationHandle::new(notification.clone()))
+}
+
+pub(crate) fn schedule_notification(notification: &Notification, delivery_date: f64) -> Result<NotificationHandle> {
+    mac_notification_sys::schedule_notification(
+        &notification.summary,                                // title
+        &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
+        &notification.body,                                   // message
+        &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
+        delivery_date, // schedule_time
     )?;
 
     Ok(NotificationHandle::new(notification.clone()))
