@@ -334,6 +334,13 @@ impl Notification {
         self.clone()
     }
 
+    /// Schedules a Notification
+    ///
+    /// Sends a Notification at the specified date
+    #[cfg(target_os = "macos")]
+    pub fn schedule(&self, delivery_date: f64) -> Result<macos::NotificationHandle> {
+        macos::schedule_notification(self, delivery_date)
+    }
 
     /// Sends Notification to D-Bus.
     ///
