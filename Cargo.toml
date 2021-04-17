@@ -33,7 +33,7 @@ mac-notification-sys = "0.3"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
-winrt-notification = "0.2"
+winrt-notification = "0.3"
 
 [features]
 default = ["z"]
