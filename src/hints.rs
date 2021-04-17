@@ -173,10 +173,10 @@ pub(crate) fn hints_to_map(notification: &Notification) -> HashMap::<&str, zvari
 }
 
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
-impl<'a> Into<(&'a str, zvariant::Value<'a>)> for &'a Hint {
-    fn into(self) -> (&'a str, zvariant::Value<'a>) {
+impl<'a> From<&'a Hint> for (&'a str, zvariant::Value<'a>) {
+    fn from(val: &'a Hint) -> Self {
         use self::constants::*;
-        match self {
+        match val {
             Hint::ActionIcons(value)       => (ACTION_ICONS   , zvariant::Value::Bool(*value)), // bool
             Hint::Category(value)          => (CATEGORY       , zvariant::Value::Str(value.as_str().into())),
             Hint::DesktopEntry(value)      => (DESKTOP_ENTRY  , zvariant::Value::Str(value.as_str().into())),
