@@ -14,7 +14,7 @@ pub enum Timeout {
 }
 
 impl Timeout {
-    #[cfg(feature = "zbus")]
+    #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) fn into_i32(self) -> i32 {
         self.into()
     }
@@ -44,9 +44,9 @@ impl From<i32> for Timeout {
     }
 }
 
-impl Into<i32> for Timeout {
-    fn into(self) -> i32 {
-        match self {
+impl From<Timeout> for i32 {
+    fn from(timeout: Timeout) -> Self {
+        match timeout {
             Timeout::Default => -1,
             Timeout::Never => 0,
             Timeout::Milliseconds(ms) => ms as i32,
