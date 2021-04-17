@@ -336,10 +336,20 @@ impl Notification {
 
     /// Schedules a Notification
     ///
-    /// Sends a Notification at the specified date
+    /// Sends a Notification at the specified date.
+    #[cfg(all(target_os = "macos", feature = "chrono"))]
+    pub fn schedule<T: chrono::TimeZone>(&self, delivery_date: chrono::DateTime<T>) -> Result<macos::NotificationHandle> {
+        macos::schedule_notification(self, delivery_date.timestamp() as f64)
+    }
+
+    /// Schedules a Notification
+    ///
+    /// Sends a Notification at the specified timestamp.
+    /// This is a raw `f64`, if that is a bit too raw for you please activate the feature `"chrono"`,
+    /// then you can use `Notification::schedule()` instead, which accepts a `chrno::DateTime<T>`.
     #[cfg(target_os = "macos")]
-    pub fn schedule(&self, delivery_date: f64) -> Result<macos::NotificationHandle> {
-        macos::schedule_notification(self, delivery_date)
+    pub fn schedule_raw(&self, timestamp: f64) -> Result<macos::NotificationHandle> {
+        macos::schedule_notification(self, timestamp)
     }
 
     /// Sends Notification to D-Bus.
@@ -359,7 +369,7 @@ impl Notification {
         macos::show_notification(self)
     }
 
-     /// Sends Notification to NSUserNotificationCenter.
+    /// Sends Notification to NSUserNotificationCenter.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
