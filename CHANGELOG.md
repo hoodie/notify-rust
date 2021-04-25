@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.3.0...HEAD) (2021-04-25)
+
+### Features
+
+* add schedule_raw() for f64 timestamps b8f811b
+* add schedule method to Notification 30f1741
+* create macos schedule_notification method 72bda94
+
+
 ## [v4.3.0](https://github.com/hoodie/notify-rust/compare/v4.2.2...v4.3.0) (2021-02-27)
 
 ### Features
@@ -25,7 +34,7 @@
 * **deps:** update rust crate dbus to 0.9 96f84f4
 
 
-## [v4.2.0](https://github.com/hoodie/notify-rust/compare/v4.1.0...v4.2.0) (2021-01-08)
+## [v4.2.0](https://github.com/hoodie/notify-rust/compare/v4.1.1...v4.2.0) (2021-01-08)
 
 ### Features
 
@@ -34,6 +43,12 @@
 ### Fixes
 
 * remove stray dbug!() b67c1d5
+
+
+### [v4.1.1](https://github.com/hoodie/notify-rust/compare/v4.1.0...v4.1.1) (2021-01-07)
+
+#### Fixes
+
 * remove stray println 15b3ecd
 
 
