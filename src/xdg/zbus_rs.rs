@@ -152,7 +152,10 @@ where
                         _ => {}
                     },
                     Ok(Some("NotificationClosed")) => match msg.body::<(u32, u32)>() {
-                        Ok((nid, _)) if nid == id => break,
+                        Ok((nid, _reason)) if nid == id => {
+                            func("__closed");
+                            break;
+                        }
                         _ => {}
                     },
 
