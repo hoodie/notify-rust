@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.4.1...HEAD) (2021-05-01)
+
+
+### [v4.4.1](https://github.com/hoodie/notify-rust/compare/v4.4.0...v4.4.1) (2021-05-01)
+
+#### Fixes
+
+* notify with __closed when notification is closed in zbus implementation 3a9c206
+
+
 ## [v4.4.0](https://github.com/hoodie/notify-rust/compare/v4.3.0...v4.4.0) (2021-04-25)
 
 ### Features
