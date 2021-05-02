@@ -168,6 +168,7 @@ pub use crate::xdg::{
     NotificationHandle,
     dbus_stack,
     DbusStack,
+    CloseReason,
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]

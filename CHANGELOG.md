@@ -2,6 +2,14 @@
 
 ## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.4.1...HEAD) (2021-05-01)
 
+### ⚠ BREAKING CHANGE
+
+* on_close() closure needs to accept a reason now
+
+### Features
+
+* add close reason handling 2b14fad
+
 
 ### [v4.4.1](https://github.com/hoodie/notify-rust/compare/v4.4.0...v4.4.1) (2021-05-01)
 

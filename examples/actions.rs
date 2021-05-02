@@ -17,16 +17,14 @@ fn main() {
         .hint(Hint::Resident(true))
         .show()
         .unwrap()
-        .wait_for_action({|action|
+        .wait_for_action(|action|
             match action {
                 "default"  => println!("default"),
                 "clicked_a"  => println!("clicked a"),
                 "clicked_b"  => println!("clicked b"),
-                // here "__closed" is a hardcoded keyword
-                "__closed" => println!("the notification was closed"),
                 _ => ()
             }
-        });
+        ).on_close(|| println!("closed"));
 
     #[cfg(target_os = "macos")]
     Notification::new()

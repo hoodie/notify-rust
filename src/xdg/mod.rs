@@ -59,17 +59,27 @@ impl NotificationHandle {
 
     /// Waits for the user to act on a notification and then calls
     /// `invocation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invocation_closure: F)
+    // pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub fn wait_for_action<F>(mut self, invocation_closure: F) -> Self
     where
         F: FnOnce(&str),
     {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(invocation_closure),
+            NotificationHandleInner::Dbus(ref mut inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Custom(action) = action {
+                    invocation_closure(action);
+                }
+            }),
 
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(invocation_closure),
-        }
+            NotificationHandleInner::Zbus(ref mut inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Custom(action) = action {
+                    invocation_closure(action);
+                }
+            }),
+        };
+        self
     }
 
     /// Manually close the notification
@@ -109,24 +119,22 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|| println!("closed"));
     /// ```
-    pub fn on_close<F>(self, closure: F)
-    where
-        F: FnOnce(),
-    {
+    pub fn on_close<A>(mut self, handler: impl CloseHandler<A>) -> Self {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action| {
-                if action == "__closed" {
-                    closure();
+            NotificationHandleInner::Dbus(ref mut inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Closed(reason) = action {
+                    handler.handle(*reason);
                 }
             }),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action| {
-                if action == "__closed" {
-                    closure();
+            NotificationHandleInner::Zbus(ref mut inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Closed(reason) = action {
+                    handler.handle(*reason);
                 }
             }),
-        }
+        };
+        self
     }
 
     /// Replace the original notification with an updated version
@@ -225,7 +233,7 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 
 // here be public functions
 
-#[cfg(all(not(any(feature = "dbus", feature="zbus")), unix, not(target_os = "macos")))]
+#[cfg(all(not(any(feature = "dbus", feature = "zbus")), unix, not(target_os = "macos")))]
 compile_error!("you have to build with eiter zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
@@ -258,7 +266,6 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
     }
 }
-
 
 /// Get the currently dsed [`DbusStack`]
 ///
@@ -391,11 +398,8 @@ pub fn stop_server() {
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
-    zbus_rs::handle_action(id, func)
+pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
+    zbus_rs::handle_action(id, handler)
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -403,13 +407,9 @@ where
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 /// (dbus-rs only)
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
-    dbus_rs::handle_action(id, func)
+pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
+    dbus_rs::handle_action(id, handler)
 }
-
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
@@ -427,3 +427,78 @@ where
     }
 }
 
+/// Reased passed to NotificationClosed Signal
+///
+/// ## Specification
+/// As listed under [Table 8. NotificationClosed Parameters]https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
+#[derive(Copy, Clone, Debug)]
+pub enum CloseReason {
+    /// The notification expired
+    Expired,
+    /// The notification was dismissed by the user
+    Dismissed,
+    /// The notification was closed by a call to `CloseNotification`
+    CloseAction,
+    /// Undefined/Reserved reason
+    Other(u32),
+}
+
+impl From<u32> for CloseReason {
+    fn from(raw_reason: u32) -> Self {
+        match raw_reason {
+            1 => CloseReason::Expired,
+            2 => CloseReason::Dismissed,
+            3 => CloseReason::CloseAction,
+            other => CloseReason::Other(other),
+        }
+    }
+}
+
+// pub type ActionResponseHandler = dyn (FnOnce(&ActionResponse));
+
+// pub(crate) trait ActionResponseHandler: Send + Sync + 'static {
+pub trait ActionResponseHandler {
+    fn call(self, response: &ActionResponse);
+}
+
+// impl<F: Send + Sync + 'static> ActionResponseHandler for F
+impl<F> ActionResponseHandler for F
+where
+    F: FnOnce(&ActionResponse),
+{
+    fn call(self, res: &ActionResponse) {
+        (self)(res)
+    }
+}
+
+pub enum ActionResponse<'a> {
+    Custom(&'a str),
+    Closed(CloseReason),
+}
+
+impl<'a> From<&'a str> for ActionResponse<'a> {
+    fn from(raw: &'a str) -> Self {
+        Self::Custom(raw)
+    }
+}
+
+pub trait CloseHandler<T> {
+    fn handle(&self, reason: CloseReason);
+}
+
+impl<F> CloseHandler<CloseReason> for F
+where
+    F: Fn(CloseReason),
+{
+    fn handle(&self, reason: CloseReason) {
+        self(reason)
+    }
+}
+impl<F> CloseHandler<()> for F
+where
+    F: Fn(),
+{
+    fn handle(&self, _: CloseReason) {
+        self()
+    }
+}
