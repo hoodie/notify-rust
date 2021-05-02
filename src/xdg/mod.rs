@@ -65,17 +65,23 @@ impl NotificationHandle {
     {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(invocation_closure),
+            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action: &ActionResponse| match action {
+                ActionResponse::Custom(action) => invocation_closure(action),
+                ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+            }),
 
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(invocation_closure),
-        }
+            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action: &ActionResponse| match action {
+                ActionResponse::Custom(action) => invocation_closure(action),
+                ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+            }),
+        };
     }
 
     /// Manually close the notification
     ///
     /// # Example
-    /// see
+    ///
     /// ```no_run
     /// # use notify_rust::*;
     /// let handle: NotificationHandle = Notification::new()
@@ -99,7 +105,9 @@ impl NotificationHandle {
     }
 
     /// Executes a closure after the notification has closed.
-    /// ## Example
+    ///
+    /// ## Example 1: *I don't care about why it closed* (the good ole API)
+    ///
     /// ```no_run
     /// # use notify_rust::Notification;
     /// Notification::new().summary("Time is running out")
@@ -109,24 +117,33 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|| println!("closed"));
     /// ```
-    pub fn on_close<F>(self, closure: F)
-    where
-        F: FnOnce(),
-    {
+    /// 
+    /// ## Example 2: *I **do** care about why it closed* (added in v4.5.0)
+    ///
+    /// ```no_run
+    /// # use notify_rust::Notification;
+    /// Notification::new().summary("Time is running out")
+    ///                    .body("This will go away.")
+    ///                    .icon("clock")
+    ///                    .show()
+    ///                    .unwrap()
+    ///                    .on_close(|reason| println!("closed: {:?}", reason));
+    /// ```
+    pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action| {
-                if action == "__closed" {
-                    closure();
+            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Closed(reason) = action {
+                    handler.call(*reason);
                 }
             }),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action| {
-                if action == "__closed" {
-                    closure();
+            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Closed(reason) = action {
+                    handler.call(*reason);
                 }
             }),
-        }
+        };
     }
 
     /// Replace the original notification with an updated version
@@ -225,7 +242,7 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 
 // here be public functions
 
-#[cfg(all(not(any(feature = "dbus", feature="zbus")), unix, not(target_os = "macos")))]
+#[cfg(all(not(any(feature = "dbus", feature = "zbus")), unix, not(target_os = "macos")))]
 compile_error!("you have to build with eiter zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
@@ -258,7 +275,6 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
     }
 }
-
 
 /// Get the currently dsed [`DbusStack`]
 ///
@@ -391,11 +407,8 @@ pub fn stop_server() {
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
-    zbus_rs::handle_action(id, func)
+pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
+    zbus_rs::handle_action(id, handler)
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -403,13 +416,9 @@ where
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 /// (dbus-rs only)
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
-    dbus_rs::handle_action(id, func)
+pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
+    dbus_rs::handle_action(id, handler)
 }
-
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
@@ -427,3 +436,82 @@ where
     }
 }
 
+/// Reased passed to NotificationClosed Signal
+///
+/// ## Specification
+/// As listed under [Table 8. NotificationClosed Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
+#[derive(Copy, Clone, Debug)]
+pub enum CloseReason {
+    /// The notification expired
+    Expired,
+    /// The notification was dismissed by the user
+    Dismissed,
+    /// The notification was closed by a call to `CloseNotification`
+    CloseAction,
+    /// Undefined/Reserved reason
+    Other(u32),
+}
+
+impl From<u32> for CloseReason {
+    fn from(raw_reason: u32) -> Self {
+        match raw_reason {
+            1 => CloseReason::Expired,
+            2 => CloseReason::Dismissed,
+            3 => CloseReason::CloseAction,
+            other => CloseReason::Other(other),
+        }
+    }
+}
+
+// pub(crate) trait ActionResponseHandler: Send + Sync + 'static {
+pub trait ActionResponseHandler {
+    fn call(self, response: &ActionResponse);
+}
+
+// impl<F: Send + Sync + 'static> ActionResponseHandler for F
+impl<F> ActionResponseHandler for F
+where
+    F: FnOnce(&ActionResponse),
+{
+    fn call(self, res: &ActionResponse) {
+        (self)(res)
+    }
+}
+
+pub enum ActionResponse<'a> {
+    Custom(&'a str),
+    Closed(CloseReason),
+}
+
+impl<'a> From<&'a str> for ActionResponse<'a> {
+    fn from(raw: &'a str) -> Self {
+        Self::Custom(raw)
+    }
+}
+
+/// Your handy callback for the `Close` signal of your Notification.
+///
+/// This is implemented by `Fn()` and `Fn(CloseReason)`, so there is probably no good reason for you to manually implement this trait.
+/// Should you find one anyway, please notify me and I'll gladly remove this obviously redundant comment.
+pub trait CloseHandler<T> {
+    /// This is called with the [`CloseReason`].
+    fn call(&self, reason: CloseReason);
+}
+
+impl<F> CloseHandler<CloseReason> for F
+where
+    F: Fn(CloseReason),
+{
+    fn call(&self, reason: CloseReason) {
+        self(reason)
+    }
+}
+
+impl<F> CloseHandler<()> for F
+where
+    F: Fn(),
+{
+    fn call(&self, _: CloseReason) {
+        self()
+    }
+}

@@ -1,6 +1,8 @@
 use crate::{error::*, notification::Notification, xdg};
 use zbus::Connection;
 
+use super::{ActionResponse, ActionResponseHandler, CloseReason};
+
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
@@ -20,11 +22,7 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action<F>(mut self, invocation_closure: F)
-    where
-        F: FnOnce(&str),
-    {
-        // todo!("no action handling yet")
+    pub fn wait_for_action(mut self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&mut self.connection, self.id, invocation_closure);
     }
 
@@ -35,16 +33,16 @@ impl ZbusNotificationHandle {
             Some(crate::xdg::NOTIFICATION_NAMESPACE),
             "CloseNotification",
             &(self.id),
-        ).unwrap();
+        ) .unwrap();
     }
 
     pub fn on_close<F>(self, closure: F)
     where
-        F: FnOnce(),
+        F: FnOnce(CloseReason),
     {
-        self.wait_for_action(|action| {
-            if action == "__closed" {
-                closure();
+        self.wait_for_action(|action: &ActionResponse| {
+            if let ActionResponse::Closed(reason) = action {
+                closure(*reason);
             }
         });
     }
@@ -119,19 +117,12 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
+pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
     let mut connection = Connection::new_session().unwrap();
     wait_for_action_signal(&mut connection, id, func);
 }
 
-
-fn wait_for_action_signal<F>(connection: &mut Connection, id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
+fn wait_for_action_signal(connection: &mut Connection, id: u32, handler: impl ActionResponseHandler) {
     let proxy = zbus::fdo::DBusProxy::new(connection).unwrap();
     proxy
         .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
@@ -146,14 +137,14 @@ where
                 match header.member() {
                     Ok(Some("ActionInvoked")) => match msg.body::<(u32, String)>() {
                         Ok((nid, action)) if nid == id => {
-                            func(&action);
+                            handler.call(&ActionResponse::Custom(&action));
                             break;
                         }
                         _ => {}
                     },
                     Ok(Some("NotificationClosed")) => match msg.body::<(u32, u32)>() {
-                        Ok((nid, _reason)) if nid == id => {
-                            func("__closed");
+                        Ok((nid, reason)) if nid == id => {
+                            handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }
                         _ => {}
