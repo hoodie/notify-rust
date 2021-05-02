@@ -1,6 +1,7 @@
 #![allow(unused_imports, dead_code)]
 use std::{io, thread};
 
+#[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::{Notification, CloseReason};
 
 fn wait_for_keypress() {
@@ -8,6 +9,7 @@ fn wait_for_keypress() {
     io::stdin().read_line(&mut String::new()).unwrap();
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 fn print_reason(reason: CloseReason) {
     println!("notification was closed ({:?})", reason);
 }
