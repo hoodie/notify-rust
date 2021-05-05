@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.4.1...HEAD) (2021-05-02)
+## [v4.5.0](https://github.com/hoodie/notify-rust/compare/v4.4.1...v4.5.0) (2021-05-05)
 
 ### Features
 
