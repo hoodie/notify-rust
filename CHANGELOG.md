@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.4.1...HEAD) (2021-05-01)
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.4.1...HEAD) (2021-05-02)
+
+### Features
+
+* **NotificationHandle:** add close reason handling 01f9980
 
 
 ### [v4.4.1](https://github.com/hoodie/notify-rust/compare/v4.4.0...v4.4.1) (2021-05-01)

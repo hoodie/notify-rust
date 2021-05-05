@@ -4,6 +4,8 @@ use dbus::{
     Message,
 };
 
+use super::{ActionResponse, ActionResponseHandler, CloseReason};
+
 use crate::{
     error::*,
     hints::message::HintMessage,
@@ -21,7 +23,6 @@ pub struct DbusNotificationHandle {
     pub(crate) notification: Notification,
 }
 
-
 impl DbusNotificationHandle {
     pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> DbusNotificationHandle {
         DbusNotificationHandle {
@@ -31,10 +32,7 @@ impl DbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action<F>(self, invocation_closure: F)
-    where
-        F: FnOnce(&str),
-    {
+    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure);
     }
 
@@ -46,11 +44,11 @@ impl DbusNotificationHandle {
 
     pub fn on_close<F>(self, closure: F)
     where
-        F: FnOnce(),
+        F: FnOnce(CloseReason),
     {
-        self.wait_for_action(|action| {
-            if action == "__closed" {
-                closure();
+        self.wait_for_action(|action: &ActionResponse| {
+            if let ActionResponse::Closed(reason) = action {
+                closure(*reason);
             }
         });
     }
@@ -58,7 +56,6 @@ impl DbusNotificationHandle {
     pub fn update(&mut self) {
         self.id = send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
     }
-
 }
 
 pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
@@ -101,7 +98,7 @@ pub fn build_message(method_name: &str) -> Message {
 }
 
 pub fn pack_hints(notification: &Notification) -> Result<MessageItem> {
-    if !notification.hints.is_empty() || !notification.hints_unique.is_empty()  {
+    if !notification.hints.is_empty() || !notification.hints_unique.is_empty() {
         let hints = notification
             .get_hints()
             .cloned()
@@ -175,22 +172,13 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_action<F>(id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
+pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
     let connection = Connection::get_private(BusType::Session).unwrap();
     wait_for_action_signal(&connection, id, func);
 }
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-fn wait_for_action_signal<F>(connection: &Connection, id: u32, func: F)
-where
-    F: FnOnce(&str),
-{
-    connection
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
-        .unwrap();
+fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
     connection
         .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
         .unwrap();
@@ -222,7 +210,7 @@ where
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
                         if nid == id {
-                            func(action);
+                            handler.call(&ActionResponse::Custom(&action));
                             break;
                         }
                     }
@@ -230,9 +218,9 @@ where
 
                 // Notification Closed
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(_)) = (&items[0], &items[1]) {
+                    if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(reason)) = (&items[0], &items[1]) {
                         if nid == id {
-                            func("__closed");
+                            handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }
                     }
@@ -254,4 +242,3 @@ pub fn stop_server() {
     std::thread::sleep(std::time::Duration::from_millis(200));
     connection.send(message).unwrap();
 }
-
