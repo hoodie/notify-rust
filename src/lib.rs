@@ -168,6 +168,7 @@ pub use crate::xdg::{
     NotificationHandle,
     dbus_stack,
     DbusStack,
+    ActionResponse,
     CloseHandler,
     CloseReason,
 };
