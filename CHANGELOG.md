@@ -1,5 +1,12 @@
 # Changelog
 
+### [v4.5.1](https://github.com/hoodie/notify-rust/compare/v4.5.0...v4.5.1) (2021-05-13)
+
+#### Fixes
+
+* export of ActionResponse 3bf2f37
+
+
 ## [v4.5.0](https://github.com/hoodie/notify-rust/compare/v4.4.1...v4.5.0) (2021-05-05)
 
 ### Features
