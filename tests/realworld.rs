@@ -25,8 +25,8 @@ mod realworld {
         ] {
             Notification::new()
                 .summary("burst")
-                .appname(&msg)
-                .body(&msg)
+                .appname(msg)
+                .body(msg)
                 .icon("media-floppy")
                 .show()
                 .unwrap();
@@ -40,7 +40,7 @@ mod realworld {
         ] {
             Notification::new()
                 .summary("merged burst")
-                .body(&msg)
+                .body(msg)
                 .icon("applications-toys")
                 .show()
                 .unwrap();
@@ -113,15 +113,34 @@ mod realworld {
     }
 
     #[test]
+    fn formatted_str() {
+        let mut message = Notification::new();
+        message.summary(format!("2 + 2 = {}", 2 + 2));
+        let t = "formatted";
+        message.body(format!("this is a {} text", t));
+        message.show().unwrap();
+    }
+
+    #[test]
+    fn display_trait() {
+        struct MyStruct;
+        impl std::fmt::Display for MyStruct {
+            fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(fmt, "this is my struct")
+            }
+        }
+
+        let mut message = Notification::new();
+        message.body(MyStruct{});
+        message.show().unwrap();
+    }
+
+    #[test]
     #[cfg(all(unix, not(target_os = "macos")))]
     fn urgency() {
         // use it this way
         use Urgency::*;
-        for urgency in &[
-            Hint::Urgency(Low),
-            Hint::Urgency(Normal),
-            Hint::Urgency(Critical),
-        ] {
+        for urgency in &[Hint::Urgency(Low), Hint::Urgency(Normal), Hint::Urgency(Critical)] {
             Notification::new()
                 .summary(&format!("Urgency {:?}", urgency))
                 .hint(urgency.clone())

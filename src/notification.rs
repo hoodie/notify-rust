@@ -17,7 +17,6 @@ use crate::error::*;
 use std::default::Default;
 use std::env;
 
-
 // Returns the name of the current executable, used as a default for `Notification.appname`.
 fn exe_name() -> String {
     env::current_exe().unwrap()
@@ -96,24 +95,24 @@ impl Notification {
     ///
     /// # Platform Support
     /// Please note that this method has no effect on macOS. Here you can only set the application via [`set_application()`](fn.set_application.html)
-    pub fn appname(&mut self, appname: &str) -> &mut Notification {
-        self.appname = appname.to_owned();
+    pub fn appname(&mut self, appname: impl ToString) -> &mut Notification {
+        self.appname = appname.to_string();
         self
     }
 
     /// Set the `summary`.
     ///
     /// Often acts as title of the notification. For more elaborate content use the `body` field.
-    pub fn summary(&mut self, summary: &str) -> &mut Notification {
-        self.summary = summary.to_owned();
+    pub fn summary(&mut self, summary: impl ToString) -> &mut Notification {
+        self.summary = summary.to_string();
         self
     }
 
     /// Set the `subtitle`.
     ///
     /// This is only useful on macOS, it's not part of the XDG specification and will therefore be eaten by gremlins under your CPU 😈🤘.
-    pub fn subtitle(&mut self, subtitle: &str) -> &mut Notification {
-        self.subtitle = Some(subtitle.to_owned());
+    pub fn subtitle(&mut self, subtitle: impl ToString) -> &mut Notification {
+        self.subtitle = Some(subtitle.to_string());
         self
     }
 
@@ -126,21 +125,21 @@ impl Notification {
 
     /// Wrapper for `Hint::ImagePath`
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn image_path(&mut self, path: &str) -> &mut Notification {
+    pub fn image_path(&mut self, path: impl ToString) -> &mut Notification {
         self.hint(Hint::ImagePath(path.to_string()));
         self
     }
 
      /// Wrapper for `NotificationHint::ImagePath`
     #[cfg(target_os="windows")]
-    pub fn image_path(&mut self, path: &str) -> &mut Notification {
+    pub fn image_path(&mut self, path: impl ToString) -> &mut Notification {
         self.path_to_image = Some(path.to_string());
         self
     }
 
     /// app's System.AppUserModel.ID
     #[cfg(target_os="windows")]
-    pub fn app_id(&mut self, app_id: &str) -> &mut Notification {
+    pub fn app_id(&mut self, app_id: impl ToString) -> &mut Notification {
         self.app_id = Some(app_id.to_string());
         self
     }
@@ -155,15 +154,15 @@ impl Notification {
 
     /// Wrapper for `Hint::SoundName`
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn sound_name(&mut self, name: &str) -> &mut Notification {
-        self.hint(Hint::SoundName(name.to_owned()));
+    pub fn sound_name(&mut self, name: impl ToString) -> &mut Notification {
+        self.hint(Hint::SoundName(name.to_string()));
         self
     }
 
     /// Set the sound_name for the NSUserNotification
     #[cfg(any(target_os = "macos", target_os = "windows"))]
-    pub fn sound_name(&mut self, name: &str) -> &mut Notification {
-        self.sound_name = Some(name.to_owned());
+    pub fn sound_name(&mut self, name: impl ToString) -> &mut Notification {
+        self.sound_name = Some(name.to_string());
         self
     }
 
@@ -172,8 +171,8 @@ impl Notification {
     /// Multiline textual content of the notification.
     /// Each line should be treated as a paragraph.
     /// Simple html markup should be supported, depending on the server implementation.
-    pub fn body(&mut self, body: &str) -> &mut Notification {
-        self.body = body.to_owned();
+    pub fn body(&mut self, body: impl ToString) -> &mut Notification {
+        self.body = body.to_string();
         self
     }
 
@@ -185,8 +184,8 @@ impl Notification {
     ///
     /// # Platform support
     /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
-    pub fn icon(&mut self, icon: &str) -> &mut Notification {
-        self.icon = icon.to_owned();
+    pub fn icon(&mut self, icon: impl ToString) -> &mut Notification {
+        self.icon = icon.to_string();
         self
     }
 
@@ -309,9 +308,9 @@ impl Notification {
     /// This adds a single action to the internal list of actions.
     ///
     /// (xdg only)
-    pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
-        self.actions.push(identifier.to_owned());
-        self.actions.push(label.to_owned());
+    pub fn action(&mut self, identifier: impl ToString, label: impl ToString) -> &mut Notification {
+        self.actions.push(identifier.to_string());
+        self.actions.push(label.to_string());
         self
     }
 
