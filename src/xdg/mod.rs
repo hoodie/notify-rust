@@ -404,30 +404,39 @@ pub fn stop_server() {
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-/// (zbus only)
+/// No need to use this, check out [`NotificationHandle::wait_for_action`]
+/// (xdg only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
-pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
-    zbus_rs::handle_action(id, handler)
-}
-
-/// Listens for the `ActionInvoked(UInt32, String)` Signal.
-///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-/// (dbus-rs only)
-#[cfg(all(feature = "dbus", not(feature = "zbus")))]
-pub fn handle_action(id: u32, handler: impl ActionResponseHandler) {
-    dbus_rs::handle_action(id, handler)
-}
-
-/// Listens for the `ActionInvoked(UInt32, String)` Signal.
-///
-/// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-/// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
-#[cfg(all(feature = "dbus", feature = "zbus"))]
+// #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
 pub fn handle_action<F>(id: u32, func: F)
 where
-    F: FnOnce(&str),
+    F: FnOnce(&ActionResponse),
+{
+    zbus_rs::handle_action(id, func)
+}
+
+/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+///
+/// No need to use this, check out [`NotificationHandle::wait_for_action`]
+/// (xdg only)
+#[cfg(all(feature = "dbus", not(feature = "zbus")))]
+// #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
+pub fn handle_action<F>(id: u32, func: F)
+where
+    F: FnOnce(&ActionResponse),
+{
+    dbus_rs::handle_action(id, func)
+}
+
+/// Listens for the `ActionInvoked(UInt32, String)` Signal.
+///
+/// No need to use this, check out [`NotificationHandle::wait_for_action`]
+/// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
+#[cfg(all(feature = "dbus", feature = "zbus"))]
+// #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
+pub fn handle_action<F>(id: u32, func: F)
+where
+    F: FnOnce(&ActionResponse),
 {
     if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
         zbus_rs::handle_action(id, func)
@@ -463,7 +472,7 @@ impl From<u32> for CloseReason {
     }
 }
 
-// pub(crate) trait ActionResponseHandler: Send + Sync + 'static {
+/// Helper Trait implemented by `Fn()`
 pub trait ActionResponseHandler {
     fn call(self, response: &ActionResponse);
 }
@@ -478,8 +487,12 @@ where
     }
 }
 
+/// Response to an action
 pub enum ActionResponse<'a> {
+    /// Custom Action configured by the Notification.
     Custom(&'a str),
+
+    /// The Notification was closed.
     Closed(CloseReason),
 }
 
