@@ -61,7 +61,7 @@ pub struct Notification {
     ///
     /// # warning
     /// this does not hold all hints, [`Hint::Custom`] and [`Hint::CustomInt`] are held elsewhere,
-    /// please access hints via [`Notification::get_hints`].
+    // /// please access hints via [`Notification::get_hints`].
     #[cfg(all(unix, not(target_os = "macos")))]
     pub hints:   HashSet<Hint>,
 
