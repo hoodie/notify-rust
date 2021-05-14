@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.5.1...HEAD) (2021-05-14)
+### [v4.5.2](https://github.com/hoodie/notify-rust/compare/v4.5.1...v4.5.2) (2021-05-14)
 
-### Fixes
+#### Fixes
 
 * clear up documentation of action handling ad35d34
 
