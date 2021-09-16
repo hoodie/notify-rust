@@ -1,4 +1,11 @@
-# Changelog
+t q# Changelog
+
+### [v4.5.3](https://github.com/hoodie/notify-rust/compare/v4.5.2...v4.5.3) (2021-09-16)
+
+#### Fixes
+
+* clear up documentation and flip env switch for dual stack 3a3b175
+
 
 ### [v4.5.2](https://github.com/hoodie/notify-rust/compare/v4.5.1...v4.5.2) (2021-05-14)
 
