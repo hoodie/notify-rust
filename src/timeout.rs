@@ -14,6 +14,7 @@ pub enum Timeout {
 }
 
 impl Timeout {
+    #[cfg(all(feature = "zbus", not(feature = "dbus")))]
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) fn into_i32(self) -> i32 {
         self.into()

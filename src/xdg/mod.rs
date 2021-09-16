@@ -255,7 +255,7 @@ pub enum DbusStack {
 }
 
 #[cfg(all(feature = "dbus", feature = "zbus"))]
-const ZBUS_SWITCH_VAR: &str = "ZBUS_NOTIFICATION";
+const DBUS_SWITCH_VAR: &str = "DBUSRS";
 
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
@@ -269,10 +269,10 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
 
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
-        zbus_rs::connect_and_send_notification(notification).map(Into::into)
-    } else {
+    if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
+    } else {
+        zbus_rs::connect_and_send_notification(notification).map(Into::into)
     }
 }
 
@@ -297,10 +297,10 @@ pub fn dbus_stack() -> Option<DbusStack> {
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 pub fn dbus_stack() -> Option<DbusStack> {
-    Some(if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
-        DbusStack::Zbus
-    } else {
+    Some(if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         DbusStack::Dbus
+    } else {
+        DbusStack::Zbus
     })
 }
 
@@ -333,10 +333,10 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 pub fn get_capabilities() -> Result<Vec<String>> {
-    if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
-        zbus_rs::get_capabilities()
-    } else {
+    if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::get_capabilities()
+    } else {
+        zbus_rs::get_capabilities()
     }
 }
 
@@ -370,10 +370,10 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 pub fn get_server_information() -> Result<ServerInformation> {
-    if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
-        zbus_rs::get_server_information()
-    } else {
+    if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::get_server_information()
+    } else {
+        zbus_rs::get_server_information()
     }
 }
 
@@ -438,10 +438,10 @@ pub fn handle_action<F>(id: u32, func: F)
 where
     F: FnOnce(&ActionResponse),
 {
-    if std::env::var(ZBUS_SWITCH_VAR).is_ok() {
-        zbus_rs::handle_action(id, func)
-    } else {
+    if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::handle_action(id, func)
+    } else {
+        zbus_rs::handle_action(id, func)
     }
 }
 
