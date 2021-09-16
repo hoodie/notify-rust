@@ -27,13 +27,15 @@ impl ZbusNotificationHandle {
     }
 
     pub fn close(self) {
-        self.connection.call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            "CloseNotification",
-            &(self.id),
-        ) .unwrap();
+        self.connection
+            .call_method(
+                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                crate::xdg::NOTIFICATION_OBJECTPATH,
+                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                "CloseNotification",
+                &(self.id),
+            )
+            .unwrap();
     }
 
     pub fn on_close<F>(self, closure: F)
@@ -66,7 +68,7 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
                 &notification.summary,
                 &notification.body,
                 &notification.actions,
-                crate::hints::hints_to_map(&notification),
+                crate::hints::hints_to_map(notification),
                 notification.timeout.into_i32(),
             ),
         )?

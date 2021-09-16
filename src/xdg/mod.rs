@@ -1,4 +1,4 @@
-//! This module contains XDG and DBus specific code.
+//! This module contains `XDG` and `DBus` specific code.
 //!
 //! it should not be available under any platform other than `(unix, not(target_os = "macos"))`
 
@@ -445,10 +445,10 @@ where
     }
 }
 
-/// Reased passed to NotificationClosed Signal
+/// Reased passed to `NotificationClosed` Signal
 ///
 /// ## Specification
-/// As listed under [Table 8. NotificationClosed Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
+/// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
 #[derive(Copy, Clone, Debug)]
 pub enum CloseReason {
     /// The notification expired

@@ -5,7 +5,7 @@
 //! ## Platform Support
 //!
 //! This library was originally conceived with the [XDG](https://en.wikipedia.org/wiki/XDG) notification specification in mind.
-//! Since version 3.3 this crate also builds on macOS, however the semantics of the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS NSNotifications
+//! Since version 3.3 this crate also builds on macOS, however the semantics of the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS `NSNotifications`
 //! are quite different.
 //! Therefore only a very small subset of functions is supported on macOS.
 //! Certain methods don't have any effect there, others will explicitly fail to compile,
@@ -135,7 +135,7 @@
         unsafe_code,
         unused_import_braces,
         unused_qualifications)]
-#![warn(missing_docs)]
+#![warn(missing_docs, clippy::doc_markdown)]
 
 #[cfg(all(feature="dbus", unix, not(target_os = "macos")))] extern crate dbus;
 #[cfg(target_os = "macos")] extern crate mac_notification_sys;

@@ -54,11 +54,13 @@ impl fmt::Display for Error {
 
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
             ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {}", e),
-            ErrorKind::SpecVersion(ref e) => write!(f, "{}", e),
-            ErrorKind::Msg(ref e) => write!(f, "{}", e),
+            ErrorKind::SpecVersion(ref e) | ErrorKind::Msg(ref e) => write!(f, "{}", e),
             #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
             ErrorKind::Image(ref e) => write!(f, "{}", e),
-            ErrorKind::ImplementationMissing => write!(f, r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#),
+            ErrorKind::ImplementationMissing => write!(
+                f,
+                r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#
+            ),
         }
     }
 }

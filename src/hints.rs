@@ -1,13 +1,3 @@
-//! `Hints` allow you to pass extra information to the server.
-//!
-//! Many of these are standardized by either:
-//!
-//! * http://www.galago-project.org/specs/notification/0.9/x344.html
-//! * https://developer.gnome.org/notification-spec/#hints
-//!
-//! Which of these are actually implemented depends strongly on the Notification server you talk to.
-//! Usually the `get_capabilities()` gives some clues, but the standards usually mention much more
-//! than is actually available.
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
 mod constants;
@@ -33,9 +23,18 @@ pub(crate) enum CustomHintType {
     String,
 }
 
-/// All currently implemented `Hints` that can be sent.
+/// `Hints` allow you to pass extra information to the server.
 ///
-/// as found on https://developer.gnome.org/notification-spec/
+/// Many of these are standardized by either:
+///
+/// * <http://www.galago-project.org/specs/notification/0.9/x344.html>
+/// * <https://developer.gnome.org/notification-spec/#hints>
+///
+/// Which of these are actually implemented depends strongly on the Notification server you talk to.
+/// Usually the [`get_capabilities()`](`crate::get_capabilities`) gives some clues, but the standards usually mention much more
+/// than is actually available.
+///
+/// you pass these to [`Notification::hint`]
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Hint {
     /// If true, server may interpret action identifiers as named icons and display those.
@@ -43,8 +42,8 @@ pub enum Hint {
 
     /// Check out:
     ///
-    /// * http://www.galago-project.org/specs/notification/0.9/x211.html
-    /// * https://developer.gnome.org/notification-spec/#categories
+    /// * <http://www.galago-project.org/specs/notification/0.9/x211.html>
+    /// * <https://developer.gnome.org/notification-spec/#categories>
     Category(String),
 
     /// Name of the DesktopEntry representing the calling application. In case of "firefox.desktop"

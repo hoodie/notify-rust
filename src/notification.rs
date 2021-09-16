@@ -203,8 +203,8 @@ impl Notification {
 
     /// Adds a hint.
     ///
-    /// This method will add a hint to the internal hint HashSet.
-    /// Hints must be of type `Hint`.
+    /// This method will add a hint to the internal hint [`HashSet`].
+    /// Hints must be of type [`Hint`].
     ///
     /// Many of these are again wrapped by more convenient functions such as:
     ///
@@ -288,7 +288,7 @@ impl Notification {
 
     /// Set `actions`.
     ///
-    /// To quote http://www.galago-project.org/specs/notification/0.9/x408.html#command-notify
+    /// To quote <http://www.galago-project.org/specs/notification/0.9/x408.html#command-notify>
     ///
     /// >  Actions are sent over as a list of pairs.
     /// >  Each even element in the list (starting at index 0) represents the identifier for the action.

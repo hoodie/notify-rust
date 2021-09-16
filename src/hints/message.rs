@@ -24,7 +24,7 @@ use dbus::arg::{messageitem::MessageItem, RefArg};
 
 /// All currently implemented `Hints` that can be sent.
 ///
-/// as found on https://developer.gnome.org/notification-spec/
+/// as found on <https://developer.gnome.org/notification-spec/>
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub(crate) struct HintMessage(Hint);
 
