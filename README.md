@@ -64,9 +64,9 @@ This is functionally identical to the default feature set.
 
 ### Requirements
 
-|         | with dbus | with zbus|
-|   ---   | ---       |   ---    |
-| **`rustc`** | >= 1.44   |  >= 1.46 |
+|             | with dbus | with zbus|
+| ----------- | ---       |   ---    |
+| **`rustc`** | >= 1.51   |  >= 1.51 |
 | **libdbus** | **yes**   |  nope!   |
 
 ## macOS support
