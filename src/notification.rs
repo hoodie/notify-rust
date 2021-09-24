@@ -369,7 +369,7 @@ impl Notification {
         macos::show_notification(self)
     }
 
-    /// Sends Notification to NSUserNotificationCenter.
+    /// Sends Notification to `NSUserNotificationCenter`.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.

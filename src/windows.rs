@@ -11,7 +11,7 @@ use std::{path::Path, str::FromStr};
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let sound = match &notification.sound_name {
-        Some(chosen_sound_name) => winrt_notification::Sound::from_str(&chosen_sound_name).ok(),
+        Some(chosen_sound_name) => winrt_notification::Sound::from_str(chosen_sound_name).ok(),
         None => None,
     };
 
@@ -31,12 +31,12 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let app_id = &notification.app_id.as_ref().unwrap_or(powershell_app_id);
     let mut toast = Toast::new(app_id)
             .title(&notification.summary)
-            .text1(&notification.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
+            .text1(notification.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
             .text2(&notification.body)
             .sound(sound)
             .duration(duration);
     if let Some(image_path) = &notification.path_to_image {
-        toast = toast.image(&Path::new(&image_path), "");
+        toast = toast.image(Path::new(&image_path), "");
     }
 
     toast
