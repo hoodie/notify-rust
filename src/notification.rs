@@ -160,7 +160,7 @@ impl Notification {
         self
     }
 
-    /// Set the sound_name for the NSUserNotification
+    /// Set the `sound_name` for the `NSUserNotification`
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
@@ -360,7 +360,7 @@ impl Notification {
         xdg::show_notification(self)
     }
 
-    /// Sends Notification to NSUserNotificationCenter.
+    /// Sends Notification to `NSUserNotificationCenter`.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
@@ -369,7 +369,7 @@ impl Notification {
         macos::show_notification(self)
     }
 
-    /// Sends Notification to NSUserNotificationCenter.
+    /// Sends Notification to `NSUserNotificationCenter`.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
