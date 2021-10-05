@@ -16,7 +16,7 @@ include = [
   "LICENSE-*",
   "Cargo.toml",
   "src/**/*.rs",
-  "tests/*.rs"
+  "tests/*.rs",
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
@@ -30,10 +30,10 @@ serde = { version = "1", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.3"
-chrono = { version = "0.4", optional = true}
+chrono = { version = "0.4", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
-winrt-notification = "0.2"
+winrt-notification = "0.4"
 
 [features]
 default = ["z"]
