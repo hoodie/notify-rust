@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.5.3...HEAD) (2021-10-08)
+
+### Fixes
+
+* update winrt-notification to 0.4 c94e111
+
+
 ### [v4.5.3](https://github.com/hoodie/notify-rust/compare/v4.5.2...v4.5.3) (2021-09-16)
 
 #### Fixes
