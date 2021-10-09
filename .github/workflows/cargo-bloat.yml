@@ -1,0 +1,14 @@
+name: cargo-bloat
+
+on:
+  push:
+    branches:
+      - cargo-bloat
+
+jobs:
+  build:
+    uses: dtolnay/install/.github/workflows/build.yml@master
+    with:
+      crate: cargo-bloat
+    secrets:
+      private_key: ${{secrets.private_key}}
