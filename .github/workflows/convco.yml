@@ -1,14 +1,14 @@
-name: cargo-bloat
+name: convco
 
 on:
   push:
     branches:
-      - cargo-bloat
 
 jobs:
   build:
     uses: dtolnay/install/.github/workflows/build.yml@master
     with:
-      crate: cargo-bloat
+      crate: convco
+    run: 'convco check "v4.0.0..HEAD"'
     secrets:
       private_key: ${{secrets.private_key}}
