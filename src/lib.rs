@@ -81,40 +81,40 @@
 //! ❌ = will not compile
 //! 
 //! ## `Notification`
-//! | method              | XDG   | macOS |
-//! |---------------------|-------|-------|
-//! |  `fn appname(...)`  |  ✔︎    |       |
-//! |  `fn summary(...)`  |  ✔︎    | ✔︎     |
-//! |  `fn subtitle(...)` |       | ✔︎     |
-//! |  `fn body(...)`     |  ✔︎    | ✔︎     |
-//! |  `fn icon(...)`     |  ✔︎    |       |
-//! |  `fn auto_icon(...)`|  ✔︎    |       |
-//! |  `fn hint(...)`     |  ✔︎    | ❌    |
-//! |  `fn timeout(...)`  |  ✔︎    |       |
-//! |  `fn urgency(...)`  |  ✔︎    | ❌    |
-//! |  `fn action(...)`   |  ✔︎    |       |
-//! |  `fn id(...)`       |  ✔︎    |       |
-//! |  `fn finalize(...)` |  ✔︎    | ✔︎     |
-//! |  `fn show(...)`     |  ✔︎    | ✔︎     |
+//! | method              | XDG   | macOS | windows |
+//! |---------------------|-------|-------|---------|
+//! |  `fn appname(...)`  |  ✔︎    |       |        |
+//! |  `fn summary(...)`  |  ✔︎    | ✔︎     |  ✔︎    |
+//! |  `fn subtitle(...)` |       | ✔︎     |  ✔︎    |
+//! |  `fn body(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
+//! |  `fn icon(...)`     |  ✔︎    |       |        |
+//! |  `fn auto_icon(...)`|  ✔︎    |       |        |
+//! |  `fn hint(...)`     |  ✔︎    | ❌    | ❌    |
+//! |  `fn timeout(...)`  |  ✔︎    |       |  ✔︎    |
+//! |  `fn urgency(...)`  |  ✔︎    | ❌    | ❌    |
+//! |  `fn action(...)`   |  ✔︎    |       |        |
+//! |  `fn id(...)`       |  ✔︎    |       |        |
+//! |  `fn finalize(...)` |  ✔︎    | ✔︎     |  ✔︎    |
+//! |  `fn show(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
 //!
 //! ## `NotificationHandle`
 //!
-//! | method                   | XDG | macOS |
-//! |--------------------------|-----|-------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌   |
-//! | `fn close(...)`          |  ✔︎  |  ❌   |
-//! | `fn on_close(...)`       |  ✔︎  |  ❌   |
-//! | `fn update(...)`         |  ✔︎  |  ❌   |
-//! | `fn id(...)`             |  ✔︎  |  ❌   |
+//! | method                   | XDG | macOS | windows |
+//! |--------------------------|-----|-------|---------|
+//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ❌   |
+//! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
+//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ❌   |
+//! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
+//! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
 //!
 //! ## Functions
 //!
-//! |                                            | XDG | macOS |
-//! |--------------------------------------------|-----|-------|
-//! | `fn get_capabilities(...)`                 | ✔︎   |    ❌ |
-//! | `fn get_server_information(...)`           | ✔︎   |    ❌ |
-//! | `fn set_application(...)`                  | ❌  |    ✔︎  |
-//! | `fn get_bundle_identifier_or_default(...)` | ❌  |    ✔︎  |
+//! |                                            | XDG | macOS | windows |
+//! |--------------------------------------------|-----|-------|---------|
+//! | `fn get_capabilities(...)`                 | ✔︎   |   ❌ |  ❌    |
+//! | `fn get_server_information(...)`           | ✔︎   |   ❌ |  ❌    |
+//! | `fn set_application(...)`                  | ❌  |   ✔︎  |  ❌    |
+//! | `fn get_bundle_identifier_or_default(...)` | ❌  |   ✔︎  |  ❌    |
 //!
 //!
 //! ### Toggles
