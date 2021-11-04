@@ -1,8 +1,15 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.5.3...HEAD) (2021-10-08)
+## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.5.4...HEAD) (2021-11-04)
 
 ### Fixes
+
+* **deps:** update rust crate winrt-notification to 0.5 6620110
+
+
+### [v4.5.4](https://github.com/hoodie/notify-rust/compare/v4.5.3...v4.5.4) (2021-10-08)
+
+#### Fixes
 
 * update winrt-notification to 0.4 c94e111
 
