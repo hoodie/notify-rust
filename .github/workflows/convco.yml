@@ -1,14 +1,29 @@
-name: convco
-
-on:
-  push:
-    branches:
+name: Pull request
+# This workflow is triggered on pushes to the repository.
+on: [pull_request]
 
 jobs:
-  build:
-    uses: dtolnay/install/.github/workflows/build.yml@master
-    with:
-      crate: convco
-    run: 'convco check "v4.0.0..HEAD"'
-    secrets:
-      private_key: ${{secrets.private_key}}
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # A PR should not contain too many commits
+          fetch-depth: 10
+      - run: git show-ref
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: convco
+          version: latest
+      - name: Validate commit messages
+        run: convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
