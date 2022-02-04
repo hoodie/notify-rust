@@ -210,7 +210,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
                         if nid == id {
-                            handler.call(&ActionResponse::Custom(&action));
+                            handler.call(&ActionResponse::Custom(action));
                             break;
                         }
                     }
