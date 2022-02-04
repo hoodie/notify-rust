@@ -51,7 +51,7 @@ impl NotificationHandle {
     }
 
     #[cfg(feature = "zbus")]
-    pub(crate) fn for_zbus(id: u32, connection: zbus::Connection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn for_zbus(id: u32, connection: zbus::blocking::Connection, notification: Notification) -> NotificationHandle {
         NotificationHandle {
             inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
         }
