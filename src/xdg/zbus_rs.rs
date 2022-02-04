@@ -22,8 +22,8 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action(mut self, invocation_closure: impl ActionResponseHandler) {
-        wait_for_action_signal(&mut self.connection, self.id, invocation_closure);
+    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+        wait_for_action_signal(&self.connection, self.id, invocation_closure);
     }
 
     pub fn close(self) {
@@ -120,8 +120,8 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
-    let mut connection = Connection::session().unwrap();
-    wait_for_action_signal(&mut connection, id, func);
+    let connection = Connection::session().unwrap();
+    wait_for_action_signal(&connection, id, func);
 }
 
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
@@ -133,34 +133,26 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
         .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
         .unwrap();
 
-    let mut msg_iter = zbus::blocking::MessageIterator::from(connection);
-    while let Some(msg) = msg_iter.next() {
-        if let Ok(msg) = msg {
-            if let Ok(header) = msg.header() {
-                if let Ok(zbus::MessageType::Signal) = header.message_type() {
-                    match header.member() {
-                        Ok(Some(name)) => {
-                            if name == &zbus::names::MemberName::from_static_str("ActionInvoked").unwrap() {
-                                match msg.body::<(u32, String)>() {
-                                    Ok((nid, action)) if nid == id => {
-                                        handler.call(&ActionResponse::Custom(&action));
-                                        break;
-                                    }
-                                    _ => {}
-                                }
-                            } else if name == &zbus::names::MemberName::from_static_str("NotificationClosed").unwrap() {
-                                match msg.body::<(u32, u32)>() {
-                                    Ok((nid, reason)) if nid == id => {
-                                        handler.call(&ActionResponse::Closed(reason.into()));
-                                        break;
-                                    }
-                                    _ => {}
-                                }
-                            }
+    for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
+        if let Ok(header) = msg.header() {
+            if let Ok(zbus::MessageType::Signal) = header.message_type() {
+                match header.member() {
+                    Ok(Some(name)) if name == "ActionInvoked" => match msg.body::<(u32, String)>() {
+                        Ok((nid, action)) if nid == id => {
+                            handler.call(&ActionResponse::Custom(&action));
+                            break;
                         }
-                        Ok(_) => {}
-                        Err(_) => {}
-                    }
+                        _ => {}
+                    },
+                    Ok(Some(name)) if name == "NotificationClosed" => match msg.body::<(u32, u32)>() {
+                        Ok((nid, reason)) if nid == id => {
+                            handler.call(&ActionResponse::Closed(reason.into()));
+                            break;
+                        }
+                        _ => {}
+                    },
+                    Ok(_) => {}
+                    Err(_) => {}
                 }
             }
         }
