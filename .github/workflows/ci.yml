@@ -30,36 +30,37 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --no-default-features --features d
 
       - name: test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --lib
+          args: --lib --no-default-features --features d
 
       - name: doc_test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --doc
+          args: --doc --no-default-features --features d
 
       - name: test_features_images
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --lib --features images
+          args: --lib --no-default-features --features d,images
 
       - name: doc_test_features_images
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --doc --features images
+          args: --doc --no-default-features --features d,images
 
       - name: clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --no-default-features --features d -- -D warnings
 
   linux_zbus:
     name: linux (zbus)
