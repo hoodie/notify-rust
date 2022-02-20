@@ -48,6 +48,7 @@ impl DbusNotificationHandle {
     {
         self.wait_for_action(|action: &ActionResponse| {
             if let ActionResponse::Closed(reason) = action {
+                log::trace!("notification closed with reason {}", reason);
                 closure(*reason);
             }
         });
@@ -210,6 +211,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
                         if nid == id {
+                            log::trace!("signal action received for {} {:?}", id, action);
                             handler.call(&ActionResponse::Custom(action));
                             break;
                         }
@@ -220,6 +222,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                 ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(reason)) = (&items[0], &items[1]) {
                         if nid == id {
+                            log::trace!("notificationfor {} closed, reason {:?}", id, reason);
                             handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }

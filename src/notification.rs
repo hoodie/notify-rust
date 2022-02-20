@@ -339,6 +339,7 @@ impl Notification {
     /// Sends a Notification at the specified date.
     #[cfg(all(target_os = "macos", feature = "chrono"))]
     pub fn schedule<T: chrono::TimeZone>(&self, delivery_date: chrono::DateTime<T>) -> Result<macos::NotificationHandle> {
+        log::trace!("scheduling notification");
         macos::schedule_notification(self, delivery_date.timestamp() as f64)
     }
 
@@ -349,6 +350,7 @@ impl Notification {
     /// then you can use `Notification::schedule()` instead, which accepts a `chrno::DateTime<T>`.
     #[cfg(target_os = "macos")]
     pub fn schedule_raw(&self, timestamp: f64) -> Result<macos::NotificationHandle> {
+        log::trace!("scheduling raw notification");
         macos::schedule_notification(self, timestamp)
     }
 
@@ -357,6 +359,7 @@ impl Notification {
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<xdg::NotificationHandle> {
+        log::trace!("sending notification");
         xdg::show_notification(self)
     }
 
@@ -366,6 +369,7 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<macos::NotificationHandle> {
+        log::trace!("sending notification");
         macos::show_notification(self)
     }
 
@@ -375,6 +379,7 @@ impl Notification {
     /// the notification.
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
+        log::trace!("sending notification");
         windows::show_notification(self)
     }
 
@@ -382,6 +387,7 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     #[deprecated = "this was never meant to be public API"]
     pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {
+        log::trace!("sending notification");
         println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
                  appname = self.appname,
                  summary = self.summary,

@@ -27,6 +27,7 @@ impl ZbusNotificationHandle {
     }
 
     pub fn close(self) {
+        log::trace!("closing notification");
         self.connection
             .call_method(
                 Some(crate::xdg::NOTIFICATION_NAMESPACE),
@@ -44,6 +45,7 @@ impl ZbusNotificationHandle {
     {
         self.wait_for_action(|action: &ActionResponse| {
             if let ActionResponse::Closed(reason) = action {
+                log::trace!("calling on_close handler {:?}", reason);
                 closure(*reason);
             }
         });
@@ -136,9 +138,11 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
         if let Ok(header) = msg.header() {
             if let Ok(zbus::MessageType::Signal) = header.message_type() {
+                log::trace!("signal recived {:?}", msg);
                 match header.member() {
                     Ok(Some(name)) if name == "ActionInvoked" => match msg.body::<(u32, String)>() {
                         Ok((nid, action)) if nid == id => {
+                            log::trace!("signal action received for {} {:?}", id, action);
                             handler.call(&ActionResponse::Custom(&action));
                             break;
                         }
@@ -146,6 +150,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                     },
                     Ok(Some(name)) if name == "NotificationClosed" => match msg.body::<(u32, u32)>() {
                         Ok((nid, reason)) if nid == id => {
+                            log::trace!("notificationfor {} closed, reason {:?}", id, reason);
                             handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }
