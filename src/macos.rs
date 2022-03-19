@@ -1,7 +1,4 @@
-pub use crate::{
-    error::*,
-    notification::Notification,
-};
+pub use crate::{error::*, notification::Notification};
 
 use std::ops::{Deref, DerefMut};
 
@@ -36,24 +33,24 @@ impl DerefMut for NotificationHandle {
 }
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    mac_notification_sys::send_notification(
-        &notification.summary,                                // title
-        &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
-        &notification.body,                                   // message
-        &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
-    )?;
+    mac_notification_sys::Notification::default()
+        .title(notification.summary.as_str())
+        .message(&notification.body)
+        .maybe_subtitle(notification.subtitle.as_deref())
+        .maybe_sound(notification.sound_name.as_deref())
+        .send()?;
 
     Ok(NotificationHandle::new(notification.clone()))
 }
 
 pub(crate) fn schedule_notification(notification: &Notification, delivery_date: f64) -> Result<NotificationHandle> {
-    mac_notification_sys::schedule_notification(
-        &notification.summary,                                // title
-        &notification.subtitle.as_ref().map(AsRef::as_ref),   // subtitle
-        &notification.body,                                   // message
-        &notification.sound_name.as_ref().map(AsRef::as_ref), // sound
-        delivery_date,
-    )?;
+    mac_notification_sys::Notification::default()
+        .title(notification.summary.as_str())
+        .message(&notification.body)
+        .maybe_subtitle(notification.subtitle.as_deref())
+        .maybe_sound(notification.sound_name.as_deref())
+        .delivery_date(delivery_date)
+        .send()?;
 
     Ok(NotificationHandle::new(notification.clone()))
 }
