@@ -29,7 +29,7 @@ zbus = { version = "2", optional = true }
 serde = { version = "1", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
-mac-notification-sys = "0.3"
+mac-notification-sys = "0.5.0-pre.1"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
