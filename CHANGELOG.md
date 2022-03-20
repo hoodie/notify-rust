@@ -1,5 +1,14 @@
 # Changelog
 
+### [v4.5.7](https://github.com/hoodie/notify-rust/compare/v4.5.6...v4.5.7) (2022-03-20)
+
+
+#### Fixes
+
+* **deps:** update rust crate mac-notification-sys to 0.5.0
+ 1f3a9f5
+
+
 ### [v4.5.6](https://github.com/hoodie/notify-rust/compare/v4.5.5...v4.5.6) (2022-02-04)
 
 
