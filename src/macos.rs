@@ -1,4 +1,7 @@
-pub use crate::{error::*, notification::Notification};
+use crate::{error::*, notification::Notification};
+
+pub use mac_notification_sys::error::{Error as MacOsError, NotificationError,ApplicationError};
+
 
 use std::ops::{Deref, DerefMut};
 

@@ -158,7 +158,7 @@ mod notification;
 pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
-#[cfg(target_os = "macos")] pub use macos::*;
+#[cfg(target_os = "macos")] pub use macos::NotificationHandle;
 
 #[cfg(all(any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
 pub use crate::xdg::{
