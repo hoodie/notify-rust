@@ -5,3 +5,4 @@ Cargo.lock
 .directory
 *.rustfmt
 *.rsx
+main-doc
