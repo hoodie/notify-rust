@@ -180,10 +180,16 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 // Listens for the `ActionInvoked(UInt32, String)` signal.
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
     connection
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+        .add_match(&format!(
+            "interface='{}',member='ActionInvoked'",
+            NOTIFICATION_NAMESPACE
+        ))
         .unwrap();
     connection
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+        .add_match(&format!(
+            "interface='{}',member='NotificationClosed'",
+            NOTIFICATION_NAMESPACE
+        ))
         .unwrap();
 
     for item in connection.iter(1000) {
@@ -204,10 +210,10 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                     .map(|p| p.into_cstring().to_string_lossy().into_owned())
                     .unwrap_or_else(String::new),
             );
-            match (path.as_ref(), interface.as_ref(), member.as_ref()) {
+            match (path.as_str(), interface.as_str(), member.as_str()) {
                 // match (protocol.unwrap(), iface.unwrap(), member.unwrap()) {
                 // Action Invoked
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "ActionInvoked") => {
+                (op, ns, "ActionInvoked") if op == NOTIFICATION_OBJECTPATH && ns == NOTIFICATION_NAMESPACE => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) = (&items[0], &items[1]) {
                         if nid == id {
                             handler.call(&ActionResponse::Custom(action));
@@ -217,7 +223,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                 }
 
                 // Notification Closed
-                ("/org/freedesktop/Notifications", "org.freedesktop.Notifications", "NotificationClosed") => {
+                (op, ns, "NotificationClosed") if op == NOTIFICATION_OBJECTPATH && ns == NOTIFICATION_NAMESPACE => {
                     if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(reason)) = (&items[0], &items[1]) {
                         if nid == id {
                             handler.call(&ActionResponse::Closed(reason.into()));

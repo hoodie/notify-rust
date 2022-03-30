@@ -125,19 +125,41 @@ impl Hint {
     }
 
     /// convenience converting a name and value into a hint
+    pub fn from_zbus(name: &str, value: zvariant::Value<'_>) -> Result<Hint, String> {
+        use constants::*;
+        use zvariant::Value::*;
+        match (name, value) {
+            (ACTION_ICONS, Bool(val))   => Ok(Hint::ActionIcons(val)),
+            (CATEGORY, Str(val))        => Ok(Hint::Category(val.into())),
+            (DESKTOP_ENTRY, Str(val))   => Ok(Hint::DesktopEntry(val.into())),
+            (IMAGE_PATH, Str(val))      => Ok(Hint::ImagePath(val.into())),
+            (RESIDENT, Bool(val))       => Ok(Hint::Resident(val)),
+            (SOUND_FILE, Str(val))      => Ok(Hint::SoundFile(val.into())),
+            (SOUND_NAME, Str(val))      => Ok(Hint::SoundName(val.into())),
+            (SUPPRESS_SOUND, Bool(val)) => Ok(Hint::SuppressSound(val)),
+            (TRANSIENT, Bool(val))      => Ok(Hint::Transient(val)),
+            (URGENCY, U8(val))          => Ok(Hint::Urgency(val.into())),
+            (X, I32(val))               => Ok(Hint::X(val)),
+            (Y, I32(val))               => Ok(Hint::Y(val)),
+            (name, value )                           => Ok(Hint::Custom(name.into(), format!("{value:#?}")))
+        }
+    }
+
+    /// convenience converting a name and value into a hint
     pub fn from_key_val(name: &str, value: &str) -> Result<Hint, String> {
-        match (name,value){
-            (constants::ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
-            (constants::CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
-            (constants::DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
-            (constants::IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
-            (constants::RESIDENT, val)       => val.parse::<bool>().map(Hint::Resident).map_err(|e|e.to_string()),
-            (constants::SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
-            (constants::SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
-            (constants::SUPPRESS_SOUND, val) => val.parse::<bool>().map(Hint::SuppressSound).map_err(|e|e.to_string()),
-            (constants::TRANSIENT, val)      => val.parse::<bool>().map(Hint::Transient).map_err(|e|e.to_string()),
-            (constants::X, val)              => val.parse::<i32>().map(Hint::X).map_err(|e|e.to_string()),
-            (constants::Y, val)              => val.parse::<i32>().map(Hint::Y).map_err(|e|e.to_string()),
+        use constants::*;
+        match (name, value){
+            (ACTION_ICONS,val)    => val.parse::<bool>().map(Hint::ActionIcons).map_err(|e|e.to_string()),
+            (CATEGORY, val)       => Ok(Hint::Category(val.to_owned())),
+            (DESKTOP_ENTRY, val)  => Ok(Hint::DesktopEntry(val.to_owned())),
+            (IMAGE_PATH, val)     => Ok(Hint::ImagePath(val.to_owned())),
+            (RESIDENT, val)       => val.parse::<bool>().map(Hint::Resident).map_err(|e|e.to_string()),
+            (SOUND_FILE, val)     => Ok(Hint::SoundFile(val.to_owned())),
+            (SOUND_NAME, val)     => Ok(Hint::SoundName(val.to_owned())),
+            (SUPPRESS_SOUND, val) => val.parse::<bool>().map(Hint::SuppressSound).map_err(|e|e.to_string()),
+            (TRANSIENT, val)      => val.parse::<bool>().map(Hint::Transient).map_err(|e|e.to_string()),
+            (X, val)              => val.parse::<i32>().map(Hint::X).map_err(|e|e.to_string()),
+            (Y, val)              => val.parse::<i32>().map(Hint::Y).map_err(|e|e.to_string()),
             _                                => Err(String::from("unknown name"))
         }
     }

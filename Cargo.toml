@@ -21,24 +21,24 @@ include = [
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
-dbus = { version = "0.9", optional = true }
+dbus = { version = "0.9", optional = true }  
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
 zvariant = { version = "3", optional = true }
 zvariant_derive = { version = "3", optional = true }
 zbus = { version = "2", optional = true }
 serde = { version = "1", optional = true }
+# async-std = { version = "1", optional = true, features = ["attributes"] }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.5.0"
-chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
 winrt-notification = "0.5"
 
 [features]
-default = ["z"]
-server = []
+default = ["z", "server", "debug_namespace"]
+server = ["zbus"]
 d = ["dbus"]
 z = ["zbus", "zvariant", "zvariant_derive", "serde"]
 debug_namespace = []

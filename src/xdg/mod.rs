@@ -14,14 +14,24 @@ mod dbus_rs;
 #[cfg(feature = "zbus")]
 mod zbus_rs;
 
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+pub mod server_dbus;
+
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+pub mod server_zbus;
+
 #[cfg(not(feature = "debug_namespace"))]
+#[doc(hidden)]
 pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
 #[cfg(not(feature = "debug_namespace"))]
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
 
 #[cfg(feature = "debug_namespace")]
+#[doc(hidden)]
 pub static NOTIFICATION_NAMESPACE: &str = "de.hoodie.Notifications";
 #[cfg(feature = "debug_namespace")]
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
 
 #[derive(Debug)]
@@ -51,7 +61,11 @@ impl NotificationHandle {
     }
 
     #[cfg(feature = "zbus")]
-    pub(crate) fn for_zbus(id: u32, connection: zbus::blocking::Connection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn for_zbus(
+        id: u32,
+        connection: zbus::blocking::Connection,
+        notification: Notification,
+    ) -> NotificationHandle {
         NotificationHandle {
             inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
         }
@@ -117,7 +131,7 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|| println!("closed"));
     /// ```
-    /// 
+    ///
     /// ## Example 2: *I **do** care about why it closed* (added in v4.5.0)
     ///
     /// ```no_run

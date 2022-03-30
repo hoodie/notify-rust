@@ -153,7 +153,15 @@ mod notification;
 #[cfg(all(unix, not(target_os = "macos")))] mod xdg;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
-#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))] pub mod server;
+/// server allows you to listen for notifications yourself
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))] pub mod server {
+    // TODO: reexports go here
+    pub use crate::xdg::server_zbus::*;
+}
+
+// FIXME: remove this reexport, its only for dev-time
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+pub use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 
 pub(crate) mod urgency;
 

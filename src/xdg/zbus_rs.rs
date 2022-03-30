@@ -1,7 +1,7 @@
 use crate::{error::*, notification::Notification, xdg};
 use zbus::blocking::Connection;
 
-use super::{ActionResponse, ActionResponseHandler, CloseReason};
+use super::{ActionResponse, ActionResponseHandler, CloseReason, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 
 /// A handle to a shown notification.
 ///
@@ -29,9 +29,9 @@ impl ZbusNotificationHandle {
     pub fn close(self) {
         self.connection
             .call_method(
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                crate::xdg::NOTIFICATION_OBJECTPATH,
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                Some(NOTIFICATION_NAMESPACE),
+                NOTIFICATION_OBJECTPATH,
+                Some(NOTIFICATION_NAMESPACE),
                 "CloseNotification",
                 &(self.id),
             )
@@ -57,9 +57,9 @@ impl ZbusNotificationHandle {
 pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
     let reply: u32 = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "Notify",
             &(
                 &notification.appname,
@@ -88,9 +88,9 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     let connection = zbus::blocking::Connection::session()?;
     let info: Vec<String> = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "GetCapabilities",
             &(),
         )?
@@ -104,9 +104,9 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
     let connection = zbus::blocking::Connection::session()?;
     let info: xdg::ServerInformation = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "GetServerInformation",
             &(),
         )?
@@ -127,10 +127,16 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
     let proxy = zbus::blocking::fdo::DBusProxy::new(connection).unwrap();
     proxy
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+        .add_match(&format!(
+            "interface='{}',member='ActionInvoked'",
+            NOTIFICATION_NAMESPACE
+        ))
         .unwrap();
     proxy
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+        .add_match(&format!(
+            "interface='{}',member='NotificationClosed'",
+            NOTIFICATION_NAMESPACE
+        ))
         .unwrap();
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
