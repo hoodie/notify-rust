@@ -206,7 +206,7 @@ lazy_static!{
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
 /// Return value of `get_server_information()`.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, zvariant::Type)]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name:          String,

@@ -1,5 +1,5 @@
 #![allow(missing_docs)]
-use crate::{ensure, Hint, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
+use crate::{ensure, Hint, ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 use std::{collections::HashMap, error::Error};
 use zbus::{dbus_interface, export::futures_util::TryStreamExt, Connection, MessageStream};
 
@@ -65,6 +65,17 @@ impl<H> NotificationServer<H>
 where
     H: NotificationHandler + 'static + Sync + Send,
 {
+    /// Can be `async` as well.
+    #[allow(clippy::too_many_arguments)]
+    fn get_server_information(&self) -> ServerInformation {
+        ServerInformation {
+            name: String::from("name"),
+            vendor: String::from("hoodie"),
+            version: String::from(env!("CARGO_PKG_VERSION")),
+            spec_version: String::from("1.1")
+        }
+    }
+
     /// Can be `async` as well.
     #[allow(clippy::too_many_arguments)]
     fn notify(
