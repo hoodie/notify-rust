@@ -471,7 +471,7 @@ where
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum CloseReason {
     /// The notification expired
     Expired,
@@ -483,12 +483,30 @@ pub enum CloseReason {
     Other(u32),
 }
 
+impl zvariant::Type for CloseReason {
+    fn signature() -> zvariant::Signature<'static> {
+        // "uu" -> "uuu" 🤷‍♂️
+        zvariant::Signature::try_from("u").unwrap()
+    }
+}
+
+impl Into<u32> for CloseReason {
+    fn into(self) -> u32 {
+        match self {
+            CloseReason::Expired => 1,
+            CloseReason::Dismissed => 2,
+            CloseReason::CloseAction => 3,
+            CloseReason::Other(other) => other,
+        }
+    }
+}
 impl From<u32> for CloseReason {
     fn from(raw_reason: u32) -> Self {
         match raw_reason {
             1 => CloseReason::Expired,
             2 => CloseReason::Dismissed,
             3 => CloseReason::CloseAction,
+            // _ => unreachable!()
             other => CloseReason::Other(other),
         }
     }

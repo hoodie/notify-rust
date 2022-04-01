@@ -140,6 +140,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
         if let Ok(header) = msg.header() {
+            log::trace!("signal received {:?}", header);
             if let Ok(zbus::MessageType::Signal) = header.message_type() {
                 match header.member() {
                     Ok(Some(name)) if name == "ActionInvoked" => match msg.body::<(u32, String)>() {

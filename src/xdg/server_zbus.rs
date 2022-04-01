@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
-use crate::{ensure, Hint, ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
+use crate::{ensure, CloseReason, Hint, ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 use std::{collections::HashMap, error::Error};
-use zbus::{dbus_interface, export::futures_util::TryStreamExt, Connection, MessageStream};
+use zbus::{dbus_interface, export::futures_util::TryStreamExt, Connection, MessageStream, SignalContext};
 
 #[derive(Debug)]
 pub struct Action {
@@ -97,7 +97,7 @@ where
 
     /// Can be `async` as well.
     #[allow(clippy::too_many_arguments)]
-    fn notify(
+    async fn notify(
         &mut self,
         appname: String,
         id: u32,
@@ -107,7 +107,8 @@ where
         raw_actions: Vec<String>,
         raw_hints: HashMap<String, zvariant::OwnedValue>,
         timeout: i32,
-    ) -> u32 {
+        #[zbus(signal_context)] ctx: SignalContext<'_>,
+    ) -> zbus::fdo::Result<u32> {
         let actions = Action::from_vec(&raw_actions);
         let hints = raw_hints
             .into_iter()
@@ -120,7 +121,7 @@ where
             })
             .collect();
 
-        self.handler.call(ReceivedNotification {
+        let received = ReceivedNotification {
             appname,
             id,
             icon,
@@ -129,11 +130,28 @@ where
             actions,
             hints,
             timeout,
-        });
+        };
+        log::debug!("received {:?}", received);
+        // log::debug!("signal context{:?}", ctx);
+
+        if let Some(action) = received.actions.get(0) {
+            Self::action_invoked(&ctx, self.count, &action.tag).await?;
+        }
+        
+        self.handler.call(received);
 
         self.count += 1;
-        self.count
+        log::trace!("sending closed signal");
+        Self::notification_closed(&ctx, self.count, CloseReason::Expired).await?;
+        log::trace!("sent closed signal");
+        Ok(self.count)
     }
+
+    #[dbus_interface(signal)]
+    async fn action_invoked(ctx: &SignalContext<'_>, id: u32, action: &str) -> zbus::Result<()>;
+
+    #[dbus_interface(signal)]
+    async fn notification_closed(ctx: &SignalContext<'_>, id: u32, reason: CloseReason) -> zbus::Result<()>;
 }
 
 /// Starts the server
@@ -200,7 +218,9 @@ async fn start_with_internal<H: NotificationHandler + 'static + Sync + Send>(han
 }
 
 /// Starts the server
-async fn _start_with_internal2<H: NotificationHandler + 'static + Sync + Send>( handler: H) -> Result<(), Box<dyn Error>> {
+async fn _start_with_internal2<H: NotificationHandler + 'static + Sync + Send>(
+    handler: H,
+) -> Result<(), Box<dyn Error>> {
     let server_state = NotificationServer::with_handler(handler);
     log::info!("instantiated server");
 
