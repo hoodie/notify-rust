@@ -27,9 +27,9 @@ use std::convert::TryFrom;
 ///
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum Urgency {
-    /// The behaviour for `Low` urgency depends on the notification server.
+    /// The behavior for `Low` urgency depends on the notification server.
     Low = 0,
-    /// The behaviour for `Normal` urgency depends on the notification server.
+    /// The behavior for `Normal` urgency depends on the notification server.
     Normal = 1,
     /// A critical notification will not time out.
     Critical = 2,
@@ -72,12 +72,13 @@ impl From<u8> for Urgency {
         }
     }
 }
-impl From<u64> for Urgency {
-    fn from(int: u64) -> Urgency {
-        match int {
-            0 => Urgency::Low,
-            1 => Urgency::Normal,
-            2..=std::u64::MAX => Urgency::Critical,
-        }
-    }
-}
+
+// impl From<u64> for Urgency {
+//     fn from(int: u64) -> Urgency {
+//         match int {
+//             0 => Urgency::Low,
+//             1 => Urgency::Normal,
+//             2..=std::u64::MAX => Urgency::Critical,
+//         }
+//     }
+// }

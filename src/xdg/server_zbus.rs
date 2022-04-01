@@ -53,6 +53,18 @@ where
 struct NotificationServer<H: NotificationHandler + 'static + Sync + Send> {
     count: u32,
     handler: H,
+    stop_listener: event_listener::Event,
+}
+
+impl<H: NotificationHandler + 'static + Sync + Send> NotificationServer<H> {
+    fn with_handler(handler: H) -> Self {
+        let stop_listener = event_listener::Event::new();
+        NotificationServer {
+            count: 0,
+            handler,
+            stop_listener,
+        }
+    }
 }
 
 // #[dbus_interface]
@@ -65,14 +77,21 @@ impl<H> NotificationServer<H>
 where
     H: NotificationHandler + 'static + Sync + Send,
 {
+    async fn stop(&self) -> bool {
+        log::info!("received stop");
+        self.stop_listener.notify(1);
+        true
+    }
+
     /// Can be `async` as well.
     #[allow(clippy::too_many_arguments)]
     fn get_server_information(&self) -> ServerInformation {
+        log::trace!("received info request");
         ServerInformation {
             name: String::from("name"),
             vendor: String::from("hoodie"),
             version: String::from(env!("CARGO_PKG_VERSION")),
-            spec_version: String::from("1.1")
+            spec_version: String::from("1.1"),
         }
     }
 
@@ -95,7 +114,7 @@ where
             .filter_map(|(k, v)| match Hint::from_zbus(&k, v.into()) {
                 Ok(hint) => Some(hint),
                 Err(error) => {
-                    eprint!("{error}");
+                    log::error!("invalid notification hint {error}");
                     None
                 }
             })
@@ -154,26 +173,57 @@ pub async fn start_with<H: NotificationHandler + 'static + Sync + Send>(handler:
 
 /// Starts the server
 pub fn start_with_blocking<H: NotificationHandler + 'static + Sync + Send>(handler: H) -> Result<(), Box<dyn Error>> {
+    log::info!("start blocking");
     zbus::block_on(start_with_internal(handler))
 }
 
-/// Starts the server
 async fn start_with_internal<H: NotificationHandler + 'static + Sync + Send>(handler: H) -> Result<(), Box<dyn Error>> {
-    let server_state = NotificationServer { count: 0, handler };
+    let server_state = NotificationServer::with_handler(handler);
+    log::info!("instantiated server");
+    let stopped = server_state.stop_listener.listen();
+
+    zbus::ConnectionBuilder::session()?
+        .name(NOTIFICATION_NAMESPACE)?
+        .serve_at(NOTIFICATION_OBJECTPATH, server_state)?
+        .build()
+        .await?;
+    log::info!(
+        "launch session\n {:?}\n {:?}",
+        NOTIFICATION_NAMESPACE,
+        NOTIFICATION_OBJECTPATH
+    );
+
+    stopped.wait();
+    log::info!("shutting down");
+
+    Ok(())
+}
+
+/// Starts the server
+async fn _start_with_internal2<H: NotificationHandler + 'static + Sync + Send>( handler: H) -> Result<(), Box<dyn Error>> {
+    let server_state = NotificationServer::with_handler(handler);
+    log::info!("instantiated server");
+
     let connection = Connection::session().await?;
+    log::info!("opened connection");
+
     let server_available = connection
         .object_server()
+        // .name(NOTIFICATION_NAMESPACE)
         .at(NOTIFICATION_OBJECTPATH, server_state)
         .await?;
     ensure!(server_available, "server object-path already taken");
+    log::info!("serving interface {:?}", NOTIFICATION_OBJECTPATH);
 
     connection.request_name(NOTIFICATION_NAMESPACE).await?;
+    log::info!("acquired namespace {:?}", NOTIFICATION_NAMESPACE);
 
     let mut stream = MessageStream::from(connection);
-
     while let Some(msg) = stream.try_next().await? {
-        println!("Got message: {}", msg);
+        log::debug!("received message: {}", msg);
+        // log::debug!("count: {}", server_state.count);
     }
+    log::info!("shutting down");
 
     Ok(())
 }

@@ -94,8 +94,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
             "GetCapabilities",
             &(),
         )?
-        .body()
-        .unwrap();
+        .body()?;
 
     Ok(info)
 }
@@ -163,4 +162,17 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
             }
         }
     }
+}
+
+pub fn stop_server() -> Result<()> {
+    let connection = zbus::blocking::Connection::session()?;
+    connection.call_method(
+        Some(NOTIFICATION_NAMESPACE),
+        NOTIFICATION_OBJECTPATH,
+        Some(NOTIFICATION_NAMESPACE),
+        "Stop",
+        &(),
+    )?;
+
+    Ok(())
 }

@@ -257,7 +257,7 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 // here be public functions
 
 #[cfg(all(not(any(feature = "dbus", feature = "zbus")), unix, not(target_os = "macos")))]
-compile_error!("you have to build with eiter zbus or dbus turned on");
+compile_error!("you have to build with either zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
 #[derive(Copy, Clone, Debug)]
@@ -290,7 +290,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     }
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
@@ -298,7 +298,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     Some(DbusStack::Zbus)
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// (dbus-rs only)
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
@@ -306,7 +306,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     Some(DbusStack::Dbus)
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
 #[cfg(all(feature = "dbus", feature = "zbus"))]
@@ -318,7 +318,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     })
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// neither zbus nor dbus-rs are configured
 #[cfg(all(not(feature = "dbus"), not(feature = "zbus")))]
@@ -409,11 +409,19 @@ pub struct ServerInformation {
 /// Strictly internal.
 /// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 #[doc(hidden)]
 pub fn stop_server() {
-    #[cfg(feature = "dbus")]
     dbus_rs::stop_server()
+}
+
+/// Strictly internal.
+/// The NotificationServer implemented here exposes a "Stop" function.
+/// stops the notification server
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+#[doc(hidden)]
+pub fn stop_server() -> Result<()> {
+    zbus_rs::stop_server()
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -459,7 +467,7 @@ where
     }
 }
 
-/// Reased passed to `NotificationClosed` Signal
+/// Reason passed to `NotificationClosed` Signal
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)

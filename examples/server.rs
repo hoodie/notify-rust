@@ -18,6 +18,7 @@ fn main() {
 //#[async_std::main]
 // async
 fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
     // notify_rust::server::start().await
     notify_rust::server::start_with_blocking(|notification| eprintln!("{notification:#?}"))
 }

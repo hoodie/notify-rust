@@ -28,6 +28,9 @@ zvariant = { version = "3", optional = true }
 zvariant_derive = { version = "3", optional = true }
 zbus = { version = "2", optional = true }
 serde = { version = "1", optional = true }
+log = "0.4"
+env_logger = "0.9"
+event-listener = "2"
 # async-std = { version = "1", optional = true, features = ["attributes"] }
 
 [target.'cfg(target_os="macos")'.dependencies]
