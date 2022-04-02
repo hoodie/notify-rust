@@ -16,16 +16,20 @@ fn print() {
 fn main() { println!("this is a xdg only feature") }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-fn main() {
+#[async_std::main]
+async fn main() {
+    use notify_rust::CloseReason;
+
+
     std::env::set_var("RUST_LOG", "notify_rust=trace");
     env_logger::init();
-    thread::spawn(|| {
+    async_std::task::spawn(async move {
         Notification::new()
             .summary("Time is running out")
             .body("This will go away.")
             .icon("clock")
+            .on_close(|_: CloseReason| println!("closed"))
             .show()
-            .map(|handler| handler.on_close(print))
     });
     wait_for_keypress();
 }

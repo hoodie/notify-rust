@@ -1,27 +1,35 @@
-#[cfg(all(unix, not(target_os = "macos")))] use crate::{
+#[cfg(all(unix, not(target_os = "macos")))]
+use crate::{
     hints::{CustomHintType, Hint},
     urgency::Urgency,
     xdg,
 };
 
-#[cfg(all(unix, not(target_os = "macos"), feature="images"))] use crate::image::Image;
+#[cfg(all(unix, not(target_os = "macos"), feature = "images"))]
+use crate::image::Image;
 
-#[cfg(all(unix, target_os = "macos"))] use crate::macos;
-#[cfg(target_os = "windows")] use crate::windows;
+#[cfg(all(unix, target_os = "macos"))]
+use crate::macos;
+#[cfg(target_os = "windows")]
+use crate::windows;
 
-use crate::timeout::Timeout;
 use crate::error::*;
+use crate::{timeout::Timeout, CloseHandler, CloseReason};
 
-#[cfg(all(unix, not(target_os = "macos")))] use std::collections::{HashMap, HashSet};
+#[cfg(all(unix, not(target_os = "macos")))]
+use std::collections::{HashMap, HashSet};
 
-use std::default::Default;
-use std::env;
-
+use std::{env, sync::Arc};
 
 // Returns the name of the current executable, used as a default for `Notification.appname`.
 fn exe_name() -> String {
-    env::current_exe().unwrap()
-    .file_name().unwrap().to_str().unwrap().to_owned()
+    env::current_exe()
+        .unwrap()
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned()
 }
 
 /// Desktop notification.
@@ -38,7 +46,7 @@ fn exe_name() -> String {
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct Notification {
     /// Filled by default with executable name.
@@ -52,10 +60,10 @@ pub struct Notification {
 
     /// Multiple lines possible, may support simple markup,
     /// check out `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
-    pub body:    String,
+    pub body: String,
 
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
-    pub icon:    String,
+    pub icon: String,
 
     /// Check out `Hint`
     ///
@@ -63,7 +71,7 @@ pub struct Notification {
     /// this does not hold all hints, [`Hint::Custom`] and [`Hint::CustomInt`] are held elsewhere,
     // /// please access hints via [`Notification::get_hints`].
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub hints:   HashSet<Hint>,
+    pub hints: HashSet<Hint>,
 
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) hints_unique: HashMap<(String, CustomHintType), Hint>,
@@ -71,18 +79,59 @@ pub struct Notification {
     /// See `Notification::actions()` and `Notification::action()`
     pub actions: Vec<String>,
 
-    #[cfg(target_os="macos")]   pub(crate) sound_name: Option<String>,
-    #[cfg(target_os="windows")] pub(crate) sound_name: Option<String>,
-    #[cfg(target_os="windows")] pub(crate) path_to_image: Option<String>,
-    #[cfg(target_os="windows")] pub(crate) app_id: Option<String>,
+    #[cfg(target_os = "macos")]
+    pub(crate) sound_name: Option<String>,
+    #[cfg(target_os = "windows")]
+    pub(crate) sound_name: Option<String>,
+    #[cfg(target_os = "windows")]
+    pub(crate) path_to_image: Option<String>,
+    #[cfg(target_os = "windows")]
+    pub(crate) app_id: Option<String>,
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
     /// Only to be used on the receive end. Use Notification hand for updating.
-    pub(crate) id: Option<u32>
+    pub(crate) id: Option<u32>,
+
+    #[cfg(any(feature = "dbus", feature = "zbus"))]
+    pub(crate) close_handler: Option<Arc<dyn FnOnce(CloseReason) + Sync + Send + 'static>>,
+}
+
+impl std::fmt::Debug for Notification {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f
+            .debug_struct("Notification")
+            .field("appname", &self.appname)
+            .field("summary", &self.summary)
+            .field("subtitle", &self.subtitle)
+            .field("body", &self.body)
+            .field("icon", &self.icon)
+            .field("hints", &self.hints)
+            .field("hints_unique", &self.hints_unique)
+        //     .field("actions", &self.actions);
+        // if cfg!(any(target_os = "windows", target_os = "macos")) {
+        //     d = d.field("sound_name", &self.sound_name);
+        // }
+        // if cfg!(target_os = "windows") {
+        //     d = d.field("path_to_image", &self.path_to_image);
+        // }
+        // if cfg!(target_os = "windows") {
+        //     d = d.field("app_id", &self.app_id);
+        // }
+        // d.field("timeout", &self.timeout)
+        //     .field("id", &self.id)
+        //     .field("close_handler", "--handler--")
+            .finish()
+    }
 }
 
 impl Notification {
+    /// EXPERIMENTAL
+    pub fn on_close<A>(&mut self, handler: impl CloseHandler<A>) -> &mut Notification {
+        self.close_handler = Some(Arc::new(move |reason| handler.call(reason)));
+        self
+    }
+
     /// Constructs a new Notification.
     ///
     /// Most fields are empty by default, only `appname` is initialized with the name of the current
@@ -131,15 +180,15 @@ impl Notification {
         self
     }
 
-     /// Wrapper for `NotificationHint::ImagePath`
-    #[cfg(target_os="windows")]
+    /// Wrapper for `NotificationHint::ImagePath`
+    #[cfg(target_os = "windows")]
     pub fn image_path(&mut self, path: &str) -> &mut Notification {
         self.path_to_image = Some(path.to_string());
         self
     }
 
     /// app's System.AppUserModel.ID
-    #[cfg(target_os="windows")]
+    #[cfg(target_os = "windows")]
     pub fn app_id(&mut self, app_id: &str) -> &mut Notification {
         self.app_id = Some(app_id.to_string());
         self
@@ -232,17 +281,13 @@ impl Notification {
     pub fn hint(&mut self, hint: Hint) -> &mut Notification {
         match hint {
             Hint::CustomInt(k, v) => {
-                self.hints_unique.insert(
-                    (k.clone(), CustomHintType::Int),
-                    Hint::CustomInt(k, v)
-                    );
-            },
+                self.hints_unique
+                    .insert((k.clone(), CustomHintType::Int), Hint::CustomInt(k, v));
+            }
             Hint::Custom(k, v) => {
-                self.hints_unique.insert(
-                    (k.clone(), CustomHintType::String),
-                    Hint::Custom(k, v)
-                    );
-            },
+                self.hints_unique
+                    .insert((k.clone(), CustomHintType::String), Hint::Custom(k, v));
+            }
             _ => {
                 self.hints.insert(hint);
             }
@@ -251,11 +296,8 @@ impl Notification {
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub(crate) fn get_hints(&self) -> impl Iterator<Item=&Hint>{
-        self
-            .hints
-            .iter()
-            .chain(self.hints_unique.values())
+    pub(crate) fn get_hints(&self) -> impl Iterator<Item = &Hint> {
+        self.hints.iter().chain(self.hints_unique.values())
     }
 
     /// Set the `timeout`.
@@ -338,7 +380,10 @@ impl Notification {
     ///
     /// Sends a Notification at the specified date.
     #[cfg(all(target_os = "macos", feature = "chrono"))]
-    pub fn schedule<T: chrono::TimeZone>(&self, delivery_date: chrono::DateTime<T>) -> Result<macos::NotificationHandle> {
+    pub fn schedule<T: chrono::TimeZone>(
+        &self,
+        delivery_date: chrono::DateTime<T>,
+    ) -> Result<macos::NotificationHandle> {
         macos::schedule_notification(self, delivery_date.timestamp() as f64)
     }
 
@@ -382,64 +427,65 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     #[deprecated = "this was never meant to be public API"]
     pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {
-        println!("Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
-                 appname = self.appname,
-                 summary = self.summary,
-                 body = self.body,
-                 hints = self.hints,
-                 icon = self.icon,);
+        println!(
+            "Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
+            appname = self.appname,
+            summary = self.summary,
+            body = self.body,
+            hints = self.hints,
+            icon = self.icon,
+        );
         self.show()
     }
-
 }
 
 impl Default for Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn default() -> Notification {
         Notification {
-            appname:  exe_name(),
-            summary:  String::new(),
+            appname: exe_name(),
+            summary: String::new(),
             subtitle: None,
-            body:     String::new(),
-            icon:     String::new(),
-            hints:    HashSet::new(),
+            body: String::new(),
+            icon: String::new(),
+            hints: HashSet::new(),
             hints_unique: HashMap::new(),
-            actions:  Vec::new(),
-            timeout:  Timeout::Default,
-            id:       None
+            actions: Vec::new(),
+            timeout: Timeout::Default,
+            id: None,
+            close_handler: None,
         }
     }
 
     #[cfg(target_os = "macos")]
     fn default() -> Notification {
         Notification {
-            appname:    exe_name(),
-            summary:    String::new(),
-            subtitle:   None,
-            body:       String::new(),
-            icon:       String::new(),
-            actions:    Vec::new(),
-            timeout:    Timeout::Default,
+            appname: exe_name(),
+            summary: String::new(),
+            subtitle: None,
+            body: String::new(),
+            icon: String::new(),
+            actions: Vec::new(),
+            timeout: Timeout::Default,
             sound_name: Default::default(),
-            id:         None
+            id: None,
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(target_os = "windows")]
     fn default() -> Notification {
         Notification {
-            appname:       exe_name(),
-            summary:       String::new(),
-            subtitle:      None,
-            body:          String::new(),
-            icon:          String::new(),
-            actions:       Vec::new(),
-            timeout:       Timeout::Default,
-            sound_name:    Default::default(),
-            id:            None,
+            appname: exe_name(),
+            summary: String::new(),
+            subtitle: None,
+            body: String::new(),
+            icon: String::new(),
+            actions: Vec::new(),
+            timeout: Timeout::Default,
+            sound_name: Default::default(),
+            id: None,
             path_to_image: None,
-            app_id:        None
+            app_id: None,
         }
     }
 }
-

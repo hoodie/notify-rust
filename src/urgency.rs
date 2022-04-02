@@ -73,6 +73,7 @@ impl From<u8> for Urgency {
     }
 }
 
+// TODO: is removing this a breaking change?
 // impl From<u64> for Urgency {
 //     fn from(int: u64) -> Urgency {
 //         match int {

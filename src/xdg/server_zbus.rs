@@ -137,13 +137,20 @@ where
         if let Some(action) = received.actions.get(0) {
             Self::action_invoked(&ctx, self.count, &action.tag).await?;
         }
-        
+
         self.handler.call(received);
 
+            log::trace!("sleep");
+            async_std::task::sleep(std::time::Duration::from_millis(1600)).await;
+            log::trace!("wake up");
+
+            log::trace!("sending closed signal");
+            Self::notification_closed(&ctx, self.count, CloseReason::Expired).await.unwrap();
+            log::trace!("sent closed signal");
+            log::trace!("sleep");
+            async_std::task::sleep(std::time::Duration::from_millis(1600)).await;
+            log::trace!("wake up");
         self.count += 1;
-        log::trace!("sending closed signal");
-        Self::notification_closed(&ctx, self.count, CloseReason::Expired).await?;
-        log::trace!("sent closed signal");
         Ok(self.count)
     }
 

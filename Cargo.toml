@@ -31,7 +31,7 @@ serde = { version = "1", optional = true }
 log = "0.4"
 env_logger = "0.9"
 event-listener = "2"
-# async-std = { version = "1", optional = true, features = ["attributes"] }
+async-std = { version = "1", optional = true, features = ["attributes"] }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.5.0"
@@ -41,7 +41,7 @@ winrt-notification = "0.5"
 
 [features]
 default = ["z", "server", "debug_namespace"]
-server = ["zbus"]
+server = ["zbus", "async-std"]
 d = ["dbus"]
 z = ["zbus", "zvariant", "zvariant_derive", "serde"]
 debug_namespace = []

@@ -273,6 +273,7 @@ const DBUS_SWITCH_VAR: &str = "DBUSRS";
 
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
+    log::trace!("show notification");
     zbus_rs::connect_and_send_notification(notification).map(Into::into)
 }
 
@@ -528,6 +529,7 @@ where
 }
 
 /// Response to an action
+#[derive(Debug)]
 pub enum ActionResponse<'a> {
     /// Custom Action configured by the Notification.
     Custom(&'a str),
