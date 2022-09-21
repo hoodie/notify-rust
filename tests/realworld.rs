@@ -25,8 +25,8 @@ mod realworld {
         ] {
             Notification::new()
                 .summary("burst")
-                .appname(&msg)
-                .body(&msg)
+                .appname(msg)
+                .body(msg)
                 .icon("media-floppy")
                 .show()
                 .unwrap();
@@ -40,7 +40,7 @@ mod realworld {
         ] {
             Notification::new()
                 .summary("merged burst")
-                .body(&msg)
+                .body(msg)
                 .icon("applications-toys")
                 .show()
                 .unwrap();

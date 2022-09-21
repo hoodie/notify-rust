@@ -121,7 +121,7 @@ impl From<(&MessageItem, &MessageItem)> for HintMessage {
         // If this is a variant, consider the thing inside it
         // If it's a nested variant, keep drilling down until we get a real value
         while let MessageItem::Variant(inner) = value {
-            value = &*inner;
+            value = inner;
         }
 
         let is_stringy = value.inner::<&str>().is_ok();
