@@ -1,5 +1,26 @@
 # Changelog
 
+### [v4.5.9](https://github.com/hoodie/notify-rust/compare/v4.5.8...v4.5.9) (2022-09-21)
+
+
+#### Fixes
+
+* raise minimum rustc version to 1.60.0 for zbus
+ b3b9aba
+
+* update winrt-notification to a maintained fork, closes #148
+ 7cc6824
+
+
+### [v4.5.8](https://github.com/hoodie/notify-rust/compare/v4.5.7...v4.5.8) (2022-03-26)
+
+
+#### Fixes
+
+* re-exported types from mac-notification-sys
+ 80daef6
+
+
 ### [v4.5.7](https://github.com/hoodie/notify-rust/compare/v4.5.6...v4.5.7) (2022-03-20)
 
 
