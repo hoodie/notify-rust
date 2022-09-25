@@ -66,7 +66,7 @@ This is functionally identical to the default feature set.
 
 |             | with dbus | with zbus|
 | ----------- | ---       |   ---    |
-| **`rustc`** | >= 1.51   |  >= 1.51 |
+| **`rustc`** | >= 1.59   |  >= 1.60 |
 | **libdbus** | **yes**   |  nope!   |
 
 ## macOS support
