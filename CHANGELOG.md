@@ -1,5 +1,14 @@
 # Changelog
 
+### [v4.5.10](https://github.com/hoodie/notify-rust/compare/v4.5.9...v4.5.10) (2022-09-25)
+
+
+#### Fixes
+
+* lower minimum rustc version to 1.59.0 for linux (dbus)
+ c0ffeed
+
+
 ### [v4.5.9](https://github.com/hoodie/notify-rust/compare/v4.5.8...v4.5.9) (2022-09-21)
 
 
