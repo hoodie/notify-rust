@@ -412,7 +412,7 @@ pub fn handle_action<F>(id: u32, func: F)
 where
     F: FnOnce(&ActionResponse),
 {
-    zbus_rs::handle_action(id, func)
+    zbus_rs::handle_action(id, func);
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -483,7 +483,7 @@ where
     F: FnOnce(&ActionResponse),
 {
     fn call(self, res: &ActionResponse) {
-        (self)(res)
+        (self)(res);
     }
 }
 
@@ -516,7 +516,7 @@ where
     F: Fn(CloseReason),
 {
     fn call(&self, reason: CloseReason) {
-        self(reason)
+        self(reason);
     }
 }
 
@@ -525,6 +525,6 @@ where
     F: Fn(),
 {
     fn call(&self, _: CloseReason) {
-        self()
+        self();
     }
 }

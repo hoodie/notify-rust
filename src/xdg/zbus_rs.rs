@@ -151,8 +151,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                         }
                         _ => {}
                     },
-                    Ok(_) => {}
-                    Err(_) => {}
+                    Ok(_) | Err(_) => {}
                 }
             }
         }

@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn version_parsing() {
-        assert_eq!("1.3".parse::<Version>().unwrap(), Version::new(1, 3))
+        assert_eq!("1.3".parse::<Version>().unwrap(), Version::new(1, 3));
     }
 
     #[test]

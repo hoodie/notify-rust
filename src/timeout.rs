@@ -31,7 +31,7 @@ impl Default for Timeout {
 fn timeout_from_i32() {
     assert_eq!(Timeout::from(234), Timeout::Milliseconds(234));
     assert_eq!(Timeout::from(-234), Timeout::Default);
-    assert_eq!(Timeout::from(0), Timeout::Never)
+    assert_eq!(Timeout::from(0), Timeout::Never);
 }
 
 impl From<i32> for Timeout {
