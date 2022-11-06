@@ -78,7 +78,7 @@ pub fn send_notificaion_via_connection(
         notification.body.to_owned().into(),    // body
         pack_actions(notification),             // actions
         pack_hints(notification)?,              // hints
-        timeout.into(),                         // timeout
+        timeout.into(),                         /* timeout */
     ]);
 
     let reply = connection.send_with_reply_and_block(message, 2000)?;

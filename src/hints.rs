@@ -14,7 +14,7 @@ use crate::Urgency;
 
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use crate::notification::Notification;
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use std::collections::HashMap;
-
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use zbus::zvariant;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]

@@ -28,6 +28,9 @@ pub enum ErrorKind {
     #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
     Zbus(zbus::Error),
 
+    #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+    ZbusFdo(zbus::fdo::Error),
+
     #[cfg(target_os = "macos")]
     MacNotificationSys(mac_notification_sys::error::Error),
 
@@ -51,6 +54,9 @@ impl fmt::Display for Error {
 
             #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
             ErrorKind::Zbus(ref e) => write!(f, "{}", e),
+
+            #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+            ErrorKind::ZbusFdo(ref e) => write!(f, "{}", e),
 
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
@@ -92,6 +98,15 @@ impl From<zbus::Error> for Error {
     fn from(e: zbus::Error) -> Error {
         Error {
             kind: ErrorKind::Zbus(e),
+        }
+    }
+}
+
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+impl From<zbus::fdo::Error> for Error {
+    fn from(e: zbus::fdo::Error) -> Error {
+        Error {
+            kind: ErrorKind::ZbusFdo(e),
         }
     }
 }

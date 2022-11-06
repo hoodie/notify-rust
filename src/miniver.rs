@@ -16,6 +16,7 @@ impl Version {
 
 impl FromStr for Version {
     type Err = Error;
+
     fn from_str(s: &str) -> Result<Version> {
         let vv = s.split('.').collect::<Vec<&str>>();
         match (vv.first(), vv.get(1)) {

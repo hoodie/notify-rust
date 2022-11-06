@@ -4,7 +4,6 @@
 //! It does not respond properly either yet.
 //!
 //! This server will not replace an already running notification server.
-//!
 
 #![allow(unused_imports, unused_variables, dead_code)]
 
@@ -63,6 +62,7 @@ impl NotificationServer {
     pub fn create() -> Arc<NotificationServer> {
         Arc::new(NotificationServer::default())
     }
+
     // pub fn notify_mothod<F>(&mut self, closure: F)
     //    -> Method
     //    where F: Fn(&Notification)

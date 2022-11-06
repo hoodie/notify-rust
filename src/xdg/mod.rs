@@ -404,7 +404,7 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-#[cfg_attr(feature = "zbus", derive(zvariant_derive::Type))]
+#[cfg_attr(feature = "zbus", derive(zbus::zvariant::Type))]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,
@@ -432,11 +432,11 @@ pub fn stop_server() {
 /// (xdg only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
-pub fn handle_action<F>(id: u32, func: F)
+pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
     F: FnOnce(&ActionResponse),
 {
-    zbus_rs::handle_action(id, func);
+    zbus_rs::handle_action(id, func)
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.

@@ -9,14 +9,13 @@ fn main() {
         .icon("chromium")
         .show();
 
-    Notification::new()
-        .summary("Table Test - will probably not work")
-        .body(&format!(
-            "<table><tr><td>{}</td><td>cell 2</td></tr> <tr><td>cell 3</td><td>cell 4</td></tr></table>",
-            "cell 1"
-        ))
-        .icon("table")
-        .show();
+    Notification::new().summary("Table Test - will probably not work")
+                       .body(&format!(
+        "<table><tr><td>{}</td><td>cell 2</td></tr> <tr><td>cell 3</td><td>cell 4</td></tr></table>",
+        "cell 1"
+    ))
+                       .icon("table")
+                       .show();
 
     Notification::new()
         .summary("linebreaks")

@@ -127,7 +127,6 @@
 //! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
 //! </details>
-//!
 
 #![deny(
     missing_copy_implementations,

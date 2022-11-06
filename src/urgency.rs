@@ -24,7 +24,6 @@ use std::convert::TryFrom;
 /// # Ok(())
 /// # }
 /// ```
-///
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum Urgency {
     /// The behaviour for `Low` urgency depends on the notification server.
