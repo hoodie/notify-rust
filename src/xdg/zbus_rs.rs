@@ -26,23 +26,22 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
-        wait_for_action_signal(&self.connection, self.id, invocation_closure);
+    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) -> Result<()> {
+        wait_for_action_signal(&self.connection, self.id, invocation_closure)
     }
 
-    pub fn close(self) {
-        self.connection
-            .call_method(
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                crate::xdg::NOTIFICATION_OBJECTPATH,
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                "CloseNotification",
-                &(self.id),
-            )
-            .unwrap();
+    pub fn close(self) -> Result<()> {
+        self.connection.call_method(
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            crate::xdg::NOTIFICATION_OBJECTPATH,
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            "CloseNotification",
+            &(self.id),
+        )?;
+        Ok(())
     }
 
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(self, closure: F) -> Result<()>
     where
         F: FnOnce(CloseReason),
     {
@@ -50,12 +49,12 @@ impl ZbusNotificationHandle {
             if let ActionResponse::Closed(reason) = action {
                 closure(*reason);
             }
-        });
+        })
     }
 
-    pub fn update(&mut self) {
-        self.id =
-            send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+    pub fn update(&mut self) -> Result<()> {
+        self.id = send_notificaion_via_connection(&self.notification, self.id, &self.connection)?;
+        Ok(())
     }
 }
 
@@ -81,8 +80,7 @@ pub fn send_notificaion_via_connection(
                 notification.timeout.into_i32(),
             ),
         )?
-        .body()
-        .unwrap();
+        .body()?;
     Ok(reply)
 }
 
@@ -109,8 +107,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
             "GetCapabilities",
             &(),
         )?
-        .body()
-        .unwrap();
+        .body()?;
 
     Ok(info)
 }
@@ -125,8 +122,7 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
             "GetServerInformation",
             &(),
         )?
-        .body()
-        .unwrap();
+        .body()?;
 
     Ok(info)
 }
@@ -134,31 +130,29 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
-    let connection = Connection::session().unwrap();
-    wait_for_action_signal(&connection, id, func);
+pub fn handle_action(id: u32, func: impl ActionResponseHandler) -> Result<()> {
+    let connection = Connection::session()?;
+    wait_for_action_signal(&connection, id, func)
 }
 
-fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
-    let action_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
-        .unwrap()
-        .member("ActionInvoked")
-        .unwrap()
-        .build();
-
-    let proxy = zbus::blocking::fdo::DBusProxy::new(connection).unwrap();
-    proxy.add_match_rule(action_signal_rule).unwrap();
-
-    let close_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
-        .unwrap()
-        .member("NotificationClosed")
-        .unwrap()
-        .build();
-    proxy.add_match_rule(close_signal_rule).unwrap();
+fn wait_for_action_signal(
+    connection: &Connection,
+    id: u32,
+    handler: impl ActionResponseHandler,
+) -> Result<()> {
+    let proxy = zbus::blocking::fdo::DBusProxy::new(connection)?;
+    proxy.add_match_rule(
+        MatchRule::builder()
+            .interface("org.freedesktop.Notifications")?
+            .member("ActionInvoked")?
+            .build(),
+    )?;
+    proxy.add_match_rule(
+        MatchRule::builder()
+            .interface("org.freedesktop.Notifications")?
+            .member("NotificationClosed")?
+            .build(),
+    )?;
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
         if let Ok(header) = msg.header() {
@@ -187,4 +181,5 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
             }
         }
     }
+    Ok(())
 }

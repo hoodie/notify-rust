@@ -4,8 +4,6 @@
 
 #[cfg(feature = "dbus")]
 use dbus::ffidisp::Connection as DbusConnection;
-#[cfg(feature = "zbus")]
-use zbus::zvariant;
 
 use crate::{error::*, notification::Notification};
 
@@ -79,16 +77,16 @@ impl NotificationHandle {
                 inner.wait_for_action(|action: &ActionResponse| match action {
                     ActionResponse::Custom(action) => invocation_closure(action),
                     ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                });
+                })
             }
 
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => {
-                inner.wait_for_action(|action: &ActionResponse| match action {
+            NotificationHandleInner::Zbus(inner) => inner
+                .wait_for_action(|action: &ActionResponse| match action {
                     ActionResponse::Custom(action) => invocation_closure(action),
                     ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                });
-            }
+                })
+                .ok(), // TODO: pass error to caller
         };
     }
 
@@ -114,7 +112,10 @@ impl NotificationHandle {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => inner.close(),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.close(),
+            NotificationHandleInner::Zbus(inner) => {
+                // TODO: handle error
+                inner.close().ok();
+            }
         }
     }
 
@@ -151,16 +152,16 @@ impl NotificationHandle {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                });
+                })
             }
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => {
-                inner.wait_for_action(|action: &ActionResponse| {
+            NotificationHandleInner::Zbus(inner) => inner
+                .wait_for_action(|action: &ActionResponse| {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                });
-            }
+                })
+                .ok(), // TODO: pass error to caller
         };
     }
 
@@ -189,7 +190,10 @@ impl NotificationHandle {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(ref mut inner) => inner.update(),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(ref mut inner) => inner.update(),
+            NotificationHandleInner::Zbus(ref mut inner) => {
+                // TODO: handle error
+                inner.update().ok();
+            }
         }
     }
 
@@ -406,7 +410,7 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-#[cfg_attr(feature = "zbus", derive(zvariant::Type))]
+#[cfg_attr(feature = "zbus", derive(zbus::zvariant::Type))]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,
@@ -434,11 +438,11 @@ pub fn stop_server() {
 /// (xdg only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
-pub fn handle_action<F>(id: u32, func: F)
+pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
     F: FnOnce(&ActionResponse),
 {
-    zbus_rs::handle_action(id, func);
+    zbus_rs::handle_action(id, func)
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
