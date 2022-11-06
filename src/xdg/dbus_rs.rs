@@ -1,7 +1,7 @@
 use dbus::{
     arg::messageitem::{MessageItem, MessageItemArray},
     ffidisp::{BusType, Connection, ConnectionItem},
-    Message,
+    Message
 };
 
 use super::{ActionResponse, ActionResponseHandler, CloseReason};
@@ -10,7 +10,7 @@ use crate::{
     error::*,
     hints::message::HintMessage,
     notification::Notification,
-    xdg::{ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH},
+    xdg::{ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH}
 };
 
 /// A handle to a shown notification.
@@ -18,18 +18,16 @@ use crate::{
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct DbusNotificationHandle {
-    pub(crate) id: u32,
-    pub(crate) connection: Connection,
-    pub(crate) notification: Notification,
+    pub(crate) id:           u32,
+    pub(crate) connection:   Connection,
+    pub(crate) notification: Notification
 }
 
 impl DbusNotificationHandle {
     pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> DbusNotificationHandle {
-        DbusNotificationHandle {
-            id,
-            connection,
-            notification,
-        }
+        DbusNotificationHandle { id,
+                                 connection,
+                                 notification }
     }
 
     pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
@@ -43,14 +41,13 @@ impl DbusNotificationHandle {
     }
 
     pub fn on_close<F>(self, closure: F)
-    where
-        F: FnOnce(CloseReason),
+        where F: FnOnce(CloseReason)
     {
         self.wait_for_action(|action: &ActionResponse| {
-            if let ActionResponse::Closed(reason) = action {
-                closure(*reason);
-            }
-        });
+                if let ActionResponse::Closed(reason) = action {
+                    closure(*reason);
+                }
+            });
     }
 
     pub fn update(&mut self) {
@@ -61,22 +58,20 @@ impl DbusNotificationHandle {
 pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
     let mut message = build_message("Notify");
     let timeout: i32 = notification.timeout.into();
-    message.append_items(&[
-        notification.appname.to_owned().into(), // appname
-        id.into(),                              // notification to update
-        notification.icon.to_owned().into(),    // icon
-        notification.summary.to_owned().into(), // summary (title)
-        notification.body.to_owned().into(),    // body
-        pack_actions(notification),             // actions
-        pack_hints(notification)?,              // hints
-        timeout.into(),                         // timeout
-    ]);
+    message.append_items(&[notification.appname.to_owned().into(), // appname
+                           id.into(),                              // notification to update
+                           notification.icon.to_owned().into(),    // icon
+                           notification.summary.to_owned().into(), // summary (title)
+                           notification.body.to_owned().into(),    // body
+                           pack_actions(notification),             // actions
+                           pack_hints(notification)?,              // hints
+                           timeout.into()                          /* timeout */]);
 
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
     match reply.get_items().get(0) {
         Some(&MessageItem::UInt32(ref id)) => Ok(*id),
-        _ => Ok(0),
+        _ => Ok(0)
     }
 }
 
@@ -88,31 +83,25 @@ pub fn connect_and_send_notification(notification: &Notification) -> Result<Dbus
 }
 
 pub fn build_message(method_name: &str) -> Message {
-    Message::new_method_call(
-        NOTIFICATION_NAMESPACE,
-        NOTIFICATION_OBJECTPATH,
-        NOTIFICATION_NAMESPACE,
-        method_name,
-    )
-    .unwrap_or_else(|_| panic!("Error building message call {:?}.", method_name))
+    Message::new_method_call(NOTIFICATION_NAMESPACE,
+                             NOTIFICATION_OBJECTPATH,
+                             NOTIFICATION_NAMESPACE,
+                             method_name).unwrap_or_else(|_| panic!("Error building message call {:?}.", method_name))
 }
 
 pub fn pack_hints(notification: &Notification) -> Result<MessageItem> {
     if !notification.hints.is_empty() || !notification.hints_unique.is_empty() {
-        let hints = notification
-            .get_hints()
-            .cloned()
-            .map(HintMessage::wrap_hint)
-            .collect::<Vec<(MessageItem, MessageItem)>>();
+        let hints = notification.get_hints()
+                                .cloned()
+                                .map(HintMessage::wrap_hint)
+                                .collect::<Vec<(MessageItem, MessageItem)>>();
 
         if let Ok(array) = MessageItem::new_dict(hints) {
             return Ok(array);
         }
     }
 
-    Ok(MessageItem::Array(
-        MessageItemArray::new(vec![], "a{sv}".into()).unwrap(),
-    ))
+    Ok(MessageItem::Array(MessageItemArray::new(vec![], "a{sv}".into()).unwrap()))
 }
 
 pub fn pack_actions(notification: &Notification) -> MessageItem {
@@ -150,7 +139,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item {
         Some(&MessageItem::Str(ref value)) => value.to_owned(),
-        _ => "".to_owned(),
+        _ => "".to_owned()
     }
 }
 
@@ -161,12 +150,10 @@ pub fn get_server_information() -> Result<ServerInformation> {
 
     let items = reply.get_items();
 
-    Ok(ServerInformation {
-        name: unwrap_message_string(items.get(0)),
-        vendor: unwrap_message_string(items.get(1)),
-        version: unwrap_message_string(items.get(2)),
-        spec_version: unwrap_message_string(items.get(3)),
-    })
+    Ok(ServerInformation { name:         unwrap_message_string(items.get(0)),
+                           vendor:       unwrap_message_string(items.get(1)),
+                           version:      unwrap_message_string(items.get(2)),
+                           spec_version: unwrap_message_string(items.get(3)) })
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -179,31 +166,24 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
-    connection
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
-        .unwrap();
-    connection
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
-        .unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+              .unwrap();
+    connection.add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+              .unwrap();
 
     for item in connection.iter(1000) {
         if let ConnectionItem::Signal(message) = item {
             let items = message.get_items();
 
-            let (path, interface, member) = (
-                message
-                    .path()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
-                message
-                    .interface()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
-                message
-                    .member()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
-            );
+            let (path, interface, member) = (message.path()
+                                                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
+                                                    .unwrap_or_else(String::new),
+                                             message.interface()
+                                                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
+                                                    .unwrap_or_else(String::new),
+                                             message.member()
+                                                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
+                                                    .unwrap_or_else(String::new));
             match (path.as_ref(), interface.as_ref(), member.as_ref()) {
                 // match (protocol.unwrap(), iface.unwrap(), member.unwrap()) {
                 // Action Invoked
@@ -225,7 +205,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                         }
                     }
                 }
-                (..) => (),
+                (..) => ()
             }
         }
     }

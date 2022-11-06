@@ -1,5 +1,5 @@
 use crate::{error::*, notification::Notification, xdg};
-use zbus::blocking::Connection;
+use zbus::{blocking::Connection, MatchRule};
 
 use super::{ActionResponse, ActionResponseHandler, CloseReason};
 
@@ -8,45 +8,40 @@ use super::{ActionResponse, ActionResponseHandler, CloseReason};
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct ZbusNotificationHandle {
-    pub(crate) id: u32,
-    pub(crate) connection: Connection,
-    pub(crate) notification: Notification,
+    pub(crate) id:           u32,
+    pub(crate) connection:   Connection,
+    pub(crate) notification: Notification
 }
 
 impl ZbusNotificationHandle {
     pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> ZbusNotificationHandle {
-        ZbusNotificationHandle {
-            id,
-            connection,
-            notification,
-        }
+        ZbusNotificationHandle { id,
+                                 connection,
+                                 notification }
     }
 
-    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
-        wait_for_action_signal(&self.connection, self.id, invocation_closure);
+    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) -> Result<()> {
+        wait_for_action_signal(&self.connection, self.id, invocation_closure)
     }
 
     pub fn close(self) {
         self.connection
-            .call_method(
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                crate::xdg::NOTIFICATION_OBJECTPATH,
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                "CloseNotification",
-                &(self.id),
-            )
+            .call_method(Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                         crate::xdg::NOTIFICATION_OBJECTPATH,
+                         Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                         "CloseNotification",
+                         &(self.id))
             .unwrap();
     }
 
-    pub fn on_close<F>(self, closure: F)
-    where
-        F: FnOnce(CloseReason),
+    pub fn on_close<F>(self, closure: F) -> Result<()>
+        where F: FnOnce(CloseReason)
     {
         self.wait_for_action(|action: &ActionResponse| {
-            if let ActionResponse::Closed(reason) = action {
-                closure(*reason);
-            }
-        });
+                if let ActionResponse::Closed(reason) = action {
+                    closure(*reason);
+                }
+            })
     }
 
     pub fn update(&mut self) {
@@ -55,25 +50,20 @@ impl ZbusNotificationHandle {
 }
 
 pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
-    let reply: u32 = connection
-        .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            "Notify",
-            &(
-                &notification.appname,
-                id,
-                &notification.icon,
-                &notification.summary,
-                &notification.body,
-                &notification.actions,
-                crate::hints::hints_to_map(notification),
-                notification.timeout.into_i32(),
-            ),
-        )?
-        .body()
-        .unwrap();
+    let reply: u32 = connection.call_method(Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                            crate::xdg::NOTIFICATION_OBJECTPATH,
+                                            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                            "Notify",
+                                            &(&notification.appname,
+                                              id,
+                                              &notification.icon,
+                                              &notification.summary,
+                                              &notification.body,
+                                              &notification.actions,
+                                              crate::hints::hints_to_map(notification),
+                                              notification.timeout.into_i32()))?
+                               .body()
+                               .unwrap();
     Ok(reply)
 }
 
@@ -86,32 +76,26 @@ pub fn connect_and_send_notification(notification: &Notification) -> Result<Zbus
 
 pub fn get_capabilities() -> Result<Vec<String>> {
     let connection = zbus::blocking::Connection::session()?;
-    let info: Vec<String> = connection
-        .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            "GetCapabilities",
-            &(),
-        )?
-        .body()
-        .unwrap();
+    let info: Vec<String> = connection.call_method(Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                                   crate::xdg::NOTIFICATION_OBJECTPATH,
+                                                   Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                                   "GetCapabilities",
+                                                   &())?
+                                      .body()
+                                      .unwrap();
 
     Ok(info)
 }
 
 pub fn get_server_information() -> Result<xdg::ServerInformation> {
     let connection = zbus::blocking::Connection::session()?;
-    let info: xdg::ServerInformation = connection
-        .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            "GetServerInformation",
-            &(),
-        )?
-        .body()
-        .unwrap();
+    let info: xdg::ServerInformation = connection.call_method(Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                                              crate::xdg::NOTIFICATION_OBJECTPATH,
+                                                              Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                                                              "GetServerInformation",
+                                                              &())?
+                                                 .body()
+                                                 .unwrap();
 
     Ok(info)
 }
@@ -119,19 +103,19 @@ pub fn get_server_information() -> Result<xdg::ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
-    let connection = Connection::session().unwrap();
-    wait_for_action_signal(&connection, id, func);
+pub fn handle_action(id: u32, func: impl ActionResponseHandler) -> Result<()> {
+    let connection = Connection::session()?;
+    wait_for_action_signal(&connection, id, func)
 }
 
-fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
+fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) -> Result<()> {
     let proxy = zbus::blocking::fdo::DBusProxy::new(connection).unwrap();
-    proxy
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
-        .unwrap();
-    proxy
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
-        .unwrap();
+    proxy.add_match_rule(MatchRule::builder().interface("org.freedesktop.Notifications")?
+                                             .member("ActionInvoked")?
+                                             .build())?;
+    proxy.add_match_rule(MatchRule::builder().interface("org.freedesktop.Notifications")?
+                                             .member("NotificationClosed")?
+                                             .build())?;
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
         if let Ok(header) = msg.header() {
@@ -156,4 +140,5 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
             }
         }
     }
+    Ok(())
 }

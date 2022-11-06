@@ -1,18 +1,13 @@
 use winrt_notification::Toast;
 
-pub use crate::{
-    error::*,
-    notification::Notification,
-    timeout::Timeout,
-};
-
+pub use crate::{error::*, notification::Notification, timeout::Timeout};
 
 use std::{path::Path, str::FromStr};
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let sound = match &notification.sound_name {
         Some(chosen_sound_name) => winrt_notification::Sound::from_str(chosen_sound_name).ok(),
-        None => None,
+        None => None
     };
 
     let duration = match notification.timeout {
@@ -39,7 +34,6 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
         toast = toast.image(Path::new(&image_path), "");
     }
 
-    toast
-        .show()
-        .map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
+    toast.show()
+         .map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
 }

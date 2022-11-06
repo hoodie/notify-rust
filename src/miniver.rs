@@ -14,16 +14,14 @@ impl Version {
     }
 }
 
-
 impl FromStr for Version {
     type Err = Error;
+
     fn from_str(s: &str) -> Result<Version> {
         let vv = s.split('.').collect::<Vec<&str>>();
         match (vv.first(), vv.get(1)) {
-            (Some(maj), Some(min)) => Ok(Version {
-                major: maj.parse()?,
-                minor: min.parse()?
-            }),
+            (Some(maj), Some(min)) => Ok(Version { major: maj.parse()?,
+                                                   minor: min.parse()? }),
             _ => Err(ErrorKind::SpecVersion(s.into()).into())
         }
     }

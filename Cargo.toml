@@ -1,6 +1,6 @@
 [package]
 name = "notify-rust"
-version = "4.5.10"
+version = "4.6.0"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
 repository = "https://github.com/hoodie/notify-rust"
@@ -24,9 +24,7 @@ include = [
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
-zvariant = { version = "3", optional = true }
-zvariant_derive = { version = "3", optional = true }
-zbus = { version = "2", optional = true }
+zbus = { version = "3.5", optional = true }
 serde = { version = "1", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
@@ -40,7 +38,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 default = ["z"]
 server = []
 d = ["dbus"]
-z = ["zbus", "zvariant", "zvariant_derive", "serde"]
+z = ["zbus", "serde"]
 debug_namespace = []
 images = ["image", "lazy_static"]
 

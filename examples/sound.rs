@@ -11,9 +11,8 @@ static SOUND: &str = "message-new-instant";
 static SOUND: &'static str = "Mail";
 
 fn main() {
-    Notification::new()
-        .summary("notification with sound")
-        .sound_name(SOUND)
-        .show()
-        .unwrap();
+    Notification::new().summary("notification with sound")
+                       .sound_name(SOUND)
+                       .show()
+                       .unwrap();
 }

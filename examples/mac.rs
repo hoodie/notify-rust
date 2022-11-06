@@ -2,12 +2,11 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::Notification;
 
-    Notification::new()
-        .summary("Safari Crashed")
-        .body("Just kidding, this is just the notify_rust example.")
-        .appname("Toastify")
-        .icon("Toastify")
-        .show()?;
+    Notification::new().summary("Safari Crashed")
+                       .body("Just kidding, this is just the notify_rust example.")
+                       .appname("Toastify")
+                       .icon("Toastify")
+                       .show()?;
 
     Ok(())
 }

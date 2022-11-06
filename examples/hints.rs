@@ -31,53 +31,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     freeze("urgency: low, medium, high");
     Notification::new().summary("low").hint(Hint::Urgency(Low)).show()?;
-    Notification::new()
-        .summary("normal")
-        .hint(Hint::Urgency(Normal))
-        .show()?;
-    Notification::new()
-        .summary("critical")
-        .hint(Hint::Urgency(Critical))
-        .show()?;
+    Notification::new().summary("normal")
+                       .hint(Hint::Urgency(Normal))
+                       .show()?;
+    Notification::new().summary("critical")
+                       .hint(Hint::Urgency(Critical))
+                       .show()?;
 
     freeze("category");
-    Notification::new()
-        .hint(Hint::Category("device.removed".into()))
-        .show()?;
+    Notification::new().hint(Hint::Category("device.removed".into()))
+                       .show()?;
 
     freeze("DesktopEntry");
-    Notification::new()
-        .summary("desktop entry")
-        .hint(Hint::DesktopEntry("firefox".into()))
-        .show()?;
+    Notification::new().summary("desktop entry")
+                       .hint(Hint::DesktopEntry("firefox".into()))
+                       .show()?;
 
     freeze("ImagePath");
-    Notification::new()
-        .summary("iconpath")
-        .hint(Hint::ImagePath(
-            "/usr/share/icons/hicolor/128x128/apps/firefox.png".into(),
-        ))
-        .show()?;
+    Notification::new().summary("iconpath")
+                       .hint(Hint::ImagePath("/usr/share/icons/hicolor/128x128/apps/firefox.png".into()))
+                       .show()?;
 
     freeze("Resident");
-    Notification::new()
-        .summary("resident")
-        .hint(Hint::Resident(true))
-        .show()?;
+    Notification::new().summary("resident")
+                       .hint(Hint::Resident(true))
+                       .show()?;
 
     freeze("SoundFile");
-    Notification::new()
-        .summary("soundfile")
-        .hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
-        .hint(Hint::SoundName("system sound".to_owned()))
-        .hint(Hint::SuppressSound(false))
-        .show()?;
+    Notification::new().summary("soundfile")
+                       .hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
+                       .hint(Hint::SoundName("system sound".to_owned()))
+                       .hint(Hint::SuppressSound(false))
+                       .show()?;
 
     freeze("Transient");
-    Notification::new()
-        .summary("transient")
-        .hint(Hint::Transient(false))
-        .show()?;
+    Notification::new().summary("transient")
+                       .hint(Hint::Transient(false))
+                       .show()?;
 
     freeze("X and Y");
     Notification::new().hint(Hint::X(200)).hint(Hint::Y(200)).show()?;
@@ -89,9 +79,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for i in 0..128 * 128 * 3 {
             image_data[i] = (i % 256) as u8;
         }
-        Notification::new()
-            .hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
-            .summary("You should see stripes in this notification");
+        Notification::new().hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
+                           .summary("You should see stripes in this notification");
     }
 
     Ok(())

@@ -2,7 +2,7 @@
 use std::{io, thread};
 
 #[cfg(all(unix, not(target_os = "macos")))]
-use notify_rust::{Notification, CloseReason};
+use notify_rust::{CloseReason, Notification};
 
 fn wait_for_keypress() {
     println!("halted until you hit the \"ANY\" key");
@@ -15,17 +15,18 @@ fn print_reason(reason: CloseReason) {
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-fn main() { println!("this is a xdg only feature") }
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     thread::spawn(|| {
-        Notification::new()
-            .summary("Time is running out")
-            .body("This will go away.")
-            .icon("clock")
-            .show()
-            .map(|handler| handler.on_close(print_reason))
+        Notification::new().summary("Time is running out")
+                           .body("This will go away.")
+                           .icon("clock")
+                           .show()
+                           .map(|handler| handler.on_close(print_reason))
     });
     wait_for_keypress();
 }

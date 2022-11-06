@@ -24,7 +24,6 @@ use std::convert::TryFrom;
 /// # Ok(())
 /// # }
 /// ```
-///
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum Urgency {
     /// The behaviour for `Low` urgency depends on the notification server.
@@ -32,7 +31,7 @@ pub enum Urgency {
     /// The behaviour for `Normal` urgency depends on the notification server.
     Normal = 1,
     /// A critical notification will not time out.
-    Critical = 2,
+    Critical = 2
 }
 
 impl TryFrom<&str> for Urgency {
@@ -58,7 +57,7 @@ impl From<Option<u64>> for Urgency {
         match maybe_int {
             Some(0) => Urgency::Low,
             Some(x) if x >= 2 => Urgency::Critical,
-            _ => Urgency::Normal,
+            _ => Urgency::Normal
         }
     }
 }
@@ -68,7 +67,7 @@ impl From<u64> for Urgency {
         match int {
             0 => Urgency::Low,
             1 => Urgency::Normal,
-            2..=std::u64::MAX => Urgency::Critical,
+            2..=std::u64::MAX => Urgency::Critical
         }
     }
 }

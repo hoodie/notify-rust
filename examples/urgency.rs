@@ -1,5 +1,5 @@
-use std::convert::TryInto;
 use notify_rust::{Notification, Urgency::*};
+use std::convert::TryInto;
 
 #[cfg(target_os = "macos")]
 fn main() {
@@ -15,19 +15,17 @@ fn main() {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // use it this way
     for urgency in &[Low, Normal, Critical] {
-        Notification::new()
-            .summary(&format!("Urgency {:?}", urgency))
-            .body("This notification uses hints")
-            .icon("firefox")
-            .urgency(*urgency)
-            .show()?;
+        Notification::new().summary(&format!("Urgency {:?}", urgency))
+                           .body("This notification uses hints")
+                           .icon("firefox")
+                           .urgency(*urgency)
+                           .show()?;
     }
 
-    Notification::new()
-        .body("Urgency from String")
-        .icon("dialog-warning")
-        .urgency("high".try_into()?)
-        .show()?;
+    Notification::new().body("Urgency from String")
+                       .icon("dialog-warning")
+                       .urgency("high".try_into()?)
+                       .show()?;
 
     Ok(())
 }

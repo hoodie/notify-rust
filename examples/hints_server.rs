@@ -19,9 +19,7 @@ mod hint_server {
         let server = NotificationServer::create();
         // thread::spawn(move || NotificationServer::start(&server,|notification| println!(" -- {:#?} --", notification)));
         thread::spawn(move || {
-            NotificationServer::start(&server, |notification| {
-                println!(" --> {:?}\n", notification.hints)
-            })
+            NotificationServer::start(&server, |notification| println!(" --> {:?}\n", notification.hints))
         });
 
         std::thread::sleep(Duration::from_millis(500));
@@ -36,42 +34,30 @@ mod hint_server {
         Notification::new().hint(Hint::Urgency(Critical)).show()?;
 
         freeze("category");
-        Notification::new()
-            .hint(Hint::Category("device.removed".into()))
-            .show()?;
+        Notification::new().hint(Hint::Category("device.removed".into()))
+                           .show()?;
 
         freeze("DesktopEntry");
-        Notification::new()
-            .hint(Hint::DesktopEntry("firefox".into()))
-            .show()?;
+        Notification::new().hint(Hint::DesktopEntry("firefox".into())).show()?;
 
         freeze("ImagePath");
-        Notification::new()
-            .hint(Hint::ImagePath(
-                "/usr/share/icons/hicolor/128x128/apps/firefox.png".into(),
-            ))
-            .show()?;
+        Notification::new().hint(Hint::ImagePath("/usr/share/icons/hicolor/128x128/apps/firefox.png".into()))
+                           .show()?;
 
         freeze("Resident");
         Notification::new().hint(Hint::Resident(true)).show()?;
 
         freeze("SoundFile");
-        Notification::new()
-            .hint(Hint::SoundFile(
-                "/usr/share/sounds/alsa/Front_Left.wav".to_owned(),
-            ))
-            .hint(Hint::SoundName("system sound".to_owned()))
-            .hint(Hint::SuppressSound(false))
-            .show()?;
+        Notification::new().hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
+                           .hint(Hint::SoundName("system sound".to_owned()))
+                           .hint(Hint::SuppressSound(false))
+                           .show()?;
 
         freeze("Transient");
         Notification::new().hint(Hint::Transient(false)).show()?;
 
         freeze("X and Y");
-        Notification::new()
-            .hint(Hint::X(200))
-            .hint(Hint::Y(200))
-            .show()?;
+        Notification::new().hint(Hint::X(200)).hint(Hint::Y(200)).show()?;
 
         // println!("Press enter to exit.\n");
         // let mut _devnull = String::new();

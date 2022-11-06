@@ -8,16 +8,15 @@ fn main() -> Result<(), String> {
     match set_application(&safari_id) {
         Ok(_) => {}
         Err(MacOsError::Application(error)) => println!("{}", error),
-        Err(MacOsError::Notification(error)) => println!("{}", error),
+        Err(MacOsError::Notification(error)) => println!("{}", error)
     }
 
-    Notification::new()
-        .summary("Safari Crashed")
-        .body("Just kidding, this is just the notify_rust example.")
-        .appname("Safari")
-        .icon("Safari")
-        .show()
-        .map_err(|f| format!("{}", f))?;
+    Notification::new().summary("Safari Crashed")
+                       .body("Just kidding, this is just the notify_rust example.")
+                       .appname("Safari")
+                       .icon("Safari")
+                       .show()
+                       .map_err(|f| format!("{}", f))?;
 
     Ok(())
 }

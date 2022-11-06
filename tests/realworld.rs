@@ -17,45 +17,40 @@ mod realworld {
 
     #[test]
     fn burst() {
-        for msg in &[
-            "These should each",
-            "come in their own pop up.",
-            "If they don't than",
-            "I will have to complain about it.",
-        ] {
-            Notification::new()
-                .summary("burst")
-                .appname(msg)
-                .body(msg)
-                .icon("media-floppy")
-                .show()
-                .unwrap();
+        for msg in &["These should each",
+                     "come in their own pop up.",
+                     "If they don't than",
+                     "I will have to complain about it."]
+        {
+            Notification::new().summary("burst")
+                               .appname(msg)
+                               .body(msg)
+                               .icon("media-floppy")
+                               .show()
+                               .unwrap();
         }
 
-        for msg in &[
-            "These may be grouped",
-            "together by the server.",
-            "that is because the all have the same",
-            "appname.",
-        ] {
-            Notification::new()
-                .summary("merged burst")
-                .body(msg)
-                .icon("applications-toys")
-                .show()
-                .unwrap();
+        for msg in &["These may be grouped",
+                     "together by the server.",
+                     "that is because the all have the same",
+                     "appname."]
+        {
+            Notification::new().summary("merged burst")
+                               .body(msg)
+                               .icon("applications-toys")
+                               .show()
+                               .unwrap();
         }
     }
 
     #[test]
     #[cfg(all(unix, not(target_os = "macos")))]
     fn closing() {
-        Notification::new()
-            .summary("You see me")
-            .body("you don't see me!")
-            .show()
-            .unwrap()
-            .close();
+        Notification::new().summary("You see me")
+                           .body("you don't see me!")
+                           .show()
+                           .unwrap()
+                           .close();
     }
 
     #[test]
@@ -63,11 +58,10 @@ mod realworld {
     fn capabilities() {
         let capabilities: Vec<String> = get_capabilities().unwrap();
         for capability in capabilities {
-            Notification::new()
-                .summary("capability")
-                .body(&capability)
-                .show()
-                .unwrap();
+            Notification::new().summary("capability")
+                               .body(&capability)
+                               .show()
+                               .unwrap();
         }
     }
 
@@ -104,12 +98,11 @@ mod realworld {
         message.body("your <b>body</b> is a <u>wonderland</u>");
         message.show().unwrap();
 
-        Notification::new()
-            .summary("this is the summary")
-            .summary("invocation type 3")
-            .body("this is the body\nnewline<br/>linebreak")
-            .show()
-            .unwrap();
+        Notification::new().summary("this is the summary")
+                           .summary("invocation type 3")
+                           .body("this is the body\nnewline<br/>linebreak")
+                           .show()
+                           .unwrap();
     }
 
     #[test]
@@ -117,50 +110,42 @@ mod realworld {
     fn urgency() {
         // use it this way
         use Urgency::*;
-        for urgency in &[
-            Hint::Urgency(Low),
-            Hint::Urgency(Normal),
-            Hint::Urgency(Critical),
-        ] {
-            Notification::new()
-                .summary(&format!("Urgency {:?}", urgency))
-                .hint(urgency.clone())
-                .show()
-                .unwrap();
+        for urgency in &[Hint::Urgency(Low), Hint::Urgency(Normal), Hint::Urgency(Critical)] {
+            Notification::new().summary(&format!("Urgency {:?}", urgency))
+                               .hint(urgency.clone())
+                               .show()
+                               .unwrap();
         }
     }
 
     #[test]
     #[cfg(all(unix, not(target_os = "macos")))]
     fn category() {
-        Notification::new()
-            .appname("thunderbird")
-            .summary("Category:email")
-            .icon("thunderbird")
-            .hint(Hint::Category("email".to_string()))
-            .show()
-            .unwrap();
+        Notification::new().appname("thunderbird")
+                           .summary("Category:email")
+                           .icon("thunderbird")
+                           .hint(Hint::Category("email".to_string()))
+                           .show()
+                           .unwrap();
     }
 
     #[test]
     #[cfg(all(unix, not(target_os = "macos")))]
     fn persistent() {
-        Notification::new()
-            .summary("Incoming Call: Your Mom!")
-            .body("Resident:True")
-            .icon("call-start")
-            .hint(Hint::Resident(true))
-            .show()
-            .unwrap();
+        Notification::new().summary("Incoming Call: Your Mom!")
+                           .body("Resident:True")
+                           .icon("call-start")
+                           .hint(Hint::Resident(true))
+                           .show()
+                           .unwrap();
 
-        Notification::new()
-            .summary("Incoming Call: Your Mom!")
-            .body("Resident:False, but Timeout=0")
-            .icon("call-start")
-            .hint(Hint::Resident(false))
-            .timeout(0)
-            .show()
-            .unwrap();
+        Notification::new().summary("Incoming Call: Your Mom!")
+                           .body("Resident:False, but Timeout=0")
+                           .icon("call-start")
+                           .hint(Hint::Resident(false))
+                           .timeout(0)
+                           .show()
+                           .unwrap();
     }
 
     #[test]
@@ -176,10 +161,9 @@ mod realworld {
             }
         }
 
-        Notification::new()
-            .summary("I can haz image data!")
-            .hint(Hint::ImageData(Image::from_rgb(64, 64, data).unwrap()))
-            .show()
-            .unwrap();
+        Notification::new().summary("I can haz image data!")
+                           .hint(Hint::ImageData(Image::from_rgb(64, 64, data).unwrap()))
+                           .show()
+                           .unwrap();
     }
 }

@@ -19,24 +19,23 @@ mod constants {
 /// Image representation for images. Send via `Notification::image_data()`
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub struct Image {
-    width: i32,
-    height: i32,
-    rowstride: i32,
-    alpha: bool,
+    width:           i32,
+    height:          i32,
+    rowstride:       i32,
+    alpha:           bool,
     bits_per_sample: i32,
-    channels: i32,
-    data: Vec<u8>,
+    channels:        i32,
+    data:            Vec<u8>
 }
 
 impl Image {
-    fn from_raw_data(
-        width: i32,
-        height: i32,
-        data: Vec<u8>,
-        channels: i32,
-        bits_per_sample: i32,
-        alpha: bool,
-    ) -> Result<Self, ImageError> {
+    fn from_raw_data(width: i32,
+                     height: i32,
+                     data: Vec<u8>,
+                     channels: i32,
+                     bits_per_sample: i32,
+                     alpha: bool)
+                     -> Result<Self, ImageError> {
         const MAX_SIZE: i32 = 0x0fff_ffff;
         if width > MAX_SIZE || height > MAX_SIZE {
             return Err(ImageError::TooBig);
@@ -45,15 +44,13 @@ impl Image {
         if data.len() != (width * height * channels) as usize {
             Err(ImageError::WrongDataSize)
         } else {
-            Ok(Self {
-                width,
-                height,
-                bits_per_sample,
-                channels,
-                data,
-                rowstride: width * channels,
-                alpha,
-            })
+            Ok(Self { width,
+                      height,
+                      bits_per_sample,
+                      channels,
+                      data,
+                      rowstride: width * channels,
+                      alpha })
         }
     }
 
@@ -79,15 +76,7 @@ impl Image {
 
     #[cfg(all(feature = "images", feature = "zbus"))]
     pub(crate) fn to_tuple(&self) -> (i32, i32, i32, bool, i32, i32, Vec<u8>) {
-        (
-            self.width,
-            self.height,
-            self.rowstride,
-            self.alpha,
-            self.bits_per_sample,
-            self.channels,
-            self.data.clone(),
-        )
+        (self.width, self.height, self.rowstride, self.alpha, self.bits_per_sample, self.channels, self.data.clone())
     }
 }
 
@@ -98,7 +87,7 @@ impl TryFrom<DynamicImage> for Image {
         match dyn_img {
             DynamicImage::ImageRgb8(img) => Self::try_from(img),
             DynamicImage::ImageRgba8(img) => Self::try_from(img),
-            _ => Err(ImageError::CantConvert),
+            _ => Err(ImageError::CantConvert)
         }
     }
 }
@@ -133,7 +122,7 @@ pub enum ImageError {
     /// Can't open given path
     CantOpen(image::ImageError),
     /// Can't convert from given input
-    CantConvert,
+    CantConvert
 }
 
 impl Error for ImageError {
@@ -143,7 +132,7 @@ impl Error for ImageError {
             TooBig => None,
             WrongDataSize => None,
             CantOpen(e) => Some(e),
-            CantConvert => None,
+            CantConvert => None
         }
     }
 }
@@ -152,13 +141,11 @@ impl fmt::Display for ImageError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use ImageError::*;
         match self {
-            TooBig => writeln!(
-                f,
-                "The given image is too big. DBus only has 32 bits for width / height"
-            ),
+            TooBig => writeln!(f,
+                               "The given image is too big. DBus only has 32 bits for width / height"),
             WrongDataSize => writeln!(f, "The given bytes don't match the width, height and channel count"),
             CantOpen(e) => writeln!(f, "Can't open given path {}", e),
-            CantConvert => writeln!(f, "Can't convert from given input"),
+            CantConvert => writeln!(f, "Can't convert from given input")
         }
     }
 }
@@ -169,17 +156,17 @@ pub(crate) fn image_spec(version: Version) -> String {
     match version.cmp(&Version::new(1, 1)) {
         Ordering::Less => constants::IMAGE_DATA_1_0.to_owned(),
         Ordering::Equal => constants::IMAGE_DATA_1_1.to_owned(),
-        Ordering::Greater => constants::IMAGE_DATA.to_owned(),
+        Ordering::Greater => constants::IMAGE_DATA.to_owned()
     }
 }
 
 /// matching image data key for each spec version
 #[cfg(feature = "zbus")]
-pub(crate) fn image_spec_str(version: Version) -> &'static str{
+pub(crate) fn image_spec_str(version: Version) -> &'static str {
     match version.cmp(&Version::new(1, 1)) {
         Ordering::Less => constants::IMAGE_DATA_1_0,
         Ordering::Equal => constants::IMAGE_DATA_1_1,
-        Ordering::Greater => constants::IMAGE_DATA,
+        Ordering::Greater => constants::IMAGE_DATA
     }
 }
 
@@ -215,14 +202,12 @@ impl From<ImageMessage> for MessageItem {
 
         let bytes = img.data.into_iter().map(MessageItem::Byte).collect();
 
-        MessageItem::Struct(vec![
-            MessageItem::Int32(img.width),
-            MessageItem::Int32(img.height),
-            MessageItem::Int32(img.rowstride),
-            MessageItem::Bool(img.alpha),
-            MessageItem::Int32(img.bits_per_sample),
-            MessageItem::Int32(img.channels),
-            MessageItem::Array(MessageItemArray::new(bytes, "ay".into()).unwrap()),
-        ])
+        MessageItem::Struct(vec![MessageItem::Int32(img.width),
+                                 MessageItem::Int32(img.height),
+                                 MessageItem::Int32(img.rowstride),
+                                 MessageItem::Bool(img.alpha),
+                                 MessageItem::Int32(img.bits_per_sample),
+                                 MessageItem::Int32(img.channels),
+                                 MessageItem::Array(MessageItemArray::new(bytes, "ay".into()).unwrap()),])
     }
 }

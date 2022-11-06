@@ -36,17 +36,14 @@ mod ownworld {
         });
 
         #[allow(deprecated)]
-        Notification::new()
-            .summary("Notification with actions")
-            .body("action1=\"Action One\", something_else=\"Something Else\"")
-            .icon("dialog-information")
-            .actions(vec![
-                "actions_vec0".into(),
-                "actions_vec1".into(),
-                "actions_vec2".into(),
-                "actions_vec3".into(),
-            ])
-            .show();
+        Notification::new().summary("Notification with actions")
+                           .body("action1=\"Action One\", something_else=\"Something Else\"")
+                           .icon("dialog-information")
+                           .actions(vec!["actions_vec0".into(),
+                                         "actions_vec1".into(),
+                                         "actions_vec2".into(),
+                                         "actions_vec3".into(),])
+                           .show();
 
         stop_server();
         assert!(thread_handle.join().is_ok());
@@ -84,18 +81,13 @@ mod ownworld {
     #[should_panic]
     fn no_server() {
         let server = NotificationServer::create();
-        thread::spawn(move || {
-            NotificationServer::start(&server, |notification| {
-                println!("{:#?}", notification)
-            })
-        });
+        thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
 
         stop_server();
-        Notification::new()
-            .summary("Another notification with actions")
-            .body("action0=\"Press me please\", action1=\"firefox\"")
-            .show()
-            .unwrap();
+        Notification::new().summary("Another notification with actions")
+                           .body("action0=\"Press me please\", action1=\"firefox\"")
+                           .show()
+                           .unwrap();
     }
 
     #[test]
@@ -110,9 +102,7 @@ mod ownworld {
             })
         });
 
-        Notification::new()
-            .summary("Notification without timeout")
-            .show();
+        Notification::new().summary("Notification without timeout").show();
         stop_server();
         assert!(thread_handle.join().is_ok());
     }

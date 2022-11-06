@@ -1,10 +1,15 @@
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
 
-#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(target_os = "windows")]
-fn main() { println!("this is a xdg only feature") }
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(all(unix, not(feature = "server"), not(target_os = "macos")))]
 fn main() {
@@ -18,19 +23,14 @@ fn main() {
     use std::time::Duration;
 
     let server = NotificationServer::create();
-    thread::spawn(move || {
-        NotificationServer::start(&server, |notification| {
-            println!("{:#?}", notification)
-        })
-    });
+    thread::spawn(move || NotificationServer::start(&server, |notification| println!("{:#?}", notification)));
 
     thread::sleep(Duration::from_millis(500));
 
-    Notification::new()
-        .summary("Notification Logger")
-        .body("If you can read this in the console, the server works fine.")
-        .show()
-        .unwrap();
+    Notification::new().summary("Notification Logger")
+                       .body("If you can read this in the console, the server works fine.")
+                       .show()
+                       .unwrap();
 
     println!("Press enter to exit.\n");
     let mut _devnull = String::new();

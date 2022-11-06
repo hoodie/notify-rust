@@ -1,7 +1,6 @@
 use crate::{error::*, notification::Notification};
 
-pub use mac_notification_sys::error::{Error as MacOsError, NotificationError,ApplicationError};
-
+pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
 
 use std::ops::{Deref, DerefMut};
 
@@ -10,7 +9,7 @@ use std::ops::{Deref, DerefMut};
 /// This keeps a connection alive to ensure actions work on certain desktops.
 #[derive(Debug)]
 pub struct NotificationHandle {
-    notification: Notification,
+    notification: Notification
 }
 
 impl NotificationHandle {
@@ -36,24 +35,22 @@ impl DerefMut for NotificationHandle {
 }
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    mac_notification_sys::Notification::default()
-        .title(notification.summary.as_str())
-        .message(&notification.body)
-        .maybe_subtitle(notification.subtitle.as_deref())
-        .maybe_sound(notification.sound_name.as_deref())
-        .send()?;
+    mac_notification_sys::Notification::default().title(notification.summary.as_str())
+                                                 .message(&notification.body)
+                                                 .maybe_subtitle(notification.subtitle.as_deref())
+                                                 .maybe_sound(notification.sound_name.as_deref())
+                                                 .send()?;
 
     Ok(NotificationHandle::new(notification.clone()))
 }
 
 pub(crate) fn schedule_notification(notification: &Notification, delivery_date: f64) -> Result<NotificationHandle> {
-    mac_notification_sys::Notification::default()
-        .title(notification.summary.as_str())
-        .message(&notification.body)
-        .maybe_subtitle(notification.subtitle.as_deref())
-        .maybe_sound(notification.sound_name.as_deref())
-        .delivery_date(delivery_date)
-        .send()?;
+    mac_notification_sys::Notification::default().title(notification.summary.as_str())
+                                                 .message(&notification.body)
+                                                 .maybe_subtitle(notification.subtitle.as_deref())
+                                                 .maybe_sound(notification.sound_name.as_deref())
+                                                 .delivery_date(delivery_date)
+                                                 .send()?;
 
     Ok(NotificationHandle::new(notification.clone()))
 }

@@ -10,7 +10,7 @@ pub enum Timeout {
     Never,
 
     /// Expire after n milliseconds.
-    Milliseconds(u32),
+    Milliseconds(u32)
 }
 
 impl Timeout {
@@ -40,7 +40,7 @@ impl From<i32> for Timeout {
         match int.cmp(&0) {
             Greater => Timeout::Milliseconds(int as u32),
             Less => Timeout::Default,
-            Equal => Timeout::Never,
+            Equal => Timeout::Never
         }
     }
 }
@@ -50,7 +50,7 @@ impl From<Timeout> for i32 {
         match timeout {
             Timeout::Default => -1,
             Timeout::Never => 0,
-            Timeout::Milliseconds(ms) => ms as i32,
+            Timeout::Milliseconds(ms) => ms as i32
         }
     }
 }
