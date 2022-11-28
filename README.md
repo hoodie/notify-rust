@@ -58,9 +58,9 @@ The main audience of this library are Linux/BSD based desktop environments that 
 Enables sending of images with notifications. This is only supported on XDG. This will add the [**image** crate](https://lib.rs/image) as a dependency as well as [**lazy_static**](https://lib.rs/lazy_static) to determine the supported spec spec-version on startup.
 
 #### `d`
-Enables the usage of [**dbus**](https://lib.rs/dbus) instead of [**zbus-rs**](https://lib.rs/zbus) (also XDG only).
+Enables the usage of [**dbus-rs**](https://lib.rs/dbus) instead of [**zbus**](https://lib.rs/zbus) (also XDG only).
 This is functionally identical to the default feature set.
-**As long as you still compile with default-features this will only enable dbus usage, but not default to it!** In order to use the DBUS-rs implementation set the environment variable **`DBUSRS `** or compile notify-rust with **`--no-default-features`**.
+**As long as you still compile with default-features this will only enable dbus-rs usage, but not default to it!** In order to use the dbus-rs implementation set the environment variable **`DBUSRS `** or compile notify-rust with **`--no-default-features`**.
 
 ### Requirements
 
