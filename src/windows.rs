@@ -31,7 +31,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let app_id = &notification.app_id.as_ref().unwrap_or(powershell_app_id);
     let mut toast = Toast::new(app_id)
             .title(&notification.summary)
-            .text1(notification.subtitle.as_ref().map(AsRef::as_ref).unwrap_or("")) // subtitle
+            .text1(notification.subtitle.as_ref().map_or("", AsRef::as_ref)) // subtitle
             .text2(&notification.body)
             .sound(sound)
             .duration(duration);

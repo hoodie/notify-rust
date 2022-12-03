@@ -140,10 +140,8 @@ impl Error for ImageError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         use ImageError::*;
         match self {
-            TooBig => None,
-            WrongDataSize => None,
+            TooBig | WrongDataSize | CantConvert => None,
             CantOpen(e) => Some(e),
-            CantConvert => None,
         }
     }
 }

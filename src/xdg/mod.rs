@@ -425,7 +425,7 @@ pub fn handle_action<F>(id: u32, func: F)
 where
     F: FnOnce(&ActionResponse),
 {
-    dbus_rs::handle_action(id, func)
+    dbus_rs::handle_action(id, func);
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
