@@ -19,9 +19,13 @@ use std::env;
 
 
 // Returns the name of the current executable, used as a default for `Notification.appname`.
-fn exe_name() -> String {
-    env::current_exe().unwrap()
-    .file_name().unwrap().to_str().unwrap().to_owned()
+fn exe_name() -> Option<String> {
+    Some(
+        env::current_exe().ok()?
+        .file_name()?
+        .to_str()?
+        .to_owned()
+    )
 }
 
 /// Desktop notification.
@@ -197,7 +201,9 @@ impl Notification {
     /// # Platform support
     /// macOS does not support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn auto_icon(&mut self) -> &mut Notification {
-        self.icon = exe_name();
+        if let Some(icon) = exe_name() {
+            self.icon = icon;
+        }
         self
     }
 
@@ -397,7 +403,7 @@ impl Default for Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn default() -> Notification {
         Notification {
-            appname:  exe_name(),
+            appname:  exe_name().unwrap_or_else(|| String::from("unidentified application")),
             summary:  String::new(),
             subtitle: None,
             body:     String::new(),
@@ -413,7 +419,7 @@ impl Default for Notification {
     #[cfg(target_os = "macos")]
     fn default() -> Notification {
         Notification {
-            appname:    exe_name(),
+            appname:    exe_name().unwrap_or_else(|| String::from("unidentified application")),
             summary:    String::new(),
             subtitle:   None,
             body:       String::new(),
@@ -428,7 +434,7 @@ impl Default for Notification {
     #[cfg(target_os="windows")]
     fn default() -> Notification {
         Notification {
-            appname:       exe_name(),
+            appname:       exe_name().unwrap_or_else(|| String::from("unidentified application")),
             summary:       String::new(),
             subtitle:      None,
             body:          String::new(),
