@@ -13,7 +13,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.61.0
+          - 1.60.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -42,6 +42,36 @@ jobs:
           command: test
           args: --doc --no-default-features --features d
 
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features d -- -D warnings
+
+  linux_dbus_with_image_feature:
+    name: linux (dbus + image)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - 1.61.0
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: rustup component add clippy
+      - run: sudo apt-get install -y libdbus-1-dev
+
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --no-default-features --features d,images
+
       - name: test_features_images
         uses: actions-rs/cargo@v1
         with:
@@ -58,7 +88,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --no-default-features --features d -- -D warnings
+          args: --no-default-features --features d,images -- -D warnings
 
   linux_zbus:
     name: linux (zbus)
@@ -67,7 +97,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.61.0
+          - 1.60.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -96,6 +126,30 @@ jobs:
           command: test
           args: --doc --no-default-features --features z
 
+  linux_zbus_with_image_feature:
+    name: linux (zbus + image)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - 1.61.0
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: rustup component add clippy
+      - run: sudo apt-get install -y libdbus-1-dev
+
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --no-default-features --features z,images
+
       - name: test_features_images (zbus)
         uses: actions-rs/cargo@v1
         with:
@@ -121,7 +175,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.61.0
+          - 1.60.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -152,7 +206,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.61.0
+          - 1.60.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
