@@ -193,16 +193,13 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
             let (path, interface, member) = (
                 message
                     .path()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
+                    .map_or_else(String::new, |p| p.into_cstring().to_string_lossy().into_owned()),
                 message
                     .interface()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
+                    .map_or_else(String::new, |p| p.into_cstring().to_string_lossy().into_owned()),
                 message
                     .member()
-                    .map(|p| p.into_cstring().to_string_lossy().into_owned())
-                    .unwrap_or_else(String::new),
+                    .map_or_else(String::new, |p| p.into_cstring().to_string_lossy().into_owned()),
             );
             match (path.as_ref(), interface.as_ref(), member.as_ref()) {
                 // match (protocol.unwrap(), iface.unwrap(), member.unwrap()) {
