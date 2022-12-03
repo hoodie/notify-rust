@@ -1,11 +1,6 @@
 use winrt_notification::Toast;
 
-pub use crate::{
-    error::*,
-    notification::Notification,
-    timeout::Timeout,
-};
-
+pub use crate::{error::*, notification::Notification, timeout::Timeout};
 
 use std::{path::Path, str::FromStr};
 
@@ -30,11 +25,11 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let powershell_app_id = &Toast::POWERSHELL_APP_ID.to_string();
     let app_id = &notification.app_id.as_ref().unwrap_or(powershell_app_id);
     let mut toast = Toast::new(app_id)
-            .title(&notification.summary)
-            .text1(notification.subtitle.as_ref().map_or("", AsRef::as_ref)) // subtitle
-            .text2(&notification.body)
-            .sound(sound)
-            .duration(duration);
+        .title(&notification.summary)
+        .text1(notification.subtitle.as_ref().map_or("", AsRef::as_ref)) // subtitle
+        .text2(&notification.body)
+        .sound(sound)
+        .duration(duration);
     if let Some(image_path) = &notification.path_to_image {
         toast = toast.image(Path::new(&image_path), "");
     }

@@ -1,7 +1,6 @@
 use crate::{error::*, notification::Notification};
 
-pub use mac_notification_sys::error::{Error as MacOsError, NotificationError,ApplicationError};
-
+pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
 
 use std::ops::{Deref, DerefMut};
 
@@ -46,7 +45,10 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     Ok(NotificationHandle::new(notification.clone()))
 }
 
-pub(crate) fn schedule_notification(notification: &Notification, delivery_date: f64) -> Result<NotificationHandle> {
+pub(crate) fn schedule_notification(
+    notification: &Notification,
+    delivery_date: f64,
+) -> Result<NotificationHandle> {
     mac_notification_sys::Notification::default()
         .title(notification.summary.as_str())
         .message(&notification.body)

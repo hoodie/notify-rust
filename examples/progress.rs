@@ -10,7 +10,9 @@ fn main() {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut notification = notify_rust::Notification::new().summary("progress").show()?;
+    let mut notification = notify_rust::Notification::new()
+        .summary("progress")
+        .show()?;
     for i in 0..=10 {
         let value = i * 10;
         notification

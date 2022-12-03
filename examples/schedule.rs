@@ -3,7 +3,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::Notification;
 
     let duration = chrono::Duration::milliseconds(4321);
-    let timestamp =  (chrono::Utc::now() + duration).timestamp() as f64;
+    let timestamp = (chrono::Utc::now() + duration).timestamp() as f64;
 
     Notification::new()
         .summary("Oh by the way")

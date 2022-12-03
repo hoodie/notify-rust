@@ -13,7 +13,9 @@ fn print() {
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-fn main() { println!("this is a xdg only feature") }
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {

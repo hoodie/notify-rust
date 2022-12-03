@@ -6,16 +6,25 @@ use notify_rust::Image;
 use notify_rust::Notification;
 
 #[cfg(target_os = "windows")]
-fn main() { println!("this is a xdg only feature") }
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(all(not(feature = "images"), unix, not(target_os = "macos")))]
-fn main() { println!("please build with '--features=images'") }
+fn main() {
+    println!("please build with '--features=images'")
+}
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos"), not(target_os = "windows")))]
+#[cfg(all(
+    feature = "images",
+    unix,
+    not(target_os = "macos"),
+    not(target_os = "windows")
+))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     fn image_data() -> Vec<u8> {
-        let mut image_data = vec![0;128*128*3];
-        for i in 0..128*128*3 {
+        let mut image_data = vec![0; 128 * 128 * 3];
+        for i in 0..128 * 128 * 3 {
             image_data[i] = (i % 256) as u8;
         }
         image_data

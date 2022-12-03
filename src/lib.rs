@@ -79,7 +79,7 @@
 //! <details>
 //! ✔︎ = works <br/>
 //! ❌ = will not compile
-//! 
+//!
 //! ## `Notification`
 //! | method              | XDG   | macOS | windows |
 //! |---------------------|-------|-------|---------|
@@ -129,12 +129,14 @@
 //! </details>
 //!
 
-#![deny(missing_copy_implementations,
-        trivial_casts,
-        trivial_numeric_casts,
-        unsafe_code,
-        unused_import_braces,
-        unused_qualifications)]
+#![deny(
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
 #![warn(
     missing_docs,
     clippy::doc_markdown,
@@ -142,43 +144,52 @@
     clippy::single_match_else,
     clippy::inconsistent_struct_constructor,
     clippy::map_unwrap_or,
-    clippy::match_same_arms,
+    clippy::match_same_arms
 )]
 
-#[cfg(all(feature="dbus", unix, not(target_os = "macos")))] extern crate dbus;
-#[cfg(target_os = "macos")] extern crate mac_notification_sys;
-#[cfg(target_os = "windows")] extern crate winrt_notification;
-#[macro_use] #[cfg(all(feature = "images", unix, not(target_os = "macos")))] extern crate lazy_static;
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
+extern crate dbus;
+#[cfg(target_os = "macos")]
+extern crate mac_notification_sys;
+#[cfg(target_os = "windows")]
+extern crate winrt_notification;
+#[macro_use]
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+extern crate lazy_static;
 
 pub mod error;
-mod miniver;
-mod timeout;
 mod hints;
+mod miniver;
 mod notification;
+mod timeout;
 
-#[cfg(target_os = "macos")] mod macos;
-#[cfg(target_os = "windows")] mod windows;
-#[cfg(all(unix, not(target_os = "macos")))] mod xdg;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "windows")]
+mod windows;
+#[cfg(all(unix, not(target_os = "macos")))]
+mod xdg;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))] mod image;
-#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))] pub mod server;
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+mod image;
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+pub mod server;
 
 pub(crate) mod urgency;
 
-#[cfg(target_os = "macos")] pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
-#[cfg(target_os = "macos")] pub use macos::NotificationHandle;
+#[cfg(target_os = "macos")]
+pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+#[cfg(target_os = "macos")]
+pub use macos::NotificationHandle;
 
-#[cfg(all(any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
+#[cfg(all(
+    any(feature = "dbus", feature = "zbus"),
+    unix,
+    not(target_os = "macos")
+))]
 pub use crate::xdg::{
-    get_capabilities,
-    get_server_information,
-    handle_action,
-    NotificationHandle,
-    dbus_stack,
-    DbusStack,
-    ActionResponse,
-    CloseHandler,
-    CloseReason,
+    dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
+    CloseHandler, CloseReason, DbusStack, NotificationHandle,
 };
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
@@ -189,16 +200,16 @@ pub use crate::hints::Hint;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 pub use crate::image::{Image, ImageError};
 
-#[cfg_attr(target_os = "macos", deprecated(note="Urgency is not supported on macOS"))]
+#[cfg_attr(
+    target_os = "macos",
+    deprecated(note = "Urgency is not supported on macOS")
+)]
 pub use crate::urgency::Urgency;
 
-pub use crate::{
-    notification::Notification,
-    timeout::Timeout
-};
+pub use crate::{notification::Notification, timeout::Timeout};
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-lazy_static!{
+lazy_static! {
     /// Read once at runtime. Needed for Images
     pub static ref SPEC_VERSION: miniver::Version =
         get_server_information()
@@ -209,12 +220,11 @@ lazy_static!{
 #[derive(Debug)]
 pub struct ServerInformation {
     /// The product name of the server.
-    pub name:          String,
+    pub name: String,
     /// The vendor name.
-    pub vendor:        String,
+    pub vendor: String,
     /// The server's version string.
-    pub version:       String,
+    pub version: String,
     /// The specification version the server is compliant with.
-    pub spec_version:  String
+    pub spec_version: String,
 }
-

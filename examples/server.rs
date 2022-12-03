@@ -1,10 +1,15 @@
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 use notify_rust::server::NotificationServer;
 
-#[cfg(target_os = "macos")] fn main() { println!("this is a xdg only feature") }
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(target_os = "windows")]
-fn main() { println!("this is a xdg only feature") }
+fn main() {
+    println!("this is a xdg only feature")
+}
 
 #[cfg(all(unix, not(feature = "server"), not(target_os = "macos")))]
 fn main() {
@@ -19,9 +24,7 @@ fn main() {
 
     let server = NotificationServer::create();
     thread::spawn(move || {
-        NotificationServer::start(&server, |notification| {
-            println!("{:#?}", notification)
-        })
+        NotificationServer::start(&server, |notification| println!("{:#?}", notification))
     });
 
     thread::sleep(Duration::from_millis(500));

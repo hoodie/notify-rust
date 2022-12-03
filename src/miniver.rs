@@ -4,7 +4,7 @@ use std::str::FromStr;
 #[derive(Copy, Clone, Eq, Debug)]
 pub struct Version {
     pub major: u64,
-    pub minor: u64
+    pub minor: u64,
 }
 
 impl Version {
@@ -14,7 +14,6 @@ impl Version {
     }
 }
 
-
 impl FromStr for Version {
     type Err = Error;
     fn from_str(s: &str) -> Result<Version> {
@@ -22,9 +21,9 @@ impl FromStr for Version {
         match (vv.first(), vv.get(1)) {
             (Some(maj), Some(min)) => Ok(Version {
                 major: maj.parse()?,
-                minor: min.parse()?
+                minor: min.parse()?,
             }),
-            _ => Err(ErrorKind::SpecVersion(s.into()).into())
+            _ => Err(ErrorKind::SpecVersion(s.into()).into()),
         }
     }
 }
@@ -47,11 +46,11 @@ impl Ord for Version {
     fn cmp(&self, other: &Version) -> cmp::Ordering {
         match self.major.cmp(&other.major) {
             cmp::Ordering::Equal => {}
-            r => return r
+            r => return r,
         }
         match self.minor.cmp(&other.minor) {
             cmp::Ordering::Equal => {}
-            r => return r
+            r => return r,
         }
         cmp::Ordering::Equal
     }

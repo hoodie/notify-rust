@@ -14,7 +14,11 @@ pub struct ZbusNotificationHandle {
 }
 
 impl ZbusNotificationHandle {
-    pub(crate) fn new(id: u32, connection: Connection, notification: Notification) -> ZbusNotificationHandle {
+    pub(crate) fn new(
+        id: u32,
+        connection: Connection,
+        notification: Notification,
+    ) -> ZbusNotificationHandle {
         ZbusNotificationHandle {
             id,
             connection,
@@ -50,11 +54,16 @@ impl ZbusNotificationHandle {
     }
 
     pub fn update(&mut self) {
-        self.id = send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+        self.id =
+            send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
     }
 }
 
-pub fn send_notificaion_via_connection(notification: &Notification, id: u32, connection: &Connection) -> Result<u32> {
+pub fn send_notificaion_via_connection(
+    notification: &Notification,
+    id: u32,
+    connection: &Connection,
+) -> Result<u32> {
     let reply: u32 = connection
         .call_method(
             Some(crate::xdg::NOTIFICATION_NAMESPACE),
@@ -77,11 +86,17 @@ pub fn send_notificaion_via_connection(notification: &Notification, id: u32, con
     Ok(reply)
 }
 
-pub fn connect_and_send_notification(notification: &Notification) -> Result<ZbusNotificationHandle> {
+pub fn connect_and_send_notification(
+    notification: &Notification,
+) -> Result<ZbusNotificationHandle> {
     let connection = zbus::blocking::Connection::session()?;
     let inner_id = notification.id.unwrap_or(0);
     let id = send_notificaion_via_connection(notification, inner_id, &connection)?;
-    Ok(ZbusNotificationHandle::new(id, connection, notification.clone()))
+    Ok(ZbusNotificationHandle::new(
+        id,
+        connection,
+        notification.clone(),
+    ))
 }
 
 pub fn get_capabilities() -> Result<Vec<String>> {
@@ -125,45 +140,48 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 }
 
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
-
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications").unwrap()
-        .member("ActionInvoked").unwrap()
+        .interface("org.freedesktop.Notifications")
+        .unwrap()
+        .member("ActionInvoked")
+        .unwrap()
         .build();
 
     let proxy = zbus::blocking::fdo::DBusProxy::new(connection).unwrap();
-    proxy
-        .add_match_rule(action_signal_rule)
-        .unwrap();
+    proxy.add_match_rule(action_signal_rule).unwrap();
 
     let close_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications").unwrap()
-        .member("NotificationClosed").unwrap()
+        .interface("org.freedesktop.Notifications")
+        .unwrap()
+        .member("NotificationClosed")
+        .unwrap()
         .build();
-    proxy
-        .add_match_rule(close_signal_rule)
-        .unwrap();
+    proxy.add_match_rule(close_signal_rule).unwrap();
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
         if let Ok(header) = msg.header() {
             if let Ok(zbus::MessageType::Signal) = header.message_type() {
                 match header.member() {
-                    Ok(Some(name)) if name == "ActionInvoked" => match msg.body::<(u32, String)>() {
-                        Ok((nid, action)) if nid == id => {
-                            handler.call(&ActionResponse::Custom(&action));
-                            break;
+                    Ok(Some(name)) if name == "ActionInvoked" => {
+                        match msg.body::<(u32, String)>() {
+                            Ok((nid, action)) if nid == id => {
+                                handler.call(&ActionResponse::Custom(&action));
+                                break;
+                            }
+                            _ => {}
                         }
-                        _ => {}
-                    },
-                    Ok(Some(name)) if name == "NotificationClosed" => match msg.body::<(u32, u32)>() {
-                        Ok((nid, reason)) if nid == id => {
-                            handler.call(&ActionResponse::Closed(reason.into()));
-                            break;
+                    }
+                    Ok(Some(name)) if name == "NotificationClosed" => {
+                        match msg.body::<(u32, u32)>() {
+                            Ok((nid, reason)) if nid == id => {
+                                handler.call(&ActionResponse::Closed(reason.into()));
+                                break;
+                            }
+                            _ => {}
                         }
-                        _ => {}
-                    },
+                    }
                     Ok(_) | Err(_) => {}
                 }
             }

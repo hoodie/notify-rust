@@ -154,7 +154,10 @@ impl fmt::Display for ImageError {
                 f,
                 "The given image is too big. DBus only has 32 bits for width / height"
             ),
-            WrongDataSize => writeln!(f, "The given bytes don't match the width, height and channel count"),
+            WrongDataSize => writeln!(
+                f,
+                "The given bytes don't match the width, height and channel count"
+            ),
             CantOpen(e) => writeln!(f, "Can't open given path {}", e),
             CantConvert => writeln!(f, "Can't convert from given input"),
         }
@@ -173,7 +176,7 @@ pub(crate) fn image_spec(version: Version) -> String {
 
 /// matching image data key for each spec version
 #[cfg(feature = "zbus")]
-pub(crate) fn image_spec_str(version: Version) -> &'static str{
+pub(crate) fn image_spec_str(version: Version) -> &'static str {
     match version.cmp(&Version::new(1, 1)) {
         Ordering::Less => constants::IMAGE_DATA_1_0,
         Ordering::Equal => constants::IMAGE_DATA_1_1,
