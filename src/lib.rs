@@ -149,10 +149,13 @@
 
 #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 extern crate dbus;
+
 #[cfg(target_os = "macos")]
 extern crate mac_notification_sys;
+
 #[cfg(target_os = "windows")]
 extern crate winrt_notification;
+
 #[macro_use]
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 extern crate lazy_static;
@@ -162,23 +165,26 @@ mod hints;
 mod miniver;
 mod notification;
 mod timeout;
+pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")]
 mod macos;
+
 #[cfg(target_os = "windows")]
 mod windows;
+
 #[cfg(all(unix, not(target_os = "macos")))]
 mod xdg;
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 mod image;
+
 #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 pub mod server;
 
-pub(crate) mod urgency;
-
 #[cfg(target_os = "macos")]
 pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+
 #[cfg(target_os = "macos")]
 pub use macos::NotificationHandle;
 
