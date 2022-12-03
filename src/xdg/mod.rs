@@ -77,7 +77,7 @@ impl NotificationHandle {
                 inner.wait_for_action(|action: &ActionResponse| match action {
                     ActionResponse::Custom(action) => invocation_closure(action),
                     ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                })
+                });
             }
 
             #[cfg(feature = "zbus")]
@@ -85,7 +85,7 @@ impl NotificationHandle {
                 inner.wait_for_action(|action: &ActionResponse| match action {
                     ActionResponse::Custom(action) => invocation_closure(action),
                     ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                })
+                });
             }
         };
     }
@@ -149,7 +149,7 @@ impl NotificationHandle {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                })
+                });
             }
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
@@ -157,7 +157,7 @@ impl NotificationHandle {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                })
+                });
             }
         };
     }
