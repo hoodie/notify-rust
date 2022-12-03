@@ -4,6 +4,8 @@
 
 #[cfg(feature = "dbus")]
 use dbus::ffidisp::Connection as DbusConnection;
+#[cfg(feature = "zbus")]
+use zbus::zvariant;
 
 use crate::{error::*, notification::Notification};
 
@@ -404,7 +406,7 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-#[cfg_attr(feature = "zbus", derive(zvariant_derive::Type))]
+#[cfg_attr(feature = "zbus", derive(zvariant::Type))]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,

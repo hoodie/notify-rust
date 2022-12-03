@@ -1,6 +1,7 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-mod constants;
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+use zbus::zvariant;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
@@ -15,6 +16,7 @@ use crate::Urgency;
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use crate::notification::Notification;
 #[cfg(all(feature = "zbus", unix, not(target_os = "macos")))] use std::collections::HashMap;
 
+mod constants;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -151,6 +153,7 @@ impl Hint {}
 fn test_hints_to_map() {
 
     // custom value should only be there once if the names are identical
+
     let n1 = crate::Notification::new()
         .hint(Hint::Custom("foo".into(), "bar1".into()))
         .hint(Hint::Custom("foo".into(), "bar2".into()))
