@@ -1,5 +1,5 @@
 use crate::{error::*, notification::Notification, xdg};
-use zbus::blocking::Connection;
+use zbus::{blocking::Connection, MatchRule};
 
 use super::{ActionResponse, ActionResponseHandler, CloseReason};
 
@@ -125,12 +125,25 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 }
 
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
+
+    let action_signal_rule = MatchRule::builder()
+        .msg_type(zbus::MessageType::Signal)
+        .interface("org.freedesktop.Notifications").unwrap()
+        .member("ActionInvoked").unwrap()
+        .build();
+
     let proxy = zbus::blocking::fdo::DBusProxy::new(connection).unwrap();
     proxy
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+        .add_match_rule(action_signal_rule)
         .unwrap();
+
+    let close_signal_rule = MatchRule::builder()
+        .msg_type(zbus::MessageType::Signal)
+        .interface("org.freedesktop.Notifications").unwrap()
+        .member("NotificationClosed").unwrap()
+        .build();
     proxy
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+        .add_match_rule(close_signal_rule)
         .unwrap();
 
     for msg in zbus::blocking::MessageIterator::from(connection).flatten() {
