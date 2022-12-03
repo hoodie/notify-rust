@@ -1,5 +1,5 @@
-use std::convert::TryInto;
 use notify_rust::{Notification, Urgency::*};
+use std::convert::TryInto;
 
 #[cfg(target_os = "macos")]
 fn main() {

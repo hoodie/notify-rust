@@ -2,9 +2,10 @@
 use notify_rust::Notification;
 use std::time::Duration;
 
-
 #[cfg(target_os = "windows")]
-fn main() { println!("This is not a windows feature") }
+fn main() {
+    println!("This is not a windows feature")
+}
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn update_via_handle() {

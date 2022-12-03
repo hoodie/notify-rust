@@ -67,13 +67,13 @@ mod ownworld {
         });
 
         Notification::new()
-        .summary("Another notification with actions")
-        .body("action0=\"Press me please\", action1=\"firefox\"")
-        .icon("dialog-information")
-        .timeout(6000) //miliseconds
-        .action("actions_built0", "actions_built1")
-        .action("actions_built2", "actions_built3")
-        .show();
+            .summary("Another notification with actions")
+            .body("action0=\"Press me please\", action1=\"firefox\"")
+            .icon("dialog-information")
+            .timeout(6000) //miliseconds
+            .action("actions_built0", "actions_built1")
+            .action("actions_built2", "actions_built3")
+            .show();
 
         stop_server();
         assert!(thread_handle.join().is_ok());
@@ -85,9 +85,7 @@ mod ownworld {
     fn no_server() {
         let server = NotificationServer::create();
         thread::spawn(move || {
-            NotificationServer::start(&server, |notification| {
-                println!("{:#?}", notification)
-            })
+            NotificationServer::start(&server, |notification| println!("{:#?}", notification))
         });
 
         stop_server();

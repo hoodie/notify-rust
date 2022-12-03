@@ -81,23 +81,28 @@ impl NotificationServer {
         connection
             .register_name(NOTIFICATION_NAMESPACE, NameFlag::ReplaceExisting as u32)
             .unwrap();
-        connection.register_object_path(NOTIFICATION_OBJECTPATH).unwrap();
+        connection
+            .register_object_path(NOTIFICATION_OBJECTPATH)
+            .unwrap();
 
         let mytex = Arc::new(Mutex::new(me.clone()));
 
         let factory = Factory::new_fn::<()>(); // D::Tree = ()
         let tree = factory.tree(()).add(
-            factory.object_path(NOTIFICATION_OBJECTPATH, ()).introspectable().add(
-                factory
-                    .interface(NOTIFICATION_NAMESPACE, ())
-                    .add_m(method_notify(&factory, closure))
-                    .add_m(method_close_notification(&factory))
-                    .add_m(Self::stop_server(mytex.clone(), &factory))
-                    // .add_signal(method_notification_closed(&factory))
-                    // .add_signal(method_action_invoked(&factory))
-                    .add_m(method_get_capabilities(&factory))
-                    .add_m(method_get_server_information(&factory)),
-            ),
+            factory
+                .object_path(NOTIFICATION_OBJECTPATH, ())
+                .introspectable()
+                .add(
+                    factory
+                        .interface(NOTIFICATION_NAMESPACE, ())
+                        .add_m(method_notify(&factory, closure))
+                        .add_m(method_close_notification(&factory))
+                        .add_m(Self::stop_server(mytex.clone(), &factory))
+                        // .add_signal(method_notification_closed(&factory))
+                        // .add_signal(method_action_invoked(&factory))
+                        .add_m(method_get_capabilities(&factory))
+                        .add_m(method_get_server_information(&factory)),
+                ),
         );
 
         connection.add_handler(tree);
@@ -111,7 +116,10 @@ impl NotificationServer {
         }
     }
 
-    fn stop_server(me: Arc<Mutex<Arc<Self>>>, factory: &Factory<MTFn>) -> tree::Method<MTFn<()>, ()> {
+    fn stop_server(
+        me: Arc<Mutex<Arc<Self>>>,
+        factory: &Factory<MTFn>,
+    ) -> tree::Method<MTFn<()>, ()> {
         factory
             .method("Stop", (), move |minfo| {
                 if let Ok(me) = me.lock() {
@@ -130,7 +138,10 @@ fn hints_from_variants<A: RefArg>(hints: &HashMap<String, A>) -> HashSet<Hint> {
     hints.iter().map(Into::into).collect()
 }
 
-fn method_notify<F: 'static>(factory: &Factory<MTFn>, on_notification: F) -> tree::Method<MTFn<()>, ()>
+fn method_notify<F: 'static>(
+    factory: &Factory<MTFn>,
+    on_notification: F,
+) -> tree::Method<MTFn<()>, ()>
 where
     F: Fn(&Notification),
 {
@@ -143,7 +154,8 @@ where
             let summary: String = i.read()?;
             let body: String = i.read()?;
             let actions: Vec<String> = i.read()?;
-            let hints: ::std::collections::HashMap<String, arg::Variant<Box<dyn RefArg>>> = i.read()?;
+            let hints: ::std::collections::HashMap<String, arg::Variant<Box<dyn RefArg>>> =
+                i.read()?;
             let timeout: i32 = i.read()?;
             println!("hints {:?} ", hints);
 
@@ -156,7 +168,11 @@ where
                 actions,
                 hints: hints_from_variants(&hints),
                 timeout: Timeout::from(timeout),
-                id: if replaces_id == 0 { None } else { Some(replaces_id) },
+                id: if replaces_id == 0 {
+                    None
+                } else {
+                    Some(replaces_id)
+                },
                 subtitle: None,
             };
 
@@ -202,8 +218,12 @@ fn method_get_capabilities(factory: &Factory<MTFn>) -> tree::Method<MTFn<()>, ()
 fn method_get_server_information(factory: &Factory<MTFn>) -> tree::Method<MTFn<()>, ()> {
     factory
         .method("GetServerInformation", (), |minfo| {
-            let (name, vendor, version, spec_version) =
-                ("notify-rust", "notify-rust", env!("CARGO_PKG_VERSION"), "0.0.0");
+            let (name, vendor, version, spec_version) = (
+                "notify-rust",
+                "notify-rust",
+                env!("CARGO_PKG_VERSION"),
+                "0.0.0",
+            );
             let rm = minfo.msg.method_return();
             let rm = rm.append1(name);
             let rm = rm.append1(vendor);

@@ -30,7 +30,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Notification::new().hint(Hint::ActionIcons(true)).show()?;
 
     freeze("urgency: low, medium, high");
-    Notification::new().summary("low").hint(Hint::Urgency(Low)).show()?;
+    Notification::new()
+        .summary("low")
+        .hint(Hint::Urgency(Low))
+        .show()?;
     Notification::new()
         .summary("normal")
         .hint(Hint::Urgency(Normal))
@@ -68,7 +71,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     freeze("SoundFile");
     Notification::new()
         .summary("soundfile")
-        .hint(Hint::SoundFile("/usr/share/sounds/alsa/Front_Left.wav".to_owned()))
+        .hint(Hint::SoundFile(
+            "/usr/share/sounds/alsa/Front_Left.wav".to_owned(),
+        ))
         .hint(Hint::SoundName("system sound".to_owned()))
         .hint(Hint::SuppressSound(false))
         .show()?;
@@ -80,7 +85,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .show()?;
 
     freeze("X and Y");
-    Notification::new().hint(Hint::X(200)).hint(Hint::Y(200)).show()?;
+    Notification::new()
+        .hint(Hint::X(200))
+        .hint(Hint::Y(200))
+        .show()?;
 
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     {
@@ -90,7 +98,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             image_data[i] = (i % 256) as u8;
         }
         Notification::new()
-            .hint(Hint::ImageData(Image::from_rgb(128, 128, image_data).unwrap()))
+            .hint(Hint::ImageData(
+                Image::from_rgb(128, 128, image_data).unwrap(),
+            ))
             .summary("You should see stripes in this notification");
     }
 

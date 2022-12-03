@@ -44,14 +44,22 @@ pub struct NotificationHandle {
 #[allow(dead_code)]
 impl NotificationHandle {
     #[cfg(feature = "dbus")]
-    pub(crate) fn for_dbus(id: u32, connection: DbusConnection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn for_dbus(
+        id: u32,
+        connection: DbusConnection,
+        notification: Notification,
+    ) -> NotificationHandle {
         NotificationHandle {
             inner: dbus_rs::DbusNotificationHandle::new(id, connection, notification).into(),
         }
     }
 
     #[cfg(feature = "zbus")]
-    pub(crate) fn for_zbus(id: u32, connection: zbus::blocking::Connection, notification: Notification) -> NotificationHandle {
+    pub(crate) fn for_zbus(
+        id: u32,
+        connection: zbus::blocking::Connection,
+        notification: Notification,
+    ) -> NotificationHandle {
         NotificationHandle {
             inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
         }
@@ -65,16 +73,20 @@ impl NotificationHandle {
     {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action: &ActionResponse| match action {
-                ActionResponse::Custom(action) => invocation_closure(action),
-                ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-            }),
+            NotificationHandleInner::Dbus(inner) => {
+                inner.wait_for_action(|action: &ActionResponse| match action {
+                    ActionResponse::Custom(action) => invocation_closure(action),
+                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                });
+            }
 
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action: &ActionResponse| match action {
-                ActionResponse::Custom(action) => invocation_closure(action),
-                ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-            }),
+            NotificationHandleInner::Zbus(inner) => {
+                inner.wait_for_action(|action: &ActionResponse| match action {
+                    ActionResponse::Custom(action) => invocation_closure(action),
+                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                });
+            }
         };
     }
 
@@ -117,7 +129,7 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|| println!("closed"));
     /// ```
-    /// 
+    ///
     /// ## Example 2: *I **do** care about why it closed* (added in v4.5.0)
     ///
     /// ```no_run
@@ -132,17 +144,21 @@ impl NotificationHandle {
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(|action: &ActionResponse| {
-                if let ActionResponse::Closed(reason) = action {
-                    handler.call(*reason);
-                }
-            }),
+            NotificationHandleInner::Dbus(inner) => {
+                inner.wait_for_action(|action: &ActionResponse| {
+                    if let ActionResponse::Closed(reason) = action {
+                        handler.call(*reason);
+                    }
+                });
+            }
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(|action: &ActionResponse| {
-                if let ActionResponse::Closed(reason) = action {
-                    handler.call(*reason);
-                }
-            }),
+            NotificationHandleInner::Zbus(inner) => {
+                inner.wait_for_action(|action: &ActionResponse| {
+                    if let ActionResponse::Closed(reason) = action {
+                        handler.call(*reason);
+                    }
+                });
+            }
         };
     }
 
@@ -229,20 +245,28 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandleInner {
 #[cfg(feature = "dbus")]
 impl From<dbus_rs::DbusNotificationHandle> for NotificationHandle {
     fn from(handle: dbus_rs::DbusNotificationHandle) -> NotificationHandle {
-        NotificationHandle { inner: handle.into() }
+        NotificationHandle {
+            inner: handle.into(),
+        }
     }
 }
 
 #[cfg(feature = "zbus")]
 impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
     fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandle {
-        NotificationHandle { inner: handle.into() }
+        NotificationHandle {
+            inner: handle.into(),
+        }
     }
 }
 
 // here be public functions
 
-#[cfg(all(not(any(feature = "dbus", feature = "zbus")), unix, not(target_os = "macos")))]
+#[cfg(all(
+    not(any(feature = "dbus", feature = "zbus")),
+    unix,
+    not(target_os = "macos")
+))]
 compile_error!("you have to build with eiter zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
