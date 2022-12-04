@@ -2,6 +2,15 @@
 
 set -xe
 
+current_branch=`git rev-parse --abbrev-ref HEAD`
+release_branch="main"
+
+
+if [ "${current_branch}" != "${release_branch}" ]; then
+echo can only bump version on $release_branch
+exit 1
+fi
+
 which convco
 which cargo-set-version
 
