@@ -1,11 +1,11 @@
 # Changelog
 
-## [Unreleased](https://github.com/hoodie/notify-rust/compare/v4.5.10...HEAD) (2022-12-03)
+## [v4.6.0](https://github.com/hoodie/notify-rust/compare/v4.5.10...v4.6.0) (2022-12-04)
 
 ### Features
 
 * update zbus dependency to 3.x
-  ([4c496dc](https://github.com/hoodie/notify-rust/commit/4c496dc8c718b38f2108c9858f1e0c2e15cd5bff))
+  ([8425c05](https://github.com/hoodie/notify-rust/commit/8425c05b9ad945745cba9f16e288d6a8fc9887a6))
 
 ### [v4.5.10](https://github.com/hoodie/notify-rust/compare/v4.5.9...v4.5.10) (2022-09-25)
 
