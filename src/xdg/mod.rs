@@ -302,7 +302,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     }
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
@@ -310,7 +310,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     Some(DbusStack::Zbus)
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// (dbus-rs only)
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
@@ -318,7 +318,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     Some(DbusStack::Dbus)
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
 #[cfg(all(feature = "dbus", feature = "zbus"))]
@@ -330,7 +330,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
     })
 }
 
-/// Get the currently dsed [`DbusStack`]
+/// Get the currently used [`DbusStack`]
 ///
 /// neither zbus nor dbus-rs are configured
 #[cfg(all(not(feature = "dbus"), not(feature = "zbus")))]

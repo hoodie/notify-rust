@@ -1,4 +1,15 @@
+use std::{num::ParseIntError, str::FromStr};
+
 /// Describes the timeout of a notification
+/// 
+/// # `FromStr`
+/// You can also parse a `Timeout` from a `&str`.
+/// ```
+/// # use notify_rust::Timeout;
+/// assert_eq!("default".parse(), Ok(Timeout::Default));
+/// assert_eq!("never".parse(), Ok(Timeout::Never));
+/// assert_eq!("42".parse(), Ok(Timeout::Milliseconds(42)));
+/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Timeout {
     /// Expires according to server default.
@@ -51,6 +62,18 @@ impl From<Timeout> for i32 {
             Timeout::Default => -1,
             Timeout::Never => 0,
             Timeout::Milliseconds(ms) => ms as i32,
+        }
+    }
+}
+
+impl FromStr for Timeout {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "default" => Ok(Timeout::Default),
+            "never" => Ok(Timeout::Never),
+            milliseconds => Ok(Timeout::Milliseconds(u32::from_str(milliseconds)?)),
         }
     }
 }
