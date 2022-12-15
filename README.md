@@ -2,7 +2,7 @@
 
 # notify-rust
 
-[![build](https://img.shields.io/github/workflow/status/hoodie/notify-rust/Continuous%20Integration)](https://github.com/hoodie/notify-rust/actions?query=workflow%3A"Continuous+Integration")
+[![build](https://img.shields.io/github/actions/workflow/status/hoodie/notify-rust/ci.yml?branch=main)](https://github.com/hoodie/notify-rust/actions?query=workflow%3A"Continuous+Integration")
 [![Crates.io](https://img.shields.io/crates/d/notify-rust)](https://crates.io/crates/notify-rust)
 [![contributors](https://img.shields.io/github/contributors/hoodie/notify-rust)](https://github.com/hoodie/notify-rust/graphs/contributors)
 ![maintenance](https://img.shields.io/maintenance/yes/2022)
