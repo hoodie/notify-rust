@@ -4,6 +4,8 @@ extern crate notify_rust;
 #[cfg(test)]
 mod realworld {
 
+    use std::time::Duration;
+
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     use notify_rust::Image;
     use notify_rust::*;
@@ -110,6 +112,16 @@ mod realworld {
             .body("this is the body\nnewline<br/>linebreak")
             .show()
             .unwrap();
+    }
+
+    #[test]
+    fn should_allow_timeout_with_duration() {
+        let mut notification = Notification::new();
+        notification.timeout(Duration::from_secs(15));
+        assert!(matches!(
+            notification.timeout,
+            Timeout::Milliseconds(15_000)
+        ));
     }
 
     #[test]
