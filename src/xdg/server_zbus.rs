@@ -2,7 +2,7 @@
 use crate::{
     ensure, CloseReason, Hint, ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH,
 };
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, time::Duration};
 use zbus::{
     dbus_interface, export::futures_util::TryStreamExt, Connection, MessageStream, SignalContext,
 };
@@ -12,6 +12,7 @@ pub struct Action {
     pub tag: String,
     pub description: String,
 }
+
 impl Action {
     fn from_pair(pair: (&String, &String)) -> Action {
         Self {
@@ -71,6 +72,45 @@ impl<H: NotificationHandler + 'static + Sync + Send> NotificationServer<H> {
     }
 }
 
+#[derive(Debug)]
+struct DropGuard(event_listener::Event);
+
+impl DropGuard {
+    fn create() -> (DropGuard, event_listener::EventListener) {
+        let event = event_listener::Event::new();
+        let listener = event.listen();
+        (DropGuard(event), listener)
+    }
+}
+impl Drop for DropGuard {
+    fn drop(&mut self) {
+        log::trace!("dropping guard");
+        self.0.notify(1);
+    }
+}
+
+pub fn print_notification(
+    ReceivedNotification {
+        appname,
+        id,
+        icon,
+        summary,
+        body,
+        actions,
+        hints,
+        timeout,
+    }: ReceivedNotification,
+) {
+    eprintln!("app:     {appname:?}");
+    eprintln!("id:      {id:?}");
+    eprintln!("summary: {summary:?}");
+    eprintln!("body:    {body:?}");
+    eprintln!("actions: {actions:#?}");
+    eprintln!("icon:    {icon:#?}");
+    eprintln!("hints:   {hints:#?}");
+    eprintln!("timeout: {timeout:#?}");
+}
+
 // #[dbus_interface]
 #[cfg_attr(
     feature = "debug_namespace",
@@ -97,9 +137,15 @@ where
     }
 
     /// Can be `async` as well.
+    ///
+    /// ## TODO: known issue
+    ///  This does not properly send the onClosed signal yet.
+    ///  The server technically sends it,
+    ///  but clients that wait for the onClose signal wait for ever.
+    ///  `fn notify` must return before sending the close signal may be sent.
     #[allow(clippy::too_many_arguments)]
-    async fn notify(
-        &mut self,
+    async fn notify<'a, 'b>(
+        &'a mut self,
         appname: String,
         id: u32,
         icon: String,
@@ -108,8 +154,16 @@ where
         raw_actions: Vec<String>,
         raw_hints: HashMap<String, zbus::zvariant::OwnedValue>,
         timeout: i32,
-        #[zbus(signal_context)] ctx: SignalContext<'_>,
-    ) -> zbus::fdo::Result<u32> {
+        #[zbus(signal_context)] ctx: SignalContext<'b>,
+        #[zbus(object_server)] _server: &zbus::ObjectServer,
+    ) -> zbus::fdo::Result<u32>
+    where
+        'b: 'a,
+    {
+        self.count += 1;
+        let count = self.count;
+        let minimum_timeout = 10; // ms
+
         let actions = Action::from_vec(&raw_actions);
         let hints = raw_hints
             .into_iter()
@@ -133,35 +187,48 @@ where
             timeout,
         };
         log::debug!("received {:?}", received);
-        // log::debug!("signal context{:?}", ctx);
 
         if let Some(action) = received.actions.get(0) {
-            Self::action_invoked(&ctx, self.count, &action.tag).await?;
+            Self::action_invoked(&ctx, count, &action.tag).await?;
         }
 
         self.handler.call(received);
 
-        // async_std::task::spawn(async {
+        let ctx_copy = ctx.to_owned();
+        let (drop_guard, has_returned) = DropGuard::create();
+        async_std::task::spawn(async move {
+            if timeout == 0 {
+                log::debug!("timeout == 0 -> never sending close signal automatically");
+            } else {
+                let timeout_before_close: u64 = if timeout < 0 {
+                    log::debug!("timeout < 0 -> using default of {}ms ", minimum_timeout);
+                    minimum_timeout
+                } else if (timeout as u64) < minimum_timeout {
+                    log::warn!("timeout is below minimum timeout of {minimum_timeout}ms -> falling back to minimum timeout");
+                    minimum_timeout
+                } else {
+                    timeout as u64
+                };
+                has_returned.await;
+                sleep_for_timeout(timeout_before_close).await;
 
-        log::trace!("sleep");
-        async_std::task::sleep(std::time::Duration::from_millis(1600)).await;
-        log::trace!("wake up");
+                log::trace!("sending closed signal");
+                Self::notification_closed(&ctx_copy, count, CloseReason::Expired)
+                    .await
+                    .unwrap();
+                log::trace!("sent closed signal");
+            }
+        });
+        log::trace!("{:?}", drop_guard);
 
-        log::trace!("sending closed signal");
-        Self::notification_closed(&ctx, self.count, CloseReason::Expired)
-            .await
-            .unwrap();
-        log::trace!("sent closed signal");
-
-        log::trace!("sleep");
-        async_std::task::sleep(std::time::Duration::from_millis(1600)).await;
-        log::trace!("wake up");
-        // });
-
-        self.count += 1;
-        Ok(self.count)
+        Ok(count)
     }
 
+    /// TODO: this causes the application that sends the stop to crash
+    /// see `examples/stop_server.rs`
+    /// ```
+    /// org.freedesktop.DBus.Error.NoReply: Message recipient disconnected from message bus without replying
+    /// ```
     async fn stop(&self) -> bool {
         log::info!("received stop");
         self.stop_listener.notify(1);
@@ -179,102 +246,82 @@ where
     ) -> zbus::Result<()>;
 }
 
-/// Starts the server
-pub async fn start() -> Result<(), Box<dyn Error>> {
-    start_with_internal(
-        |ReceivedNotification {
-             appname,
-             id,
-             icon,
-             summary,
-             body,
-             actions,
-             hints,
-             timeout,
-         }| {
-            eprintln!("app:     {appname:?}");
-            eprintln!("id:      {id:?}");
-            eprintln!("summary: {summary:?}");
-            eprintln!("body:    {body:?}");
-            eprintln!("actions: {actions:#?}");
-            eprintln!("icon:    {icon:#?}");
-            eprintln!("hints:   {hints:#?}");
-            eprintln!("timeout: {timeout:#?}");
-        },
-    )
-    .await
-}
-
-pub fn start_blocking() -> Result<(), Box<dyn Error>> {
-    zbus::block_on(start())
+async fn sleep_for_timeout(ms: u64) {
+    log::trace!("sleeping for {ms}ms");
+    async_std::task::sleep(Duration::from_millis(ms)).await;
 }
 
 /// Starts the server
 pub async fn start_with<H: NotificationHandler + 'static + Sync + Send>(
     handler: H,
 ) -> Result<(), Box<dyn Error>> {
-    start_with_internal(handler).await
+    internal::start_with(handler).await
 }
 
 /// Starts the server
-pub fn start_with_blocking<H: NotificationHandler + 'static + Sync + Send>(
+pub fn blocking_start_with<H: NotificationHandler + 'static + Sync + Send>(
     handler: H,
 ) -> Result<(), Box<dyn Error>> {
     log::info!("start blocking");
-    zbus::block_on(start_with_internal(handler))
+    zbus::block_on(internal::start_with(handler))
 }
 
-async fn start_with_internal<H: NotificationHandler + 'static + Sync + Send>(
-    handler: H,
-) -> Result<(), Box<dyn Error>> {
-    let server_state = NotificationServer::with_handler(handler);
-    log::info!("instantiated server");
-    let stopped = server_state.stop_listener.listen();
+mod internal {
+    use super::*;
 
-    zbus::ConnectionBuilder::session()?
-        .name(NOTIFICATION_NAMESPACE)?
-        .serve_at(NOTIFICATION_OBJECTPATH, server_state)?
-        .build()
-        .await?;
-    log::info!(
-        "launch session\n {:?}\n {:?}",
-        NOTIFICATION_NAMESPACE,
-        NOTIFICATION_OBJECTPATH
-    );
+    pub(super) async fn start_with<H: NotificationHandler + 'static + Sync + Send>(
+        handler: H,
+    ) -> Result<(), Box<dyn Error>> {
+        let server_state = NotificationServer::with_handler(handler);
+        log::info!("instantiated server");
+        let stopped = server_state.stop_listener.listen();
 
-    stopped.wait();
-    log::info!("shutting down");
+        zbus::ConnectionBuilder::session()?
+            .name(NOTIFICATION_NAMESPACE)?
+            .serve_at(NOTIFICATION_OBJECTPATH, server_state)?
+            .build()
+            .await?;
+        log::info!(
+            "launch session\n {:?}\n {:?}",
+            NOTIFICATION_NAMESPACE,
+            NOTIFICATION_OBJECTPATH
+        );
 
-    Ok(())
-}
+        stopped.wait();
+        log::info!("shutting down");
 
-/// Starts the server
-async fn _start_with_internal2<H: NotificationHandler + 'static + Sync + Send>(
-    handler: H,
-) -> Result<(), Box<dyn Error>> {
-    let server_state = NotificationServer::with_handler(handler);
-    log::info!("instantiated server");
-
-    let connection = Connection::session().await?;
-    log::info!("opened connection");
-
-    let server_available = connection
-        .object_server()
-        // .name(NOTIFICATION_NAMESPACE)
-        .at(NOTIFICATION_OBJECTPATH, server_state)
-        .await?;
-    ensure!(server_available, "server object-path already taken");
-    log::info!("serving interface {:?}", NOTIFICATION_OBJECTPATH);
-
-    connection.request_name(NOTIFICATION_NAMESPACE).await?;
-    log::info!("acquired namespace {:?}", NOTIFICATION_NAMESPACE);
-
-    let mut stream = MessageStream::from(connection);
-    while let Some(msg) = stream.try_next().await? {
-        log::debug!("received message: {}", msg);
-        // log::debug!("count: {}", server_state.count);
+        Ok(())
     }
-    log::info!("shutting down");
 
-    Ok(())
+    /// Starts the server
+    #[allow(dead_code)]
+    pub(super) async fn start_with2<H: NotificationHandler + 'static + Sync + Send>(
+        handler: H,
+    ) -> Result<(), Box<dyn Error>> {
+        let server_state = NotificationServer::with_handler(handler);
+        log::info!("instantiated server");
+
+        let connection = Connection::session().await?;
+        log::info!("opened connection");
+
+        let server_available = connection
+            .object_server()
+            // .name(NOTIFICATION_NAMESPACE)
+            .at(NOTIFICATION_OBJECTPATH, server_state)
+            .await?;
+        ensure!(server_available, "server object-path already taken");
+        log::info!("serving interface {:?}", NOTIFICATION_OBJECTPATH);
+
+        connection.request_name(NOTIFICATION_NAMESPACE).await?;
+        log::info!("acquired namespace {:?}", NOTIFICATION_NAMESPACE);
+
+        let mut stream = MessageStream::from(connection);
+        while let Some(msg) = stream.try_next().await? {
+            log::debug!("received message: {}", msg);
+            // log::debug!("count: {}", server_state.count);
+        }
+        log::info!("shutting down");
+
+        Ok(())
+    }
 }

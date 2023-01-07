@@ -1,3 +1,4 @@
+use notify_rust::server;
 use std::error::Error;
 #[cfg(target_os = "macos")]
 fn main() {
@@ -20,6 +21,8 @@ fn main() {
 fn main() -> Result<(), Box<dyn Error>> {
     std::env::set_var("RUST_LOG", "notify_rust=trace");
     env_logger::init();
-    // notify_rust::server::start().await
-    notify_rust::server::start_with_blocking(|notification| eprintln!("{notification:#?}"))
+    // notify_rust::server::blocking_start_with(|notification| eprintln!("{notification:#?}"))
+    server::blocking_start_with(server::print_notification)?;
+
+    Ok(())
 }
