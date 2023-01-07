@@ -8,11 +8,12 @@
 
 #![allow(unused_imports, unused_variables, dead_code)]
 
-use std::cell::Cell;
-use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::{
+    cell::Cell,
+    collections::{HashMap, HashSet},
+    sync::{Arc, Mutex},
+};
 
-#[cfg(feature = "dbus")]
 use dbus::{
     arg::{self, RefArg},
     ffidisp::{BusType, Connection, NameFlag},
@@ -20,8 +21,10 @@ use dbus::{
     Path,
 };
 
-use super::{Hint, Notification, Timeout};
-use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
+use crate::{
+    xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH},
+    Hint, Notification, Timeout,
+};
 
 static DBUS_ERROR_FAILED: &str = "org.freedesktop.DBus.Error.Failed";
 /// Version of the crate equals the version server.

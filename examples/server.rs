@@ -1,6 +1,5 @@
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-use notify_rust::server::NotificationServer;
-
+use notify_rust::server;
+use std::error::Error;
 #[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
@@ -17,26 +16,42 @@ fn main() {
 }
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-fn main() {
-    use notify_rust::Notification;
-    use std::thread;
-    use std::time::Duration;
+//#[async_std::main]
+// async
+fn main() -> Result<(), Box<dyn Error>> {
+    use futures_util::{select, FutureExt};
+    use notify_rust::{server::ReceivedNotification, CloseReason};
 
-    let server = NotificationServer::create();
-    thread::spawn(move || {
-        NotificationServer::start(&server, |notification| println!("{:#?}", notification))
-    });
+    let timeout = std::env::args()
+        .nth(1)
+        .and_then(|x| x.parse::<u64>().ok())
+        .unwrap_or(1);
 
-    thread::sleep(Duration::from_millis(500));
+    std::env::set_var("RUST_LOG", "zbus=debug,server=trace,notify_rust=trace");
+    color_backtrace::install();
+    env_logger::init();
 
-    Notification::new()
-        .summary("Notification Logger")
-        .body("If you can read this in the console, the server works fine.")
-        .show()
-        .unwrap();
+    // notify_rust::server::blocking_start_with(|notification| eprintln!("{notification:#?}"))
+    server::blocking_start_with(move |received: ReceivedNotification| {
+        log::debug!("enter handler");
+        std::thread::sleep(std::time::Duration::from_secs(dbg!(timeout)));
+        log::debug!("wake up handler");
 
-    println!("Press enter to exit.\n");
-    let mut _devnull = String::new();
-    let _ = std::io::stdin().read_line(&mut _devnull);
-    println!("Thank you for choosing notify-rust.");
+        async_std::task::block_on(async {
+            if let Some((action, closer)) =
+                Option::zip(received.action_tx.upgrade(), received.close_tx.upgrade())
+            {
+                select!(
+                    _ = action.send("action".into()).fuse() => (),
+                    _ = closer.send(CloseReason::Dismissed).fuse() => {},
+                );
+            } else {
+                log::warn!("channel upgrade failed, can no longer send action or close")
+            }
+        });
+
+        log::debug!("handler done");
+    })?;
+
+    Ok(())
 }

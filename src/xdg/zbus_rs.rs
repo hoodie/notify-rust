@@ -1,7 +1,10 @@
 use crate::{error::*, notification::Notification, xdg};
 use zbus::{export::futures_util::TryStreamExt, MatchRule};
 
-use super::{ActionResponse, ActionResponseHandler, CloseReason};
+use super::{
+    ActionResponse, ActionResponseHandler, CloseReason, NOTIFICATION_NAMESPACE,
+    NOTIFICATION_OBJECTPATH,
+};
 
 /// A handle to a shown notification.
 ///
@@ -27,15 +30,18 @@ impl ZbusNotificationHandle {
     }
 
     pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+        log::trace!("wait_for_action...");
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
+        log::trace!("wait_for_action. done");
     }
 
     pub async fn close_fallible(self) -> Result<()> {
+        log::trace!("close id {}", self.id);
         self.connection
             .call_method(
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                crate::xdg::NOTIFICATION_OBJECTPATH,
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                Some(NOTIFICATION_NAMESPACE),
+                NOTIFICATION_OBJECTPATH,
+                Some(NOTIFICATION_NAMESPACE),
                 "CloseNotification",
                 &(self.id),
             )
@@ -77,11 +83,19 @@ pub async fn send_notification_via_connection(
     id: u32,
     connection: &zbus::Connection,
 ) -> Result<u32> {
+    log::trace!("send_notification_via_connection");
+    // if let Some(ref close_handler) = notification.close_handler {
+    //     // close_handler.
+    //     let connection = connection.clone();
+    //     async_std::task::spawn(async move {
+    //         wait_for_action_signal(&connection, id, |response: &ActionResponse<'_>| log::trace!("{:?}", response))
+    //     });
+    // }
     let reply: u32 = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "Notify",
             &(
                 &notification.appname,
@@ -118,9 +132,9 @@ pub async fn get_capabilities() -> Result<Vec<String>> {
     let connection = zbus::Connection::session().await?;
     let info: Vec<String> = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "GetCapabilities",
             &(),
         )
@@ -135,9 +149,9 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
     let connection = zbus::Connection::session().await?;
     let info: xdg::ServerInformation = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(NOTIFICATION_NAMESPACE),
+            NOTIFICATION_OBJECTPATH,
+            Some(NOTIFICATION_NAMESPACE),
             "GetServerInformation",
             &(),
         )
@@ -151,6 +165,7 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
+    log::trace!("handle_action");
     let connection = zbus::Connection::session().await.unwrap();
     wait_for_action_signal(&connection, id, func).await;
 }
@@ -162,7 +177,7 @@ async fn wait_for_action_signal(
 ) {
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
+        .interface(NOTIFICATION_NAMESPACE)
         .unwrap()
         .member("ActionInvoked")
         .unwrap()
@@ -173,7 +188,7 @@ async fn wait_for_action_signal(
 
     let close_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
+        .interface(NOTIFICATION_NAMESPACE)
         .unwrap()
         .member("NotificationClosed")
         .unwrap()
@@ -182,29 +197,60 @@ async fn wait_for_action_signal(
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
         if let Ok(header) = msg.header() {
+            log::trace!("signal received {:?}", header);
+
             if let Ok(zbus::MessageType::Signal) = header.message_type() {
+                log::trace!("it's a signal message");
+
                 match header.member() {
                     Ok(Some(name)) if name == "ActionInvoked" => {
                         match msg.body::<(u32, String)>() {
                             Ok((nid, action)) if nid == id => {
+                                log::trace!("ActionInvoked {}", action);
                                 handler.call(&ActionResponse::Custom(&action));
                                 break;
                             }
-                            _ => {}
+                            other => {
+                                log::warn!("ActionInvoked failed {:?}", other);
+                            }
                         }
                     }
                     Ok(Some(name)) if name == "NotificationClosed" => {
                         match msg.body::<(u32, u32)>() {
                             Ok((nid, reason)) if nid == id => {
-                                handler.call(&ActionResponse::Closed(reason.into()));
+                                let reason: CloseReason = reason.into();
+                                log::trace!("Notification Closed {:?}", reason);
+                                handler.call(&ActionResponse::Closed(reason));
                                 break;
                             }
-                            _ => {}
+                            other => {
+                                log::warn!("NotificationClosed failed {:?}", other);
+                            }
                         }
                     }
-                    Ok(_) | Err(_) => {}
+                    Ok(_) => {
+                        log::trace!("received unhandled signal");
+                    }
+                    Err(error) => {
+                        log::trace!("failed to handle message {}", error);
+                    }
                 }
             }
+        } else {
+            log::warn!("received unexpected message");
         }
     }
+}
+
+pub fn stop_server() -> Result<()> {
+    let connection = zbus::blocking::Connection::session()?;
+    connection.call_method(
+        Some(NOTIFICATION_NAMESPACE),
+        NOTIFICATION_OBJECTPATH,
+        Some(NOTIFICATION_NAMESPACE),
+        "Stop",
+        &(),
+    )?;
+
+    Ok(())
 }

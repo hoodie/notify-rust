@@ -18,7 +18,6 @@ use crate::{error::*, timeout::Timeout};
 #[cfg(all(unix, not(target_os = "macos")))]
 use std::collections::{HashMap, HashSet};
 
-use std::default::Default;
 use std::env;
 
 // Returns the name of the current executable, used as a default for `Notification.appname`.
@@ -46,7 +45,7 @@ fn exe_name() -> String {
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct Notification {
     /// Filled by default with executable name.
@@ -81,12 +80,16 @@ pub struct Notification {
 
     #[cfg(target_os = "macos")]
     pub(crate) sound_name: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) sound_name: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) path_to_image: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
+
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
