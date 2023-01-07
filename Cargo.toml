@@ -46,7 +46,7 @@ debug_namespace = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 color-backtrace = "0.5"
 ctor = "0.1"
 maplit = "1.0"

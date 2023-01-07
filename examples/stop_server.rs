@@ -1,7 +1,9 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     env_logger::init();
-    notify_rust::stop_server().unwrap();
+    if let Err(err) = notify_rust::stop_server() {
+        println!("{err}")
+    }
 }
 
 #[cfg(target_os = "macos")]
