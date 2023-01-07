@@ -1,7 +1,7 @@
-use std::{num::ParseIntError, str::FromStr};
+use std::{convert::TryInto, num::ParseIntError, str::FromStr, time::Duration};
 
 /// Describes the timeout of a notification
-/// 
+///
 /// # `FromStr`
 /// You can also parse a `Timeout` from a `&str`.
 /// ```
@@ -52,6 +52,18 @@ impl From<i32> for Timeout {
             Greater => Timeout::Milliseconds(int as u32),
             Less => Timeout::Default,
             Equal => Timeout::Never,
+        }
+    }
+}
+
+impl From<Duration> for Timeout {
+    fn from(duration: Duration) -> Timeout {
+        if duration.is_zero() {
+            Timeout::Never
+        } else if duration.as_millis() > u32::MAX.into() {
+            Timeout::Default
+        } else {
+            Timeout::Milliseconds(duration.as_millis().try_into().unwrap_or(u32::MAX))
         }
     }
 }
