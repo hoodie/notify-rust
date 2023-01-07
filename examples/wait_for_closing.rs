@@ -2,6 +2,8 @@
 use notify_rust::Notification;
 
 fn main() {
+    std::env::set_var("RUST_LOG", "notify_rust=trace");
+    env_logger::init();
     #[cfg(all(unix, not(target_os = "macos")))]
     {
         let handle: notify_rust::NotificationHandle = Notification::new()

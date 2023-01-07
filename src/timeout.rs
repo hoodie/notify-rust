@@ -1,7 +1,7 @@
 use std::{num::ParseIntError, str::FromStr};
 
 /// Describes the timeout of a notification
-/// 
+///
 /// # `FromStr`
 /// You can also parse a `Timeout` from a `&str`.
 /// ```

@@ -16,14 +16,24 @@ mod dbus_rs;
 #[cfg(feature = "zbus")]
 mod zbus_rs;
 
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+pub mod server_dbus;
+
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+pub mod server_zbus;
+
 #[cfg(not(feature = "debug_namespace"))]
+#[doc(hidden)]
 pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
 #[cfg(not(feature = "debug_namespace"))]
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
 
 #[cfg(feature = "debug_namespace")]
+#[doc(hidden)]
 pub static NOTIFICATION_NAMESPACE: &str = "de.hoodie.Notifications";
 #[cfg(feature = "debug_namespace")]
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
 
 #[derive(Debug)]
@@ -269,7 +279,7 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
     unix,
     not(target_os = "macos")
 ))]
-compile_error!("you have to build with eiter zbus or dbus turned on");
+compile_error!("you have to build with either zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
 #[derive(Copy, Clone, Debug)]
@@ -285,6 +295,7 @@ const DBUS_SWITCH_VAR: &str = "DBUSRS";
 
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
+    log::trace!("show notification");
     zbus_rs::connect_and_send_notification(notification).map(Into::into)
 }
 
@@ -421,11 +432,19 @@ pub struct ServerInformation {
 /// Strictly internal.
 /// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 #[doc(hidden)]
 pub fn stop_server() {
-    #[cfg(feature = "dbus")]
     dbus_rs::stop_server()
+}
+
+/// Strictly internal.
+/// The NotificationServer implemented here exposes a "Stop" function.
+/// stops the notification server
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+#[doc(hidden)]
+pub fn stop_server() -> Result<()> {
+    zbus_rs::stop_server()
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -471,11 +490,11 @@ where
     }
 }
 
-/// Reased passed to `NotificationClosed` Signal
+/// Reason passed to `NotificationClosed` Signal
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum CloseReason {
     /// The notification expired
     Expired,
@@ -487,12 +506,31 @@ pub enum CloseReason {
     Other(u32),
 }
 
+impl zvariant::Type for CloseReason {
+    fn signature() -> zvariant::Signature<'static> {
+        // "uu" -> "uuu" 🤷‍♂️
+        zvariant::Signature::try_from("u").unwrap()
+    }
+}
+
+impl From<CloseReason> for u32 {
+    fn from(val: CloseReason) -> Self {
+        match val {
+            CloseReason::Expired => 1,
+            CloseReason::Dismissed => 2,
+            CloseReason::CloseAction => 3,
+            CloseReason::Other(other) => other,
+        }
+    }
+}
+
 impl From<u32> for CloseReason {
     fn from(raw_reason: u32) -> Self {
         match raw_reason {
             1 => CloseReason::Expired,
             2 => CloseReason::Dismissed,
             3 => CloseReason::CloseAction,
+            // _ => unreachable!()
             other => CloseReason::Other(other),
         }
     }
@@ -514,6 +552,7 @@ where
 }
 
 /// Response to an action
+#[derive(Debug)]
 pub enum ActionResponse<'a> {
     /// Custom Action configured by the Notification.
     Custom(&'a str),
