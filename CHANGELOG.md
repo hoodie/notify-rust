@@ -1,5 +1,19 @@
 # Changelog
 
+## [v4.7.0](https://github.com/hoodie/notify-rust/compare/v4.6.0...v4.7.0) (2023-01-08)
+
+### Features
+
+* Accept durations as timeout arguments
+  ([3ab191a](https://github.com/hoodie/notify-rust/commit/3ab191a9b74ad3120211719050f125de2e6f757d))
+* implement FromStr for Timeout
+  ([b87b859](https://github.com/hoodie/notify-rust/commit/b87b859e6d18481e40d90ae7b4cd1b885589b897))
+
+### Fixes
+
+* **deps:** update rust crate zbus to 3.6
+  ([89779e8](https://github.com/hoodie/notify-rust/commit/89779e8f43978e3d4f72d9a66107a60bc3443d10))
+
 ## [v4.6.0](https://github.com/hoodie/notify-rust/compare/v4.5.10...v4.6.0) (2022-12-04)
 
 ### Features
