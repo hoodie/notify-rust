@@ -27,5 +27,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .icon("timer")
         .timeout(2_000)
         .show()?;
+
+    Notification::new()
+        .summary("Notification string timeout")
+        .body("this one should stay for 2s (\"2000\")")
+        .icon("timer")
+        .timeout("2000".parse::<Timeout>().unwrap())
+        .show()?;
     Ok(())
 }
