@@ -269,9 +269,9 @@ impl Notification {
     /// Set the `timeout`.
     ///
     /// Accepts multiple types that implement `Into<Timeout>`.
-    /// 
+    ///
     /// ## `i31`
-    /// 
+    ///
     /// This sets the time (in milliseconds) from the time the notification is displayed until it is
     /// closed again by the Notification Server.
     /// According to [specification](https://developer.gnome.org/notification-spec/)
@@ -279,17 +279,17 @@ impl Notification {
     /// 0 will cause the notification never to expire.
 
     /// ## [Duration](`std::time::Duration`)
-    /// 
+    ///
     /// When passing a [`Duration`](`std::time::Duration`) we will try convert it into milliseconds.
-    /// 
-    /// 
+    ///
+    ///
     /// ```
     /// # use std::time::Duration;
     /// # use notify_rust::Timeout;
     /// assert_eq!(Timeout::from(Duration::from_millis(2000)), Timeout::Milliseconds(2000));
     /// ```
     /// ### Caveats!
-    /// 
+    ///
     /// 1. If the duration is zero milliseconds then the original behavior will apply and the notification will **Never** timeout.
     /// 2. Should the number of milliseconds not fit within an [`i32`] then we will fall back to the default timeout.
     /// ```
