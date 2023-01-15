@@ -13,6 +13,53 @@ pub struct ZbusNotificationHandle {
     pub(crate) notification: Notification,
 }
 
+/// A handle to a shown notification.
+///
+/// This keeps a connection alive to ensure actions work on certain desktops.
+#[derive(Debug)]
+pub struct ZbusAsyncNotificationHandle {
+    pub(crate) id: u32,
+    pub(crate) connection: zbus::Connection,
+    pub(crate) notification: Notification,
+}
+
+impl ZbusAsyncNotificationHandle {
+    pub(crate) fn new(
+        id: u32,
+        connection: zbus::Connection,
+        notification: Notification,
+    ) -> ZbusAsyncNotificationHandle {
+        ZbusAsyncNotificationHandle {
+            id,
+            connection,
+            notification,
+        }
+    }
+
+    pub async fn close(self) {
+        // TODO: add fallible
+        self.connection
+            .call_method(
+                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                crate::xdg::NOTIFICATION_OBJECTPATH,
+                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                "CloseNotification",
+                &(self.id),
+            )
+            .await
+            .unwrap();
+    }
+
+    pub async fn update_fallible(&mut self) -> Result<()> {
+        self.id = send_notification_via_connection_async(&self.notification, self.id, &self.connection).await?;
+        Ok(())
+    }
+
+    pub async fn update(&mut self) {
+        self.update_fallible().await.unwrap();
+    }
+}
+
 impl ZbusNotificationHandle {
     pub(crate) fn new(
         id: u32,
@@ -53,13 +100,17 @@ impl ZbusNotificationHandle {
         });
     }
 
+    pub fn update_fallible(&mut self) -> Result<()> {
+        self.id = send_notification_via_connection(&self.notification, self.id, &self.connection)?;
+        Ok(())
+    }
+
     pub fn update(&mut self) {
-        self.id =
-            send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+        self.update_fallible().unwrap();
     }
 }
 
-pub fn send_notificaion_via_connection(
+pub fn send_notification_via_connection(
     notification: &Notification,
     id: u32,
     connection: &Connection,
@@ -86,13 +137,54 @@ pub fn send_notificaion_via_connection(
     Ok(reply)
 }
 
+pub async fn send_notification_via_connection_async(
+    notification: &Notification,
+    id: u32,
+    connection: &zbus::Connection,
+) -> Result<u32> {
+    let reply: u32 = connection
+        .call_method(
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            crate::xdg::NOTIFICATION_OBJECTPATH,
+            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            "Notify",
+            &(
+                &notification.appname,
+                id,
+                &notification.icon,
+                &notification.summary,
+                &notification.body,
+                &notification.actions,
+                crate::hints::hints_to_map(notification),
+                notification.timeout.into_i32(),
+            ),
+        )
+        .await?
+        .body()
+        .unwrap();
+    Ok(reply)
+}
+
 pub fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<ZbusNotificationHandle> {
     let connection = zbus::blocking::Connection::session()?;
     let inner_id = notification.id.unwrap_or(0);
-    let id = send_notificaion_via_connection(notification, inner_id, &connection)?;
+    let id = send_notification_via_connection(notification, inner_id, &connection)?;
     Ok(ZbusNotificationHandle::new(
+        id,
+        connection,
+        notification.clone(),
+    ))
+}
+
+pub async fn connect_and_send_notification_async(
+    notification: &Notification,
+) -> Result<ZbusAsyncNotificationHandle> {
+    let connection = zbus::Connection::session().await?;
+    let inner_id = notification.id.unwrap_or(0);
+    let id = send_notification_via_connection_async(notification, inner_id, &connection).await?;
+    Ok(ZbusAsyncNotificationHandle::new(
         id,
         connection,
         notification.clone(),

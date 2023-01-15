@@ -396,6 +396,15 @@ impl Notification {
         xdg::show_notification(self)
     }
 
+    /// Sends Notification to D-Bus.
+    ///
+    /// Returns a handle to a notification
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(feature = "async")]
+    pub async fn show_async(&self) -> Result<xdg::NotificationHandle> {
+        xdg::show_notification_async(self).await
+    }
+
     /// Sends Notification to `NSUserNotificationCenter`.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
