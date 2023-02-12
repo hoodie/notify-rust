@@ -78,7 +78,7 @@ pub fn send_notificaion_via_connection(
                 &notification.body,
                 &notification.actions,
                 crate::hints::hints_to_map(notification),
-                notification.timeout.into_i32(),
+                i32::from(notification.timeout),
             ),
         )?
         .body()

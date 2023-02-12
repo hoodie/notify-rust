@@ -24,14 +24,6 @@ pub enum Timeout {
     Milliseconds(u32),
 }
 
-impl Timeout {
-    #[cfg(all(feature = "zbus", not(feature = "dbus")))]
-    #[cfg(all(unix, not(target_os = "macos")))]
-    pub(crate) fn into_i32(self) -> i32 {
-        self.into()
-    }
-}
-
 impl Default for Timeout {
     fn default() -> Self {
         Timeout::Default
