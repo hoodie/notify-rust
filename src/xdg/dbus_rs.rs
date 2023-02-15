@@ -84,7 +84,7 @@ pub fn send_notificaion_via_connection(
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
     match reply.get_items().get(0) {
-        Some(&MessageItem::UInt32(ref id)) => Ok(*id),
+        Some(MessageItem::UInt32(ref id)) => Ok(*id),
         _ => Ok(0),
     }
 }
@@ -151,7 +151,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     let connection = Connection::get_private(BusType::Session)?;
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
-    if let Some(&MessageItem::Array(ref items)) = reply.get_items().get(0) {
+    if let Some(MessageItem::Array(items)) = reply.get_items().get(0) {
         for item in items.iter() {
             if let MessageItem::Str(ref cap) = *item {
                 capabilities.push(cap.clone());
@@ -164,7 +164,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 
 fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     match item {
-        Some(&MessageItem::Str(ref value)) => value.to_owned(),
+        Some(MessageItem::Str(value)) => value.to_owned(),
         _ => "".to_owned(),
     }
 }
@@ -224,7 +224,7 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                     "org.freedesktop.Notifications",
                     "ActionInvoked",
                 ) => {
-                    if let (&MessageItem::UInt32(nid), &MessageItem::Str(ref action)) =
+                    if let (&MessageItem::UInt32(nid), MessageItem::Str(action)) =
                         (&items[0], &items[1])
                     {
                         if nid == id {
