@@ -1,5 +1,7 @@
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
+    #[cfg(feature = "env_logger")]
+    env_logger::init();
     match notify_rust::get_server_information() {
         Ok(info) => {
             println!("{}:", info.name);

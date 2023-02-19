@@ -5,7 +5,7 @@
 #[cfg(feature = "dbus")]
 use dbus::ffidisp::Connection as DbusConnection;
 #[cfg(feature = "zbus")]
-use zbus::zvariant;
+use zbus::{block_on, zvariant};
 
 use crate::{error::*, notification::Notification};
 
@@ -59,7 +59,7 @@ impl NotificationHandle {
     #[cfg(feature = "zbus")]
     pub(crate) fn for_zbus(
         id: u32,
-        connection: zbus::blocking::Connection,
+        connection: zbus::Connection,
         notification: Notification,
     ) -> NotificationHandle {
         NotificationHandle {
@@ -84,10 +84,12 @@ impl NotificationHandle {
 
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
-                inner.wait_for_action(|action: &ActionResponse| match action {
-                    ActionResponse::Custom(action) => invocation_closure(action),
-                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                });
+                block_on(
+                    inner.wait_for_action(|action: &ActionResponse| match action {
+                        ActionResponse::Custom(action) => invocation_closure(action),
+                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                    }),
+                );
             }
         };
     }
@@ -114,7 +116,7 @@ impl NotificationHandle {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => inner.close(),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.close(),
+            NotificationHandleInner::Zbus(inner) => block_on(inner.close()),
         }
     }
 
@@ -155,11 +157,11 @@ impl NotificationHandle {
             }
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
-                inner.wait_for_action(|action: &ActionResponse| {
+                block_on(inner.wait_for_action(|action: &ActionResponse| {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                });
+                }));
             }
         };
     }
@@ -285,7 +287,16 @@ const DBUS_SWITCH_VAR: &str = "DBUSRS";
 
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    zbus_rs::connect_and_send_notification(notification).map(Into::into)
+    block_on(zbus_rs::connect_and_send_notification(notification)).map(Into::into)
+}
+
+#[cfg(all(feature = "zbus", not(feature = "dbus")))]
+pub(crate) async fn show_notification_async(
+    notification: &Notification,
+) -> Result<NotificationHandle> {
+    zbus_rs::connect_and_send_notification(notification)
+        .await
+        .map(Into::into)
 }
 
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
@@ -343,7 +354,7 @@ pub fn dbus_stack() -> Option<DbusStack> {
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub fn get_capabilities() -> Result<Vec<String>> {
-    zbus_rs::get_capabilities()
+    block_on(zbus_rs::get_capabilities())
 }
 
 /// Get list of all capabilities of the running notification server.
@@ -374,7 +385,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
 /// (zbus only)
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub fn get_server_information() -> Result<ServerInformation> {
-    zbus_rs::get_server_information()
+    block_on(zbus_rs::get_server_information())
 }
 
 /// Returns a struct containing `ServerInformation`.
@@ -438,7 +449,7 @@ pub fn handle_action<F>(id: u32, func: F)
 where
     F: FnOnce(&ActionResponse),
 {
-    zbus_rs::handle_action(id, func);
+    block_on(zbus_rs::handle_action(id, func));
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -471,7 +482,7 @@ where
     }
 }
 
-/// Reased passed to `NotificationClosed` Signal
+/// Reason passed to `NotificationClosed` Signal
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)

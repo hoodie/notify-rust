@@ -382,7 +382,7 @@ impl Notification {
     ///
     /// Sends a Notification at the specified timestamp.
     /// This is a raw `f64`, if that is a bit too raw for you please activate the feature `"chrono"`,
-    /// then you can use `Notification::schedule()` instead, which accepts a `chrno::DateTime<T>`.
+    /// then you can use `Notification::schedule()` instead, which accepts a `chrono::DateTime<T>`.
     #[cfg(target_os = "macos")]
     pub fn schedule_raw(&self, timestamp: f64) -> Result<macos::NotificationHandle> {
         macos::schedule_notification(self, timestamp)
@@ -394,6 +394,15 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<xdg::NotificationHandle> {
         xdg::show_notification(self)
+    }
+
+    /// Sends Notification to D-Bus.
+    ///
+    /// Returns a handle to a notification
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(feature = "async")]
+    pub async fn show_async(&self) -> Result<xdg::NotificationHandle> {
+        xdg::show_notification_async(self).await
     }
 
     /// Sends Notification to `NSUserNotificationCenter`.

@@ -24,8 +24,10 @@ include = [
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
-zbus = { version = "3.6", optional = true }
+zbus = { version = "3.10", optional = true }
 serde = { version = "1", optional = true }
+log = "0.4"
+env_logger ={ version ="0.10", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.5"
@@ -38,7 +40,8 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 default = ["z"]
 server = []
 d = ["dbus"]
-z = ["zbus", "serde"]
+z = ["zbus", "serde", "async"]
+async = []
 debug_namespace = []
 images = ["image", "lazy_static"]
 
@@ -61,3 +64,13 @@ required-features = ["server"]
 name = "schedule"
 path = "examples/schedule.rs"
 required-features = ["chrono"]
+
+[[example]]
+name = "wait_for_closing_async"
+path = "examples/wait_for_closing_async.rs"
+required-features = ["async"]
+
+[[example]]
+name = "simple_async"
+path = "examples/simple_async.rs"
+required-features = ["async"]
