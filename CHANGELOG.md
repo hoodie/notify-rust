@@ -1,5 +1,12 @@
 # Changelog
 
+## [v4.8.0](https://github.com/hoodie/notify-rust/compare/v4.7.1...v4.8.0) (2023-02-19)
+
+### Features
+
+* add .show_async()
+([ae3db62](https://github.com/hoodie/notify-rust/commit/ae3db621665ce4e2c741e2507f57d805d88c25ba))
+
 ### [v4.7.1](https://github.com/hoodie/notify-rust/compare/v4.7.0...v4.7.1) (2023-02-15)
 
 #### Fixes
