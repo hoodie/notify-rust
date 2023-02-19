@@ -64,3 +64,13 @@ required-features = ["server"]
 name = "schedule"
 path = "examples/schedule.rs"
 required-features = ["chrono"]
+
+[[example]]
+name = "wait_for_closing_async"
+path = "examples/wait_for_closing_async.rs"
+required-features = ["async"]
+
+[[example]]
+name = "simple_async"
+path = "examples/simple_async.rs"
+required-features = ["async"]
