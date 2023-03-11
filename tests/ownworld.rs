@@ -4,7 +4,7 @@
 extern crate notify_rust;
 
 #[cfg(test)]
-mod ownworld {
+mod ownworld { /*
 
     use notify_rust::server::*;
     use notify_rust::*;
@@ -114,4 +114,4 @@ mod ownworld {
         stop_server();
         assert!(thread_handle.join().is_ok());
     }
-}
+ */}

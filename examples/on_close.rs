@@ -26,7 +26,7 @@ fn main() {
         .summary("Time is running out")
         .body("This will go away.")
         .icon("clock")
-        .action("action", "action")
+        // .action("action", "action")
         .timeout(Duration::from_secs(dbg!(timeout)))
         .show()
         .map(|handler| handler.on_close(print))

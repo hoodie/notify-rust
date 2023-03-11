@@ -1,4 +1,5 @@
 use crate::{error::*, notification::Notification, xdg};
+use std::path::PathBuf;
 use zbus::{export::futures_util::TryStreamExt, MatchRule};
 
 use super::{
@@ -78,12 +79,67 @@ impl ZbusNotificationHandle {
     }
 }
 
-pub async fn send_notification_via_connection(
+#[derive(Debug)]
+pub(crate) struct NotificationObjectPath(String);
+
+impl<I> From<I> for NotificationObjectPath
+where
+    // I: std::fmt::Display,
+    I: ToString,
+{
+    fn from(value: I) -> Self {
+        NotificationObjectPath(value.to_string())
+    }
+}
+
+impl NotificationObjectPath {
+    // #[cfg(test)]
+    // pub(crate) fn new(custom_path: impl ToString) -> Self {
+    //     Self::from(custom_path)
+    // }
+
+    pub(crate) fn custom(custom_path: &str) -> Option<Self> {
+        let namespaced_custom = PathBuf::from("/de/hoodie/Notification")
+            .join(custom_path)
+            .to_str()?
+            .to_owned();
+
+        Some(Self::from(namespaced_custom))
+    }
+}
+
+impl Default for NotificationObjectPath {
+    fn default() -> Self {
+        Self(String::from(NOTIFICATION_OBJECTPATH))
+    }
+}
+
+impl TryFrom<&NotificationObjectPath> for zbus::zvariant::ObjectPath<'static> {
+    type Error = zbus::zvariant::Error;
+
+    fn try_from(value: &NotificationObjectPath) -> std::result::Result<Self, Self::Error> {
+        zbus::zvariant::ObjectPath::try_from(value.0.to_owned())
+    }
+}
+
+async fn send_notification_via_connection(
     notification: &Notification,
     id: u32,
     connection: &zbus::Connection,
 ) -> Result<u32> {
-    log::trace!("send_notification_via_connection");
+    send_notification_via_connection_at_path(notification, id, connection, Default::default()).await
+}
+
+async fn send_notification_via_connection_at_path(
+    notification: &Notification,
+    id: u32,
+    connection: &zbus::Connection,
+    path: NotificationObjectPath,
+) -> Result<u32> {
+    log::trace!(
+        "send_notification_via_connection ({NOTIFICATION_NAMESPACE}) at {:?}",
+        path
+    );
     // if let Some(ref close_handler) = notification.close_handler {
     //     // close_handler.
     //     let connection = connection.clone();
@@ -94,7 +150,7 @@ pub async fn send_notification_via_connection(
     let reply: u32 = connection
         .call_method(
             Some(NOTIFICATION_NAMESPACE),
-            NOTIFICATION_OBJECTPATH,
+            &path,
             Some(NOTIFICATION_NAMESPACE),
             "Notify",
             &(
@@ -117,9 +173,17 @@ pub async fn send_notification_via_connection(
 pub async fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<ZbusNotificationHandle> {
+    connect_and_send_notification_at_path(notification, Default::default()).await
+}
+
+pub(crate) async fn connect_and_send_notification_at_path(
+    notification: &Notification,
+    path: NotificationObjectPath,
+) -> Result<ZbusNotificationHandle> {
     let connection = zbus::Connection::session().await?;
     let inner_id = notification.id.unwrap_or(0);
-    let id = send_notification_via_connection(notification, inner_id, &connection).await?;
+    let id =
+        send_notification_via_connection_at_path(notification, inner_id, &connection, path).await?;
     Ok(ZbusNotificationHandle::new(
         id,
         connection,

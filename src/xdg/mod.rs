@@ -15,6 +15,8 @@ use std::ops::{Deref, DerefMut};
 mod dbus_rs;
 #[cfg(feature = "zbus")]
 mod zbus_rs;
+#[cfg(feature = "zbus")]
+pub(crate) use zbus_rs::NotificationObjectPath;
 
 #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 pub mod server_dbus;
@@ -312,6 +314,17 @@ pub(crate) async fn show_notification_async(
         .map(Into::into)
 }
 
+#[cfg(all(feature = "zbus", not(feature = "dbus")))]
+// #[cfg(test)]
+pub(crate) async fn show_notification_async_at_path(
+    notification: &Notification,
+    path: NotificationObjectPath,
+) -> Result<NotificationHandle> {
+    zbus_rs::connect_and_send_notification_at_path(notification, path)
+        .await
+        .map(Into::into)
+}
+
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     dbus_rs::connect_and_send_notification(notification).map(Into::into)
@@ -507,7 +520,7 @@ where
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
-#[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CloseReason {
     /// Undefined/Reserved reason
     Other(u32),
@@ -539,7 +552,7 @@ impl From<CloseReason> for u32 {
 
 impl From<u32> for CloseReason {
     fn from(raw_reason: u32) -> Self {
-        match dbg!(raw_reason) {
+        match raw_reason {
             1 => CloseReason::Expired,
             2 => CloseReason::Dismissed,
             3 => CloseReason::CloseAction,

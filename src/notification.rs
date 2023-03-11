@@ -408,6 +408,17 @@ impl Notification {
         xdg::show_notification_async(self).await
     }
 
+    /// Sends Notification to D-Bus.
+    ///
+    /// Returns a handle to a notification
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(feature = "async")]
+    // #[cfg(test)]
+    pub async fn show_async_at_path(&self, sub_path: &str) -> Result<xdg::NotificationHandle> {
+        let path = crate::xdg::NotificationObjectPath::custom(sub_path).ok_or("invalid subpath")?;
+        xdg::show_notification_async_at_path(self, path).await
+    }
+
     /// Sends Notification to `NSUserNotificationCenter`.
     ///
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
