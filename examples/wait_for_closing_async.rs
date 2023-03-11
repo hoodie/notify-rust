@@ -1,7 +1,4 @@
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is an xdg only feature")
-}
+use notify_rust::CloseReason;
 
 #[cfg(target_os = "windows")]
 fn main() {
@@ -21,10 +18,8 @@ fn main() {
             .show_async()
             .then(|handle| async move {
                 match handle {
-                    Ok(handle) => handle.wait_for_action(|action| {
-                        if "__closed" == action {
-                            println!("the notification was closed")
-                        }
+                    Ok(handle) => handle.on_close(|reason: CloseReason| {
+                        println!("the notification was closed reason: {reason:?}")
                     }),
                     Err(error) => println!("failed to send notification {error}"),
                 }
