@@ -130,7 +130,6 @@
 //!
 
 #![deny(
-    missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code,
@@ -165,6 +164,21 @@ mod hints;
 mod miniver;
 mod notification;
 mod timeout;
+
+#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+mod image;
+/// server allows you to listen for notifications yourself
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+pub mod server {
+    // TODO: reexports go here
+    pub use crate::xdg::server::*;
+    pub use crate::xdg::server_zbus::*;
+}
+
+// FIXME: remove this reexport, its only for dev-time
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+pub use crate::xdg::{NOTIFICATION_DEFAULT_BUS, NOTIFICATION_OBJECTPATH};
+
 pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")]
@@ -220,7 +234,7 @@ lazy_static! {
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
 /// Return value of `get_server_information()`.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, zbus::zvariant::Type)]
 pub struct ServerInformation {
     /// The product name of the server.
     pub name: String,

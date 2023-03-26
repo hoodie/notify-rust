@@ -29,6 +29,12 @@ serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.11", optional = true }
 
+# server dependencies
+futures-util = { version = "0.3", optional = true }
+async-std = { version = "1", optional = true, features = ["attributes"] }
+event-listener= { version = "2", optional = true }
+async-trait = "0.1"
+
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
 chrono = { version = "0.4", optional = true}
@@ -37,8 +43,10 @@ chrono = { version = "0.4", optional = true}
 winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 
 [features]
-default = ["z"]
-# server = []
+default = ["z", "server", "server_zbus", "debug_namespace"
+]
+server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
+server = []
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
 z = ["zbus", "serde", "async"]
@@ -48,12 +56,18 @@ images = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.6" # wait for MSVR 1.70 to update
+env_logger = "0.10"
 ctor = "0.2"
 maplit = "1.0"
 
 [dev-dependencies.async-std]
 version = "1.12.0"
 features = ["attributes"]
+
+[[example]]
+name = "hints_server"
+path = "examples/hints_server.rs"
+required-features = ["async","server"]
 
 [[example]]
 name = "images"

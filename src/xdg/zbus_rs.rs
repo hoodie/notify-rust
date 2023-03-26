@@ -77,10 +77,13 @@ impl ZbusNotificationHandle {
     }
 
     pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+        log::trace!("wait_for_action...");
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
+        log::trace!("wait_for_action. done");
     }
 
     pub async fn close_fallible(self) -> Result<()> {
+        log::trace!("close id {}", self.id);
         self.connection
             .call_method(
                 Some(self.notification.bus.clone().into_name()),
@@ -136,6 +139,13 @@ async fn send_notification_via_connection_at_bus(
     connection: &zbus::Connection,
     bus: NotificationBus,
 ) -> Result<u32> {
+    // if let Some(ref close_handler) = notification.close_handler {
+    //     // close_handler.
+    //     let connection = connection.clone();
+    //     async_std::task::spawn(async move {
+    //         wait_for_action_signal(&connection, id, |response: &ActionResponse<'_>| log::trace!("{:?}", response))
+    //     });
+    // }
     let reply: u32 = connection
         .call_method(
             Some(bus.into_name()),
@@ -156,6 +166,7 @@ async fn send_notification_via_connection_at_bus(
         .await?
         .body()
         .deserialize()?;
+    log::trace!("reply received");
     Ok(reply)
 }
 
@@ -163,6 +174,7 @@ pub async fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<ZbusNotificationHandle> {
     let bus = notification.bus.clone();
+    log::trace!("connecting at {bus:?}");
     connect_and_send_notification_at_bus(notification, bus).await
 }
 
@@ -227,6 +239,7 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
 pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
+    log::trace!("handle_action");
     let connection = zbus::Connection::session().await.unwrap();
     wait_for_action_signal(&connection, id, func).await;
 }
@@ -258,7 +271,11 @@ async fn wait_for_action_signal(
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
         let header = msg.header();
-        if let zbus::MessageType::Signal = header.message_type() {
+        log::trace!("signal received {:?}", header);
+
+        if zbus::MessageType::Signal == header.message_type() {
+            log::trace!("it's a signal message");
+
             match header.member() {
                 Some(name) if name == "ActionInvoked" => {
                     match msg.body().deserialize::<(u32, String)>() {

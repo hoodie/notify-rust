@@ -8,8 +8,9 @@ mod conversion {
         assert_eq!(Urgency::from(0), Urgency::Low);
         assert_eq!(Urgency::from(1), Urgency::Normal);
         assert_eq!(Urgency::from(2), Urgency::Critical);
-        assert_eq!(Urgency::from(900), Urgency::Critical);
-        assert_eq!(Urgency::from(u64::MAX), Urgency::Critical);
+        assert_eq!(Urgency::from(255), Urgency::Critical);
+        // TODO: removing this a breaking change?
+        assert_eq!(Urgency::from(u8::MAX), Urgency::Critical);
     }
 
     #[test]
