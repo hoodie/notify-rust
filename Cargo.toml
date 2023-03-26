@@ -24,10 +24,16 @@ include = [
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
-zbus = { version = "3.10", optional = true }
+zbus = { version = "3.11", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.10", optional = true }
+
+# server dependencies
+futures-util = { version = "0.3", optional = true }
+async-std = { version = "1", optional = true, features = ["attributes"] }
+event-listener= { version = "2", optional = true }
+async-trait = "0.1"
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.5"
@@ -37,8 +43,10 @@ chrono = { version = "0.4", optional = true}
 winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 
 [features]
-default = ["z"]
-#`server = []
+default = ["z", "server", "server_zbus", "debug_namespace"
+]
+server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
+server = []
 d = ["dbus"]
 z = ["zbus", "serde", "async"]
 async = []
@@ -46,8 +54,9 @@ debug_namespace = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]
+env_logger = "0.10"
 color-backtrace = "0.5"
-ctor = "0.1"
+ctor = "0.2"
 maplit = "1.0"
 
 [dev-dependencies.async-std]

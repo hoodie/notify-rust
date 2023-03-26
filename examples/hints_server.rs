@@ -27,36 +27,48 @@ mod hint_server {
         std::thread::sleep(Duration::from_millis(500));
 
         freeze("actionicons");
-        Notification::new().hint(Hint::ActionIcons(true)).show()?;
-        Notification::new().hint(Hint::ActionIcons(false)).show()?;
+        Notification::at_bus("example")
+            .hint(Hint::ActionIcons(true))
+            .show()?;
+        Notification::at_bus("example")
+            .hint(Hint::ActionIcons(false))
+            .show()?;
 
         freeze("urgency: low, medium, high");
-        Notification::new().hint(Hint::Urgency(Low)).show()?;
-        Notification::new().hint(Hint::Urgency(Normal)).show()?;
-        Notification::new().hint(Hint::Urgency(Critical)).show()?;
+        Notification::at_bus("example")
+            .hint(Hint::Urgency(Low))
+            .show()?;
+        Notification::at_bus("example")
+            .hint(Hint::Urgency(Normal))
+            .show()?;
+        Notification::at_bus("example")
+            .hint(Hint::Urgency(Critical))
+            .show()?;
 
         freeze("category");
-        Notification::new()
+        Notification::at_bus("example")
             .hint(Hint::Category("device.removed".into()))
             .show()?;
 
         freeze("DesktopEntry");
-        Notification::new()
+        Notification::at_bus("example")
             .hint(Hint::DesktopEntry("firefox".into()))
             .show()?;
 
         freeze("ImagePath");
-        Notification::new()
+        Notification::at_bus("example")
             .hint(Hint::ImagePath(
                 "/usr/share/icons/hicolor/128x128/apps/firefox.png".into(),
             ))
             .show()?;
 
         freeze("Resident");
-        Notification::new().hint(Hint::Resident(true)).show()?;
+        Notification::at_bus("example")
+            .hint(Hint::Resident(true))
+            .show()?;
 
         freeze("SoundFile");
-        Notification::new()
+        Notification::at_bus("example")
             .hint(Hint::SoundFile(
                 "/usr/share/sounds/alsa/Front_Left.wav".to_owned(),
             ))
@@ -65,10 +77,12 @@ mod hint_server {
             .show()?;
 
         freeze("Transient");
-        Notification::new().hint(Hint::Transient(false)).show()?;
+        Notification::at_bus("example")
+            .hint(Hint::Transient(false))
+            .show()?;
 
         freeze("X and Y");
-        Notification::new()
+        Notification::at_bus("example")
             .hint(Hint::X(200))
             .hint(Hint::Y(200))
             .show()?;

@@ -1,6 +1,3 @@
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-use notify_rust::server::NotificationServer;
-
 #[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
@@ -13,30 +10,58 @@ fn main() {
 
 #[cfg(all(unix, not(feature = "server"), not(target_os = "macos")))]
 fn main() {
-    println!("this is a xdg only feature")
+    println!("server feature required")
 }
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-fn main() {
-    use notify_rust::Notification;
-    use std::thread;
-    use std::time::Duration;
+//#[async_std::main]
+// async
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use notify_rust::server;
+    use futures_util::{select, FutureExt};
+    use notify_rust::{
+        server::{print_notification, ReceivedNotification},
+        CloseReason,
+    };
 
-    let server = NotificationServer::create();
-    thread::spawn(move || {
-        NotificationServer::start(&server, |notification| println!("{:#?}", notification))
+    let timeout = std::env::args()
+        .nth(1)
+        .and_then(|x| x.parse::<u64>().ok())
+        .unwrap_or(1);
+
+    std::env::set_var("RUST_LOG", "zbus=trace,server=trace,notify_rust=trace");
+    color_backtrace::install();
+    env_logger::init();
+
+    // server::start_blocking(move |received: ReceivedNotification| async move {
+    async_std::task::block_on(async move {
+        if let Err(error) = server::start_at(
+            "example",
+            move |received: ReceivedNotification| async move {
+                // sleep some time, if the timeout is longer than the timeout of the notification
+                // then .channels() will return undefined
+                print_notification(&received);
+                async_std::task::sleep(std::time::Duration::from_secs(timeout)).await;
+                if let Some((action, closer)) = received.channels() {
+                    // if received.actions.contains(Action"action") {
+                    select!(
+                        _ = action.send("action".into()).fuse() => (),
+                        _ = closer.send(CloseReason::Dismissed).fuse() => {},
+                    );
+                    // }
+                } else {
+                    log::warn!("channel upgrade failed, can no longer send action or close")
+                }
+                //   });
+
+                log::debug!("handler done");
+            },
+        )
+        .await
+        {
+            log::warn!("failed to start notification server {error}")
+        }
     });
 
-    thread::sleep(Duration::from_millis(500));
-
-    Notification::new()
-        .summary("Notification Logger")
-        .body("If you can read this in the console, the server works fine.")
-        .show()
-        .unwrap();
-
-    println!("Press enter to exit.\n");
-    let mut _devnull = String::new();
-    let _ = std::io::stdin().read_line(&mut _devnull);
-    println!("Thank you for choosing notify-rust.");
+    Ok(())
 }

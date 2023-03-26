@@ -4,6 +4,7 @@
 
 #[cfg(feature = "dbus")]
 use dbus::ffidisp::Connection as DbusConnection;
+
 #[cfg(feature = "zbus")]
 use zbus::{block_on, zvariant};
 
@@ -27,11 +28,15 @@ mod bus;
 #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 pub mod server_dbus;
 
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+pub mod server;
+
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+pub mod server_dbus;
+
 #[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
 pub mod server_zbus;
 
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-pub mod server;
 
 #[cfg(not(feature = "debug_namespace"))]
 #[doc(hidden)]
@@ -315,7 +320,10 @@ const DBUS_SWITCH_VAR: &str = "DBUSRS";
 
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    block_on(zbus_rs::connect_and_send_notification(notification)).map(Into::into)
+    log::trace!("showing notification...");
+    let handle = block_on(zbus_rs::connect_and_send_notification(notification)).map(Into::into);
+    log::trace!("showing notification done");
+    handle
 }
 
 #[cfg(all(feature = "async", feature = "zbus"))]
@@ -470,11 +478,19 @@ pub struct ServerInformation {
 /// Strictly internal.
 /// The NotificationServer implemented here exposes a "Stop" function.
 /// stops the notification server
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 #[doc(hidden)]
 pub fn stop_server() {
-    #[cfg(feature = "dbus")]
     dbus_rs::stop_server()
+}
+
+/// Strictly internal.
+/// The NotificationServer implemented here exposes a "Stop" function.
+/// stops the notification server
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+#[doc(hidden)]
+pub fn stop_server() -> Result<()> {
+    server_zbus::stop(Default::default())
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -524,16 +540,36 @@ where
 ///
 /// ## Specification
 /// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "zbus", derive(serde::Serialize, serde::Deserialize))]
 pub enum CloseReason {
+    /// Undefined/Reserved reason
+    Other(u32),
     /// The notification expired
     Expired,
     /// The notification was dismissed by the user
     Dismissed,
     /// The notification was closed by a call to `CloseNotification`
     CloseAction,
-    /// Undefined/Reserved reason
-    Other(u32),
+}
+
+#[cfg(feature = "zbus")]
+impl zvariant::Type for CloseReason {
+    fn signature() -> zvariant::Signature<'static> {
+        // "uu" -> "uuu" 🤷‍♂️
+        zvariant::Signature::try_from("u").unwrap()
+    }
+}
+
+impl From<CloseReason> for u32 {
+    fn from(val: CloseReason) -> Self {
+        match dbg!(val) {
+            CloseReason::Expired => 1,
+            CloseReason::Dismissed => 2,
+            CloseReason::CloseAction => 3,
+            CloseReason::Other(other) => other,
+        }
+    }
 }
 
 impl From<u32> for CloseReason {
@@ -542,6 +578,7 @@ impl From<u32> for CloseReason {
             1 => CloseReason::Expired,
             2 => CloseReason::Dismissed,
             3 => CloseReason::CloseAction,
+            // _ => unreachable!()
             other => CloseReason::Other(other),
         }
     }
@@ -563,6 +600,7 @@ where
 }
 
 /// Response to an action
+#[derive(Debug)]
 pub enum ActionResponse<'a> {
     /// Custom Action configured by the Notification.
     Custom(&'a str),

@@ -1,0 +1,7 @@
+# planned breaking changes
+
+* [ ] remove dbus or at least make zbus/dbus mutually exclusive
+* [ ] remove __closed
+* [ ] urgency u8 vs u64 stuff
+* [ ] accept `Into<Action>` in `Notification::action()` (move `Action` from server up)
+* [ ] rename `Notification::show()` and `Notification::show_async()` (maybe show() and show_blocking)

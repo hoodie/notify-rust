@@ -63,6 +63,17 @@ impl From<Option<u64>> for Urgency {
     }
 }
 
+impl From<u8> for Urgency {
+    fn from(int: u8) -> Urgency {
+        match int {
+            0 => Urgency::Low,
+            1 => Urgency::Normal,
+            2..=std::u8::MAX => Urgency::Critical,
+        }
+    }
+}
+
+// TODO: is removing this a breaking change?
 impl From<u64> for Urgency {
     fn from(int: u64) -> Urgency {
         match int {
