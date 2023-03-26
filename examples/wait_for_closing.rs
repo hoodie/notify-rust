@@ -8,11 +8,18 @@ fn main() {
 fn main() {
     use notify_rust::CloseReason;
 
-    notify_rust::Notification::new()
-        .summary("Don't Mind me")
-        .hint(notify_rust::Hint::Transient(true))
-        .body("I'll be gone soon enough.\nSorry for the inconvenience.")
-        .show()
-        .unwrap()
-        .on_close(|reason: CloseReason| println!("the notification was closed reason: {reason:?}"));
+    std::env::set_var("RUST_LOG", "notify_rust=trace");
+    env_logger::init();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        notify_rust::Notification::new()
+            .summary("Don't Mind me")
+            .hint(notify_rust::Hint::Transient(true))
+            .body("I'll be gone soon enough.\nSorry for the inconvenience.")
+            .show()
+            .unwrap()
+            .on_close(|reason: CloseReason| {
+                println!("the notification was closed reason: {reason:?}")
+            });
+    }
 }

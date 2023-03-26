@@ -43,7 +43,7 @@ fn exe_name() -> String {
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct Notification {
     /// Filled by default with executable name.
