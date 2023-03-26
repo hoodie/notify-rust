@@ -18,12 +18,9 @@ use crate::{error::*, timeout::Timeout};
 #[cfg(all(unix, not(target_os = "macos")))]
 use std::collections::{HashMap, HashSet};
 
-use std::default::Default;
-use std::env;
-
 // Returns the name of the current executable, used as a default for `Notification.appname`.
 fn exe_name() -> String {
-    env::current_exe()
+    std::env::current_exe()
         .unwrap()
         .file_name()
         .unwrap()
@@ -81,12 +78,19 @@ pub struct Notification {
 
     #[cfg(target_os = "macos")]
     pub(crate) sound_name: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) sound_name: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) path_to_image: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub(crate) bus: xdg::NotificationBus,
+
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
@@ -102,6 +106,20 @@ impl Notification {
     /// The appname is used by some desktop environments to group notifications.
     pub fn new() -> Notification {
         Notification::default()
+    }
+
+    /// This is for testing purposes only and will not work with actual implementations.
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[doc(hidden)]
+    #[deprecated(note = "this is a test only feature")]
+    pub fn at_bus(sub_bus: &str) -> Notification {
+        let bus = xdg::NotificationBus::custom(sub_bus)
+            .ok_or("invalid subpath")
+            .unwrap();
+        Notification {
+            bus,
+            ..Notification::default()
+        }
     }
 
     /// Overwrite the appname field used for Notification.
@@ -400,9 +418,20 @@ impl Notification {
     ///
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", feature = "zbus"))]
     pub async fn show_async(&self) -> Result<xdg::NotificationHandle> {
         xdg::show_notification_async(self).await
+    }
+
+    /// Sends Notification to D-Bus.
+    ///
+    /// Returns a handle to a notification
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(feature = "async")]
+    // #[cfg(test)]
+    pub async fn show_async_at_bus(&self, sub_bus: &str) -> Result<xdg::NotificationHandle> {
+        let bus = crate::xdg::NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        xdg::show_notification_async_at_bus(self, bus).await
     }
 
     /// Sends Notification to `NSUserNotificationCenter`.
@@ -452,6 +481,7 @@ impl Default for Notification {
             hints_unique: HashMap::new(),
             actions: Vec::new(),
             timeout: Timeout::Default,
+            bus: Default::default(),
             id: None,
         }
     }

@@ -13,18 +13,42 @@ use std::ops::{Deref, DerefMut};
 
 #[cfg(feature = "dbus")]
 mod dbus_rs;
+#[cfg(all(feature = "dbus", not(feature = "zbus")))]
+use dbus_rs::bus;
+
 #[cfg(feature = "zbus")]
 mod zbus_rs;
+#[cfg(all(feature = "zbus", not(feature = "dbus")))]
+use zbus_rs::bus;
+
+#[cfg(all(feature = "dbus", feature = "zbus"))]
+mod bus;
+
+#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+pub mod server_dbus;
+
+#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+pub mod server_zbus;
+
+#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+pub mod server;
 
 #[cfg(not(feature = "debug_namespace"))]
-pub static NOTIFICATION_NAMESPACE: &str = "org.freedesktop.Notifications";
-#[cfg(not(feature = "debug_namespace"))]
+#[doc(hidden)]
+pub static NOTIFICATION_DEFAULT_BUS: &str = "org.freedesktop.Notifications";
+
+#[cfg(feature = "debug_namespace")]
+#[doc(hidden)]
+// #[deprecated]
+pub static NOTIFICATION_DEFAULT_BUS: &str = "de.hoodie.Notifications";
+
+#[doc(hidden)]
+pub static NOTIFICATION_INTERFACE: &str = "org.freedesktop.Notifications";
+
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
 
-#[cfg(feature = "debug_namespace")]
-pub static NOTIFICATION_NAMESPACE: &str = "de.hoodie.Notifications";
-#[cfg(feature = "debug_namespace")]
-pub static NOTIFICATION_OBJECTPATH: &str = "/de/hoodie/Notifications";
+pub(crate) use bus::NotificationBus;
 
 #[derive(Debug)]
 enum NotificationHandleInner {
@@ -266,12 +290,16 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
 
 // here be public functions
 
+// TODO: breaking change, wait for 5.0
+// #[cfg(all(feature = "dbus", feature = "zbus"))]
+//compile_error!("the z and d features are mutually exclusive");
+
 #[cfg(all(
     not(any(feature = "dbus", feature = "zbus")),
     unix,
     not(target_os = "macos")
 ))]
-compile_error!("you have to build with eiter zbus or dbus turned on");
+compile_error!("you have to build with either zbus or dbus turned on");
 
 /// Which Dbus implementation are we using?
 #[derive(Copy, Clone, Debug)]
@@ -295,6 +323,16 @@ pub(crate) async fn show_notification_async(
     notification: &Notification,
 ) -> Result<NotificationHandle> {
     zbus_rs::connect_and_send_notification(notification)
+        .await
+        .map(Into::into)
+}
+
+#[cfg(all(feature = "async", feature = "zbus"))]
+pub(crate) async fn show_notification_async_at_bus(
+    notification: &Notification,
+    bus: NotificationBus,
+) -> Result<NotificationHandle> {
+    zbus_rs::connect_and_send_notification_at_bus(notification, bus)
         .await
         .map(Into::into)
 }
