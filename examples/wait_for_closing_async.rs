@@ -1,4 +1,7 @@
-use notify_rust::CloseReason;
+#[cfg(target_os = "macos")]
+fn main() {
+    println!("this is an xdg only feature")
+}
 
 #[cfg(target_os = "windows")]
 fn main() {
@@ -8,6 +11,7 @@ fn main() {
 #[cfg(all(unix, not(target_os = "macos")))]
 
 fn main() {
+    use notify_rust::CloseReason;
     use zbus::export::futures_util::FutureExt;
 
     zbus::block_on(async {
