@@ -290,7 +290,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     block_on(zbus_rs::connect_and_send_notification(notification)).map(Into::into)
 }
 
-#[cfg(all(feature = "zbus", not(feature = "dbus")))]
+#[cfg(all(feature = "async", feature = "zbus"))]
 pub(crate) async fn show_notification_async(
     notification: &Notification,
 ) -> Result<NotificationHandle> {
@@ -309,7 +309,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::connect_and_send_notification(notification).map(Into::into)
     } else {
-        zbus_rs::connect_and_send_notification(notification).map(Into::into)
+        block_on(zbus_rs::connect_and_send_notification(notification)).map(Into::into)
     }
 }
 
@@ -373,7 +373,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::get_capabilities()
     } else {
-        zbus_rs::get_capabilities()
+        block_on(zbus_rs::get_capabilities())
     }
 }
 
@@ -410,7 +410,7 @@ pub fn get_server_information() -> Result<ServerInformation> {
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
         dbus_rs::get_server_information()
     } else {
-        zbus_rs::get_server_information()
+        block_on(zbus_rs::get_server_information())
     }
 }
 
@@ -476,9 +476,9 @@ where
     F: FnOnce(&ActionResponse),
 {
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
-        dbus_rs::handle_action(id, func)
+        dbus_rs::handle_action(id, func);
     } else {
-        zbus_rs::handle_action(id, func)
+        block_on(zbus_rs::handle_action(id, func));
     }
 }
 
