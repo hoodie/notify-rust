@@ -38,7 +38,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 
 [features]
 default = ["z"]
-server = []
+#`server = []
 d = ["dbus"]
 z = ["zbus", "serde", "async"]
 async = []
