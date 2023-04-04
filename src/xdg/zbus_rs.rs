@@ -1,7 +1,57 @@
 use crate::{error::*, notification::Notification, xdg};
 use zbus::{export::futures_util::TryStreamExt, MatchRule};
 
-use super::{ActionResponse, ActionResponseHandler, CloseReason};
+use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
+
+pub mod bus {
+
+    use crate::xdg::NOTIFICATION_DEFAULT_BUS;
+
+    fn skip_first_slash(s: &str) -> &str {
+        if let Some('/') = s.chars().next() {
+            &s[1..]
+        } else {
+            s
+        }
+    }
+
+    use std::path::PathBuf;
+
+    type BusNameType = zbus::names::WellKnownName<'static>;
+
+    #[derive(Clone, Debug)]
+    pub struct NotificationBus(BusNameType);
+
+    impl Default for NotificationBus {
+        #[cfg(feature = "zbus")]
+        fn default() -> Self {
+            Self(zbus::names::WellKnownName::from_static_str(NOTIFICATION_DEFAULT_BUS).unwrap())
+        }
+    }
+
+    impl NotificationBus {
+        fn namespaced_custom(custom_path: &str) -> Option<String> {
+            // abusing path for semantic join
+            skip_first_slash(
+                PathBuf::from("/de/hoodie/Notification")
+                    .join(custom_path)
+                    .to_str()?,
+            )
+            .replace('/', ".")
+            .into()
+        }
+
+        pub fn custom(custom_path: &str) -> Option<Self> {
+            let name =
+                zbus::names::WellKnownName::try_from(Self::namespaced_custom(custom_path)?).ok()?;
+            Some(Self(name))
+        }
+
+        pub fn into_name(self) -> BusNameType {
+            self.0
+        }
+    }
+}
 
 /// A handle to a shown notification.
 ///
@@ -33,9 +83,9 @@ impl ZbusNotificationHandle {
     pub async fn close_fallible(self) -> Result<()> {
         self.connection
             .call_method(
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
-                crate::xdg::NOTIFICATION_OBJECTPATH,
-                Some(crate::xdg::NOTIFICATION_NAMESPACE),
+                Some(self.notification.bus.clone().into_name()),
+                xdg::NOTIFICATION_OBJECTPATH,
+                Some(xdg::NOTIFICATION_INTERFACE),
                 "CloseNotification",
                 &(self.id),
             )
@@ -72,16 +122,25 @@ impl ZbusNotificationHandle {
     }
 }
 
-pub async fn send_notification_via_connection(
+async fn send_notification_via_connection(
     notification: &Notification,
     id: u32,
     connection: &zbus::Connection,
 ) -> Result<u32> {
+    send_notification_via_connection_at_bus(notification, id, connection, Default::default()).await
+}
+
+async fn send_notification_via_connection_at_bus(
+    notification: &Notification,
+    id: u32,
+    connection: &zbus::Connection,
+    bus: NotificationBus,
+) -> Result<u32> {
     let reply: u32 = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(bus.into_name()),
+            xdg::NOTIFICATION_OBJECTPATH,
+            Some(xdg::NOTIFICATION_INTERFACE),
             "Notify",
             &(
                 &notification.appname,
@@ -103,9 +162,19 @@ pub async fn send_notification_via_connection(
 pub async fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<ZbusNotificationHandle> {
+    let bus = notification.bus.clone();
+    connect_and_send_notification_at_bus(notification, bus).await
+}
+
+pub(crate) async fn connect_and_send_notification_at_bus(
+    notification: &Notification,
+    bus: NotificationBus,
+) -> Result<ZbusNotificationHandle> {
     let connection = zbus::Connection::session().await?;
     let inner_id = notification.id.unwrap_or(0);
-    let id = send_notification_via_connection(notification, inner_id, &connection).await?;
+    let id =
+        send_notification_via_connection_at_bus(notification, inner_id, &connection, bus).await?;
+
     Ok(ZbusNotificationHandle::new(
         id,
         connection,
@@ -113,15 +182,33 @@ pub async fn connect_and_send_notification(
     ))
 }
 
-pub async fn get_capabilities() -> Result<Vec<String>> {
-    log::trace!("get_capabilities()");
+pub async fn get_capabilities_at_bus(bus: NotificationBus) -> Result<Vec<String>> {
     let connection = zbus::Connection::session().await?;
     let info: Vec<String> = connection
         .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
+            Some(bus.into_name()),
+            xdg::NOTIFICATION_OBJECTPATH,
+            Some(xdg::NOTIFICATION_INTERFACE),
             "GetCapabilities",
+            &(),
+        )
+        .await?
+        .body()?;
+    Ok(info)
+}
+
+pub async fn get_capabilities() -> Result<Vec<String>> {
+    get_capabilities_at_bus(Default::default()).await
+}
+
+pub async fn get_server_information_at_bus(bus: NotificationBus) -> Result<xdg::ServerInformation> {
+    let connection = zbus::Connection::session().await?;
+    let info: xdg::ServerInformation = connection
+        .call_method(
+            Some(bus.into_name()),
+            xdg::NOTIFICATION_OBJECTPATH,
+            Some(xdg::NOTIFICATION_INTERFACE),
+            "GetServerInformation",
             &(),
         )
         .await?
@@ -131,20 +218,7 @@ pub async fn get_capabilities() -> Result<Vec<String>> {
 }
 
 pub async fn get_server_information() -> Result<xdg::ServerInformation> {
-    log::trace!("get_server_information()");
-    let connection = zbus::Connection::session().await?;
-    let info: xdg::ServerInformation = connection
-        .call_method(
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            crate::xdg::NOTIFICATION_OBJECTPATH,
-            Some(crate::xdg::NOTIFICATION_NAMESPACE),
-            "GetServerInformation",
-            &(),
-        )
-        .await?
-        .body()?;
-
-    Ok(info)
+    get_server_information_at_bus(Default::default()).await
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -162,7 +236,7 @@ async fn wait_for_action_signal(
 ) {
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
+        .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("ActionInvoked")
         .unwrap()
@@ -173,7 +247,7 @@ async fn wait_for_action_signal(
 
     let close_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
-        .interface("org.freedesktop.Notifications")
+        .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("NotificationClosed")
         .unwrap()

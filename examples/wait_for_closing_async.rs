@@ -11,6 +11,7 @@ fn main() {
 #[cfg(all(unix, not(target_os = "macos")))]
 
 fn main() {
+    use notify_rust::CloseReason;
     use zbus::export::futures_util::FutureExt;
 
     zbus::block_on(async {
@@ -21,10 +22,8 @@ fn main() {
             .show_async()
             .then(|handle| async move {
                 match handle {
-                    Ok(handle) => handle.wait_for_action(|action| {
-                        if "__closed" == action {
-                            println!("the notification was closed")
-                        }
+                    Ok(handle) => handle.on_close(|reason: CloseReason| {
+                        println!("the notification was closed reason: {reason:?}")
                     }),
                     Err(error) => println!("failed to send notification {error}"),
                 }

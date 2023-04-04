@@ -5,7 +5,7 @@ authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
 description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
-edition = "2018"
+edition = "2021"
 rust-version = "1.59.0"
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
@@ -38,7 +38,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 
 [features]
 default = ["z"]
-server = []
+#`server = []
 d = ["dbus"]
 z = ["zbus", "serde", "async"]
 async = []
@@ -49,6 +49,10 @@ images = ["image", "lazy_static"]
 color-backtrace = "0.5"
 ctor = "0.1"
 maplit = "1.0"
+
+[dev-dependencies.async-std]
+version = "1.12.0"
+features = ["attributes"]
 
 [[example]]
 name = "images"

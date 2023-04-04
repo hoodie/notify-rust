@@ -4,14 +4,65 @@ use dbus::{
     Message,
 };
 
-use super::{ActionResponse, ActionResponseHandler, CloseReason};
+use super::{
+    bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason,
+    NOTIFICATION_INTERFACE,
+};
 
 use crate::{
     error::*,
     hints::message::HintMessage,
     notification::Notification,
-    xdg::{ServerInformation, NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH},
+    xdg::{ServerInformation, NOTIFICATION_OBJECTPATH},
 };
+
+pub mod bus {
+
+    use crate::xdg::NOTIFICATION_DEFAULT_BUS;
+
+    fn skip_first_slash(s: &str) -> &str {
+        if let Some('/') = s.chars().next() {
+            &s[1..]
+        } else {
+            s
+        }
+    }
+
+    use std::path::PathBuf;
+
+    type BusNameType = dbus::strings::BusName<'static>;
+
+    #[derive(Clone, Debug)]
+    pub struct NotificationBus(BusNameType);
+
+    impl Default for NotificationBus {
+        fn default() -> Self {
+            Self(dbus::strings::BusName::from_slice(NOTIFICATION_DEFAULT_BUS).unwrap())
+        }
+    }
+
+    impl NotificationBus {
+        fn namespaced_custom(custom_path: &str) -> Option<String> {
+            // abusing path for semantic join
+            skip_first_slash(
+                PathBuf::from("/de/hoodie/Notification")
+                    .join(custom_path)
+                    .to_str()?,
+            )
+            .replace('/', ".")
+            .into()
+        }
+
+        pub fn custom(custom_path: &str) -> Option<Self> {
+            let name = dbus::strings::BusName::new(Self::namespaced_custom(custom_path)?).ok()?;
+            Some(Self(name))
+        }
+
+        pub fn into_name(self) -> BusNameType {
+            self.0
+        }
+    }
+}
 
 /// A handle to a shown notification.
 ///
@@ -41,7 +92,7 @@ impl DbusNotificationHandle {
     }
 
     pub fn close(self) {
-        let mut message = build_message("CloseNotification");
+        let mut message = build_message("CloseNotification", Default::default());
         message.append_items(&[self.id.into()]);
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
@@ -58,17 +109,26 @@ impl DbusNotificationHandle {
     }
 
     pub fn update(&mut self) {
-        self.id =
-            send_notificaion_via_connection(&self.notification, self.id, &self.connection).unwrap();
+        self.id = send_notification_via_connection(&self.notification, self.id, &self.connection)
+            .unwrap();
     }
 }
 
-pub fn send_notificaion_via_connection(
+pub fn send_notification_via_connection(
     notification: &Notification,
     id: u32,
     connection: &Connection,
 ) -> Result<u32> {
-    let mut message = build_message("Notify");
+    send_notification_via_connection_at_bus(notification, id, connection, Default::default())
+}
+
+pub fn send_notification_via_connection_at_bus(
+    notification: &Notification,
+    id: u32,
+    connection: &Connection,
+    bus: NotificationBus,
+) -> Result<u32> {
+    let mut message = build_message("Notify", bus);
     let timeout: i32 = notification.timeout.into();
     message.append_items(&[
         notification.appname.to_owned().into(), // appname
@@ -92,9 +152,18 @@ pub fn send_notificaion_via_connection(
 pub fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<DbusNotificationHandle> {
+    let bus = notification.bus.clone();
+    connect_and_send_notification_at_bus(notification, bus)
+}
+
+pub fn connect_and_send_notification_at_bus(
+    notification: &Notification,
+    bus: NotificationBus,
+) -> Result<DbusNotificationHandle> {
     let connection = Connection::get_private(BusType::Session)?;
     let inner_id = notification.id.unwrap_or(0);
-    let id = send_notificaion_via_connection(notification, inner_id, &connection)?;
+    let id = send_notification_via_connection_at_bus(notification, inner_id, &connection, bus)?;
+
     Ok(DbusNotificationHandle::new(
         id,
         connection,
@@ -102,11 +171,11 @@ pub fn connect_and_send_notification(
     ))
 }
 
-pub fn build_message(method_name: &str) -> Message {
+fn build_message(method_name: &str, bus: NotificationBus) -> Message {
     Message::new_method_call(
-        NOTIFICATION_NAMESPACE,
+        bus.into_name(),
         NOTIFICATION_OBJECTPATH,
-        NOTIFICATION_NAMESPACE,
+        NOTIFICATION_INTERFACE,
         method_name,
     )
     .unwrap_or_else(|_| panic!("Error building message call {:?}.", method_name))
@@ -147,7 +216,7 @@ pub fn pack_actions(notification: &Notification) -> MessageItem {
 pub fn get_capabilities() -> Result<Vec<String>> {
     let mut capabilities = vec![];
 
-    let message = build_message("GetCapabilities");
+    let message = build_message("GetCapabilities", Default::default());
     let connection = Connection::get_private(BusType::Session)?;
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
@@ -170,7 +239,7 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String {
 }
 
 pub fn get_server_information() -> Result<ServerInformation> {
-    let message = build_message("GetServerInformation");
+    let message = build_message("GetServerInformation", Default::default());
     let connection = Connection::get_private(BusType::Session)?;
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
@@ -195,10 +264,16 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 // Listens for the `ActionInvoked(UInt32, String)` signal.
 fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
     connection
-        .add_match("interface='org.freedesktop.Notifications',member='ActionInvoked'")
+        .add_match(&format!(
+            "interface='{}',member='ActionInvoked'",
+            NOTIFICATION_INTERFACE
+        ))
         .unwrap();
     connection
-        .add_match("interface='org.freedesktop.Notifications',member='NotificationClosed'")
+        .add_match(&format!(
+            "interface='{}',member='NotificationClosed'",
+            NOTIFICATION_INTERFACE
+        ))
         .unwrap();
 
     for item in connection.iter(1000) {
@@ -216,15 +291,13 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                     p.into_cstring().to_string_lossy().into_owned()
                 }),
             );
-            match (path.as_ref(), interface.as_ref(), member.as_ref()) {
+            match (path.as_str(), interface.as_str(), member.as_str()) {
                 // match (protocol.unwrap(), iface.unwrap(), member.unwrap()) {
                 // Action Invoked
-                (
-                    "/org/freedesktop/Notifications",
-                    "org.freedesktop.Notifications",
-                    "ActionInvoked",
-                ) => {
-                    if let (&MessageItem::UInt32(nid), MessageItem::Str(action)) =
+                (path, interface, "ActionInvoked")
+                    if path == NOTIFICATION_OBJECTPATH && interface == NOTIFICATION_INTERFACE =>
+                {
+                    if let (&MessageItem::UInt32(nid), MessageItem::Str(ref action)) =
                         (&items[0], &items[1])
                     {
                         if nid == id {
@@ -235,11 +308,9 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
                 }
 
                 // Notification Closed
-                (
-                    "/org/freedesktop/Notifications",
-                    "org.freedesktop.Notifications",
-                    "NotificationClosed",
-                ) => {
+                (path, interface, "NotificationClosed")
+                    if path == NOTIFICATION_OBJECTPATH && interface == NOTIFICATION_INTERFACE =>
+                {
                     if let (&MessageItem::UInt32(nid), &MessageItem::UInt32(reason)) =
                         (&items[0], &items[1])
                     {
@@ -253,16 +324,4 @@ fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl Action
             }
         }
     }
-}
-
-/// Strictly internal.
-/// The NotificationServer implemented here exposes a "Stop" function.
-/// stops the notification server
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-#[doc(hidden)]
-pub fn stop_server() {
-    let message = build_message("Stop");
-    let connection = Connection::get_private(BusType::Session).unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(200));
-    connection.send(message).unwrap();
 }

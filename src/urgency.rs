@@ -27,9 +27,9 @@ use std::convert::TryFrom;
 ///
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub enum Urgency {
-    /// The behaviour for `Low` urgency depends on the notification server.
+    /// The behavior for `Low` urgency depends on the notification server.
     Low = 0,
-    /// The behaviour for `Normal` urgency depends on the notification server.
+    /// The behavior for `Normal` urgency depends on the notification server.
     Normal = 1,
     /// A critical notification will not time out.
     Critical = 2,
