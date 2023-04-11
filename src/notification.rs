@@ -109,9 +109,7 @@ impl Notification {
     }
 
     /// This is for testing purposes only and will not work with actual implementations.
-    #[cfg(all(unix, not(target_os = "macos"), feature = "config_bus"))]
-    #[doc(hidden)]
-    #[deprecated(note = "this is a test only feature")]
+    #[cfg(all(unix, not(target_os = "macos"), any(test, feature = "config_bus")))]
     pub fn at_bus(sub_bus: &str) -> Notification {
         let bus = xdg::NotificationBus::custom(sub_bus)
             .ok_or("invalid subpath")

@@ -28,7 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(1);
 
     std::env::set_var("RUST_LOG", "zbus=trace,server=trace,notify_rust=trace");
-    color_backtrace::install();
     env_logger::init();
 
     if let Err(error) = server::start_at(
@@ -37,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // sleep some time, if the timeout is longer than the timeout of the notification
             // then .channels() will return undefined
             print_notification(&received);
-            async_std::task::sleep(std::time::Duration::from_secs(timeout)).await;
+            // async_std::task::sleep(std::time::Duration::from_secs(timeout)).await;
             if let Some((action, closer)) = received.channels() {
                 // if received.actions.contains(Action"action") {
                 select!(

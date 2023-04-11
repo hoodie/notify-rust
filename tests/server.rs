@@ -6,14 +6,22 @@ use notify_rust::{
 };
 use std::time::Duration;
 
+#[ctor::ctor]
+fn init_color_backtrace() {
+    color_backtrace::install();
+}
+
+
 fn never_handle() -> impl NotificationHandler + Clone {
-    move |_received: ReceivedNotification| async move {
+    move |received: ReceivedNotification| async move {
+        eprintln!("received notification (timeout: {}) I will never handle", received.timeout);
         pending::<()>().await;
     }
 }
 
 fn close_after(close_reason: CloseReason, sleep_ms: u64) -> impl NotificationHandler + Clone {
     move |received: ReceivedNotification| async move {
+        eprintln!("received notification I will close with {close_reason:?}");
         async_std::task::sleep(Duration::from_millis(sleep_ms)).await;
 
         let (_action, closer) = received.channels().unwrap();
@@ -24,9 +32,10 @@ fn close_after(close_reason: CloseReason, sleep_ms: u64) -> impl NotificationHan
 
 #[async_std::test]
 async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
+    let bus = "expire_notification_after_default_timeout";
     env_logger::init();
     let running_server = async_std::task::spawn(async {
-        server::start_at("expire_notification_after_default_timeout", never_handle())
+        server::start_at(bus, never_handle())
             .await
             .unwrap();
     });
@@ -35,7 +44,7 @@ async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::new()
+        Notification::at_bus(bus)
             .timeout(Timeout::Default)
             .show_async()
             .await
@@ -57,6 +66,7 @@ async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
 
 #[async_std::test]
 async fn close_notification_with_reason() -> std::io::Result<()> {
+    let bus = "close_notification_with_reason";
     env_logger::init();
     let original_close_reason = CloseReason::from(3);
 
@@ -64,20 +74,20 @@ async fn close_notification_with_reason() -> std::io::Result<()> {
 
     let running_server = async_std::task::spawn(async move {
         let close_reason = original_close_reason;
-        server::start(close_after(close_reason, 10)).await.unwrap();
+        server::start_at(bus, close_after(close_reason, 10)).await.unwrap();
     });
 
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::new()
+        Notification::at_bus(bus)
             .timeout(Timeout::Never)
             .show_async()
             .await
             .map(|handler| {
                 handler.on_close(|received_reason: CloseReason| {
                     eprintln!("received close reason {received_reason:?}");
-                    assert_eq!(received_reason, original_close_reason)
+                    assert_eq!(dbg!(received_reason), original_close_reason)
                 })
             })
             .unwrap();
