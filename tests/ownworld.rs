@@ -4,9 +4,8 @@
 extern crate notify_rust;
 
 #[cfg(test)]
-mod ownworld { /*
 
-                  use notify_rust::server::*;
+                  use notify_rust::server;
                   use notify_rust::*;
                   use std::thread;
 
@@ -18,10 +17,11 @@ mod ownworld { /*
                           NotificationServer::start(&server, |_| {})
                       });
 
-                      stop_server();
+                      server::stop();
                       assert!(thread_handle.join().is_ok());
                   }
 
+mod ownworld { /*
                   #[test]
                   #[ignore]
                   fn actions_vec() {
