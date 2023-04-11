@@ -37,15 +37,8 @@ pub mod server_dbus;
 #[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
 pub mod server_zbus;
 
-
-#[cfg(not(feature = "debug_namespace"))]
 #[doc(hidden)]
 pub static NOTIFICATION_DEFAULT_BUS: &str = "org.freedesktop.Notifications";
-
-#[cfg(feature = "debug_namespace")]
-#[doc(hidden)]
-// #[deprecated]
-pub static NOTIFICATION_DEFAULT_BUS: &str = "de.hoodie.Notifications";
 
 #[doc(hidden)]
 pub static NOTIFICATION_INTERFACE: &str = "org.freedesktop.Notifications";
@@ -335,16 +328,6 @@ pub(crate) async fn show_notification_async(
         .map(Into::into)
 }
 
-#[cfg(all(feature = "async", feature = "zbus"))]
-pub(crate) async fn show_notification_async_at_bus(
-    notification: &Notification,
-    bus: NotificationBus,
-) -> Result<NotificationHandle> {
-    zbus_rs::connect_and_send_notification_at_bus(notification, bus)
-        .await
-        .map(Into::into)
-}
-
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     dbus_rs::connect_and_send_notification(notification).map(Into::into)
@@ -401,6 +384,42 @@ pub fn dbus_stack() -> Option<DbusStack> {
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 pub fn get_capabilities() -> Result<Vec<String>> {
     block_on(zbus_rs::get_capabilities())
+}
+
+/// versions of functions that target a specific bus;
+#[cfg(all(feature = "zbus", feature = "config_bus", not(feature = "dbus")))]
+pub mod at_bus {
+    use super::*;
+    /// Returns a struct containing `ServerInformation`.
+    ///
+    /// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
+    /// running.
+    ///
+    /// (zbus only)
+    #[cfg(all(feature = "zbus", not(feature = "dbus")))]
+    pub fn get_server_information(sub_bus: &str) -> Result<ServerInformation> {
+        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        block_on(zbus_rs::get_server_information_at_bus(bus))
+    }
+
+    /// Get list of all capabilities of the running notification server.
+    ///
+    /// (zbus only)
+    #[cfg(all(feature = "zbus", not(feature = "dbus")))]
+    pub fn get_capabilities(sub_bus: &str) -> Result<Vec<String>> {
+        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        block_on(zbus_rs::get_capabilities_at_bus(bus))
+    }
+
+    #[cfg(all(feature = "async", feature = "zbus"))]
+    pub(crate) async fn show_notification_async(
+        notification: &Notification,
+        bus: NotificationBus,
+    ) -> Result<NotificationHandle> {
+        zbus_rs::connect_and_send_notification_at_bus(notification, bus)
+            .await
+            .map(Into::into)
+    }
 }
 
 /// Get list of all capabilities of the running notification server.

@@ -43,15 +43,14 @@ chrono = { version = "0.4", optional = true}
 winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 
 [features]
-default = ["z", "server", "server_zbus", "debug_namespace"
-]
-server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
-server = []
+default = ["z", "server", "config_bus"]
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
 z = ["zbus", "serde", "async"]
+server = ["server_zbus"]
+server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
 async = []
-debug_namespace = []
+config_bus = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]

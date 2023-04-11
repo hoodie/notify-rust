@@ -214,6 +214,12 @@ pub async fn get_capabilities() -> Result<Vec<String>> {
     get_capabilities_at_bus(Default::default()).await
 }
 
+/// Returns a struct containing `ServerInformation`.
+///
+/// This struct contains `name`, `vendor`, `version` and `spec_version` of the notification server
+/// running.
+///
+/// (zbus only)
 pub async fn get_server_information_at_bus(bus: NotificationBus) -> Result<xdg::ServerInformation> {
     let connection = zbus::Connection::session().await?;
     let info: xdg::ServerInformation = connection

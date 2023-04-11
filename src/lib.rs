@@ -199,6 +199,9 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 #[cfg(target_os = "macos")]
 pub use macos::NotificationHandle;
 
+#[cfg(feature = "config_bus")]
+pub use crate::xdg::at_bus;
+
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),
     unix,
