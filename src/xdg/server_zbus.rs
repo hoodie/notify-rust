@@ -198,14 +198,15 @@ where
 /// Starts the server
 pub async fn start<H: NotificationHandler + 'static + Sync + Send + Clone>(
     handler: H,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send>> {
     start_at(NOTIFICATION_OBJECTPATH, handler).await
 }
 
 pub async fn start_at<H: NotificationHandler + 'static + Sync + Send + Clone>(
     sub_bus: &str,
     handler: H,
-) -> Result<(), Box<dyn Error>> {
+// FIXME: add proper server error type
+) -> Result<(), Box<dyn Error + Send>> {
     let server_state = NotificationServer::with_handler(handler);
     let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
 
@@ -234,7 +235,7 @@ pub async fn start_at<H: NotificationHandler + 'static + Sync + Send + Clone>(
 /// Starts the server
 pub fn start_blocking<H: NotificationHandler + 'static + Sync + Send + Clone>(
     handler: H,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send>> {
     log::info!("start blocking");
     zbus::block_on(start(handler))
 }
