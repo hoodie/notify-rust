@@ -8,7 +8,7 @@ fn main() {
     println!("this is an xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(unix, not(target_os = "macos"), feature = "config_bus"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::Notification;
     std::env::set_var(

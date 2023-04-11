@@ -109,7 +109,7 @@ impl Notification {
     }
 
     /// This is for testing purposes only and will not work with actual implementations.
-    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(all(unix, not(target_os = "macos"), feature = "config_bus"))]
     #[doc(hidden)]
     #[deprecated(note = "this is a test only feature")]
     pub fn at_bus(sub_bus: &str) -> Notification {
@@ -427,11 +427,11 @@ impl Notification {
     ///
     /// Returns a handle to a notification
     #[cfg(all(unix, not(target_os = "macos")))]
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", feature = "config_bus"))]
     // #[cfg(test)]
     pub async fn show_async_at_bus(&self, sub_bus: &str) -> Result<xdg::NotificationHandle> {
         let bus = crate::xdg::NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
-        xdg::show_notification_async_at_bus(self, bus).await
+        xdg::at_bus::show_notification_async(self, bus).await
     }
 
     /// Sends Notification to `NSUserNotificationCenter`.
