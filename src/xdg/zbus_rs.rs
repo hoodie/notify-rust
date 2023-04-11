@@ -5,7 +5,10 @@ use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseRe
 
 pub mod bus {
 
-    use crate::xdg::NOTIFICATION_DEFAULT_BUS;
+    use crate::{
+        error::{ErrorKind, Result},
+        xdg::NOTIFICATION_DEFAULT_BUS,
+    };
 
     fn skip_first_slash(s: &str) -> &str {
         if let Some('/') = s.chars().next() {
@@ -30,21 +33,20 @@ pub mod bus {
     }
 
     impl NotificationBus {
-        fn namespaced_custom(custom_path: &str) -> Option<String> {
+        fn namespaced_custom(custom_path: &str) -> Result<String> {
             // abusing path for semantic join
-            skip_first_slash(
-                PathBuf::from("/de/hoodie/Notification")
-                    .join(custom_path)
-                    .to_str()?,
-            )
-            .replace('/', ".")
-            .into()
+            PathBuf::from("/de/hoodie/Notification")
+                .join(custom_path)
+                .to_str()
+                .map(skip_first_slash)
+                .map(|path| path.replace('/', "."))
+                .ok_or_else(|| ErrorKind::InvalidBusName(custom_path.into()).into())
         }
 
-        pub fn custom(custom_path: &str) -> Option<Self> {
-            let name =
-                zbus::names::WellKnownName::try_from(Self::namespaced_custom(custom_path)?).ok()?;
-            Some(Self(name))
+        pub fn custom(custom_path: &str) -> Result<Self> {
+            let inner = Self::namespaced_custom(custom_path)?;
+            let name = zbus::names::WellKnownName::try_from(inner)?;
+            Ok(Self(name))
         }
 
         pub fn into_name(self) -> BusNameType {

@@ -198,7 +198,7 @@ where
 /// Starts the server
 pub async fn start<H: NotificationHandler + 'static + Sync + Send + Clone>(
     handler: H,
-) -> Result<(), Box<dyn Error + Send>> {
+) -> crate::error::Result<()> {
     start_at(NOTIFICATION_OBJECTPATH, handler).await
 }
 
@@ -206,9 +206,9 @@ pub async fn start_at<H: NotificationHandler + 'static + Sync + Send + Clone>(
     sub_bus: &str,
     handler: H,
 // FIXME: add proper server error type
-) -> Result<(), Box<dyn Error + Send>> {
+) -> crate::error::Result<()> {
     let server_state = NotificationServer::with_handler(handler);
-    let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+    let bus = NotificationBus::custom(sub_bus)?;
 
     log::info!(
         "instantiated server ({NOTIFICATION_DEFAULT_BUS}) at {:?}",
@@ -233,15 +233,16 @@ pub async fn start_at<H: NotificationHandler + 'static + Sync + Send + Clone>(
 }
 
 /// Starts the server
+// FIXME: add proper server error type
 pub fn start_blocking<H: NotificationHandler + 'static + Sync + Send + Clone>(
     handler: H,
-) -> Result<(), Box<dyn Error + Send>> {
+) -> crate::error::Result<()> {
     log::info!("start blocking");
     zbus::block_on(start(handler))
 }
 
 pub fn stop(sub_bus: &str) -> crate::error::Result<()> {
-    let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+    let bus = NotificationBus::custom(sub_bus)?;
     let connection = zbus::blocking::Connection::session()?;
     connection.call_method(
         Some(bus.into_name()),
