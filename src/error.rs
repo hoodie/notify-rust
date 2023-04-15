@@ -66,6 +66,7 @@ impl fmt::Display for Error {
                 f,
                 r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#
             ),
+            ErrorKind::InvalidBusName(ref e) => write!(f, "the bus name {e} is not valid"),
         }
     }
 }

@@ -44,7 +44,7 @@ async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::at_bus(bus)
+        Notification::at_bus(bus).unwrap()
             .timeout(Timeout::Default)
             .show_async()
             .await
@@ -80,7 +80,7 @@ async fn close_notification_with_reason() -> std::io::Result<()> {
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::at_bus(bus)
+        Notification::at_bus(bus).unwrap()
             .timeout(Timeout::Never)
             .show_async()
             .await

@@ -398,7 +398,7 @@ pub mod at_bus {
     /// (zbus only)
     #[cfg(all(feature = "zbus", not(feature = "dbus")))]
     pub fn get_server_information(sub_bus: &str) -> Result<ServerInformation> {
-        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        let bus = NotificationBus::custom(sub_bus)?;
         block_on(zbus_rs::get_server_information_at_bus(bus))
     }
 
@@ -407,7 +407,7 @@ pub mod at_bus {
     /// (zbus only)
     #[cfg(all(feature = "zbus", not(feature = "dbus")))]
     pub fn get_capabilities(sub_bus: &str) -> Result<Vec<String>> {
-        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        let bus = NotificationBus::custom(sub_bus)?;
         block_on(zbus_rs::get_capabilities_at_bus(bus))
     }
 

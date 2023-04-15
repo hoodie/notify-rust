@@ -8,7 +8,7 @@ use super::server::*;
 /// * [ ] handle update from "UI"
 ///
 use futures_util::{future::pending, select, try_join, FutureExt};
-use std::{collections::HashMap, error::Error, time::Duration};
+use std::{collections::HashMap, time::Duration};
 use zbus::{dbus_interface, SignalContext};
 
 use crate::{

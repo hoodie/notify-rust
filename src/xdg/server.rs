@@ -9,16 +9,6 @@ pub use crate::xdg::server_dbus::stop;
 #[cfg(feature = "z")]
 pub use crate::xdg::server_zbus::stop;
 
-/// ///// Errors
-mod error {
-    use thiserror::Error;
-
-    #[derive(Error, Debug)]
-    pub enum ServerError {
-        #[error("invalid bus name {0}")]
-        InvalidBusName(String),
-    }
-}
 // ////// Actions and Hints
 
 // TODO: move

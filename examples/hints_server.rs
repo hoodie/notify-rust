@@ -26,48 +26,48 @@ mod hint_server {
         std::thread::sleep(Duration::from_millis(500));
 
         freeze("actionicons");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::ActionIcons(true))
             .show()?;
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::ActionIcons(false))
             .show()?;
 
         freeze("urgency: low, medium, high");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Urgency(Low))
             .show()?;
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Urgency(Normal))
             .show()?;
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Urgency(Critical))
             .show()?;
 
         freeze("category");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Category("device.removed".into()))
             .show()?;
 
         freeze("DesktopEntry");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::DesktopEntry("firefox".into()))
             .show()?;
 
         freeze("ImagePath");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::ImagePath(
                 "/usr/share/icons/hicolor/128x128/apps/firefox.png".into(),
             ))
             .show()?;
 
         freeze("Resident");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Resident(true))
             .show()?;
 
         freeze("SoundFile");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::SoundFile(
                 "/usr/share/sounds/alsa/Front_Left.wav".to_owned(),
             ))
@@ -76,12 +76,12 @@ mod hint_server {
             .show()?;
 
         freeze("Transient");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::Transient(false))
             .show()?;
 
         freeze("X and Y");
-        Notification::at_bus("example")
+        Notification::at_bus("example")?
             .hint(Hint::X(200))
             .hint(Hint::Y(200))
             .show()?;
