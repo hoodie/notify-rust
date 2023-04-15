@@ -4,22 +4,24 @@
 extern crate notify_rust;
 
 #[cfg(test)]
+use notify_rust::server;
+use notify_rust::*;
+use std::thread;
 
-                  use notify_rust::server;
-                  use notify_rust::*;
-                  use std::thread;
+/*
+// TODO: redo tests like in tests/server.rs
+#[test]
+#[ignore]
+fn server_can_be_stopped() {
+    let thread_handle = thread::spawn(move || {
+        let server = NotificationServer::create();
+        NotificationServer::start(&server, |_| {})
+    });
 
-                  #[test]
-                  #[ignore]
-                  fn server_can_be_stopped() {
-                      let thread_handle = thread::spawn(move || {
-                          let server = NotificationServer::create();
-                          NotificationServer::start(&server, |_| {})
-                      });
-
-                      server::stop();
-                      assert!(thread_handle.join().is_ok());
-                  }
+    server::stop();
+    assert!(thread_handle.join().is_ok());
+}
+*/
 
 mod ownworld { /*
                   #[test]

@@ -9,12 +9,15 @@ use std::time::Duration;
 #[ctor::ctor]
 fn init_color_backtrace() {
     color_backtrace::install();
+    env_logger::init();
 }
-
 
 fn never_handle() -> impl NotificationHandler + Clone {
     move |received: ReceivedNotification| async move {
-        eprintln!("received notification (timeout: {}) I will never handle", received.timeout);
+        eprintln!(
+            "received notification (timeout: {}) I will never handle",
+            received.timeout
+        );
         pending::<()>().await;
     }
 }
@@ -33,18 +36,16 @@ fn close_after(close_reason: CloseReason, sleep_ms: u64) -> impl NotificationHan
 #[async_std::test]
 async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
     let bus = "expire_notification_after_default_timeout";
-    env_logger::init();
     let running_server = async_std::task::spawn(async {
-        server::start_at(bus, never_handle())
-            .await
-            .unwrap();
+        server::start_at(bus, never_handle()).await.unwrap();
     });
     log::info!("expire server");
 
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::at_bus(bus).unwrap()
+        Notification::at_bus(bus)
+            .unwrap()
             .timeout(Timeout::Default)
             .show_async()
             .await
@@ -67,20 +68,22 @@ async fn expire_notification_after_default_timeout() -> std::io::Result<()> {
 #[async_std::test]
 async fn close_notification_with_reason() -> std::io::Result<()> {
     let bus = "close_notification_with_reason";
-    env_logger::init();
     let original_close_reason = CloseReason::from(3);
 
     log::info!("close server");
 
     let running_server = async_std::task::spawn(async move {
         let close_reason = original_close_reason;
-        server::start_at(bus, close_after(close_reason, 10)).await.unwrap();
+        server::start_at(bus, close_after(close_reason, 10))
+            .await
+            .unwrap();
     });
 
     let sent_notification = async {
         async_std::task::sleep(Duration::from_millis(10)).await;
 
-        Notification::at_bus(bus).unwrap()
+        Notification::at_bus(bus)
+            .unwrap()
             .timeout(Timeout::Never)
             .show_async()
             .await

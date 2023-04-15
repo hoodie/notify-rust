@@ -16,17 +16,17 @@ fn main() {
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-use std::time::Duration;
+    use std::time::Duration;
 
-use notify_rust::{
-    server::{self, ReceivedNotification},
-    CloseReason, Notification, Timeout,
-};
+    use notify_rust::{
+        server::{self, ReceivedNotification},
+        CloseReason, Notification, Timeout,
+    };
 
-fn print(reason: CloseReason) {
-    println!("notification was closed {reason:?}");
-    log::info!("✅ close_Handler done")
-}
+    fn print(reason: CloseReason) {
+        println!("notification was closed {reason:?}");
+        log::info!("✅ close_Handler done")
+    }
 
     env_logger::init();
 

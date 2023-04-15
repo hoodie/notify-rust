@@ -122,6 +122,7 @@ where
             action_tx: action_tx.downgrade(),
             close_tx: close_tx.downgrade(),
         };
+        log::trace!("received #{id} timeout: {timeout}");
 
         let time_to_sleep = close_timeout(timeout, self.config.default_timeout);
 
@@ -138,15 +139,15 @@ where
             // waiting for actions and close notifications
             let (reason, action) = select! {
                 action = action_rx.recv().fuse() => {
-                    log::trace!("close from action");
+                    log::trace!("close #{id} from action");
                     (CloseReason::CloseAction, action.ok())
                 }
                 reason = close_rx.recv().fuse() => {
-                    log::trace!("close from user");
+                    log::trace!("close #{id} from user");
                     (reason.unwrap_or(CloseReason::Expired), None)
                 }
                 _ = sleep_before_close(time_to_sleep).fuse() => {
-                    log::trace!("close from expire after {time_to_sleep:?}", );
+                    log::trace!("close #{id} from expire after {time_to_sleep:?}", );
                     (CloseReason::Expired, None)
                 }
             };
@@ -205,7 +206,7 @@ pub async fn start<H: NotificationHandler + 'static + Sync + Send + Clone>(
 pub async fn start_at<H: NotificationHandler + 'static + Sync + Send + Clone>(
     sub_bus: &str,
     handler: H,
-// FIXME: add proper server error type
+    // FIXME: add proper server error type
 ) -> crate::error::Result<()> {
     let server_state = NotificationServer::with_handler(handler);
     let bus = NotificationBus::custom(sub_bus)?;

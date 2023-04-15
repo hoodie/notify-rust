@@ -516,6 +516,7 @@ pub fn stop_server() -> Result<()> {
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// (xdg only)
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
 pub fn handle_action<F>(id: u32, func: F)
@@ -529,6 +530,7 @@ where
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// (xdg only)
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F)
@@ -542,6 +544,7 @@ where
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F)

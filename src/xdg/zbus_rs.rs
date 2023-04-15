@@ -5,6 +5,8 @@ use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseRe
 
 pub mod bus {
 
+    use zbus::names::BusName;
+
     use crate::{
         error::{ErrorKind, Result},
         xdg::NOTIFICATION_DEFAULT_BUS,
@@ -53,6 +55,11 @@ pub mod bus {
             self.0
         }
     }
+    impl From<NotificationBus> for BusName<'static> {
+        fn from(value: NotificationBus) -> Self {
+            value.into_name().into()
+        }
+    }
 }
 
 /// A handle to a shown notification.
@@ -80,7 +87,13 @@ impl ZbusNotificationHandle {
 
     pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
         log::trace!("wait_for_action...");
-        wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
+        wait_for_action_signal(
+            &self.connection,
+            self.id,
+            self.notification.bus,
+            invocation_closure,
+        )
+        .await;
         log::trace!("wait_for_action. done");
     }
 
@@ -247,16 +260,20 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
     log::trace!("handle_action");
     let connection = zbus::Connection::session().await.unwrap();
-    wait_for_action_signal(&connection, id, func).await;
+    wait_for_action_signal(&connection, id, Default::default(), func).await;
 }
 
 async fn wait_for_action_signal(
     connection: &zbus::Connection,
     id: u32,
+    bus: NotificationBus,
     handler: impl ActionResponseHandler,
 ) {
+    log::trace!("wait for action on #{id} on bus {}", connection.is_bus());
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
+        .sender(bus.clone())
+        .unwrap()
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("ActionInvoked")
@@ -268,6 +285,8 @@ async fn wait_for_action_signal(
 
     let close_signal_rule = MatchRule::builder()
         .msg_type(zbus::MessageType::Signal)
+        .sender(bus)
+        .unwrap()
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("NotificationClosed")
@@ -277,7 +296,7 @@ async fn wait_for_action_signal(
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
         if let Ok(header) = msg.header() {
-            log::trace!("signal received {:?}", header);
+            log::debug!("signal received {:#?}", header);
 
             if let Ok(zbus::MessageType::Signal) = header.message_type() {
                 log::trace!("it's a signal message");

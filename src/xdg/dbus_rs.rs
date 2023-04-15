@@ -88,7 +88,12 @@ impl DbusNotificationHandle {
     }
 
     pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
-        wait_for_action_signal(&self.connection, self.id, invocation_closure);
+        wait_for_action_signal(
+            &self.connection,
+            self.id,
+            self.notification.bus,
+            invocation_closure,
+        );
     }
 
     pub fn close(self) {
@@ -262,7 +267,12 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) {
 }
 
 // Listens for the `ActionInvoked(UInt32, String)` signal.
-fn wait_for_action_signal(connection: &Connection, id: u32, handler: impl ActionResponseHandler) {
+fn wait_for_action_signal(
+    connection: &Connection,
+    id: u32,
+    bus: NotificationBus,
+    handler: impl ActionResponseHandler,
+) {
     connection
         .add_match(&format!(
             "interface='{}',member='ActionInvoked'",
