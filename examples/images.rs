@@ -5,7 +5,7 @@ use notify_rust::Hint;
 use notify_rust::Image;
 use notify_rust::Notification;
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is a xdg only feature")
 }

@@ -1,18 +1,11 @@
-use notify_rust::*;
-
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is an xdg only feature")
-}
-
-#[cfg(windows)]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is a xdg only feature")
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    Notification::new()
+    notify_rust::Notification::new()
         .summary("Persistent notification")
         .body("This should not go away unless you want it to.")
         .icon("firefox")

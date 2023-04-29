@@ -1,18 +1,12 @@
-use notify_rust::{Notification, Urgency::*};
-use std::convert::TryInto;
-
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is an xdg only feature")
-}
-
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is an xdg only feature")
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use notify_rust::{Notification, Urgency::*};
+    use std::convert::TryInto;
     // use it this way
     for urgency in &[Low, Normal, Critical] {
         Notification::new()

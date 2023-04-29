@@ -12,7 +12,7 @@ fn print() {
     println!("notification was closed, don't know why");
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is a xdg only feature")
 }

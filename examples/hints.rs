@@ -11,12 +11,7 @@ fn freeze(message: &str) {
     let _ = std::io::stdin().read_line(&mut _devnull);
 }
 
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is an xdg only feature")
-}
-
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is an xdg only feature")
 }

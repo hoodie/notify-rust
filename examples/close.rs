@@ -1,11 +1,6 @@
 use notify_rust::*;
 
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is a xdg only feature")
-}
-
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
     println!("this is a xdg only feature")
 }

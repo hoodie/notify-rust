@@ -1,14 +1,13 @@
 #![allow(unused_imports)]
 use notify_rust::{Hint, Notification};
 
-#[cfg(windows)]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {
-    println!("this is a unix only feature");
+    println!("this is a xdg only feature");
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
-    #[cfg(all(unix, not(target_os = "macos")))]
     Notification::new()
         .summary("click me")
         .action("default", "default") // IDENTIFIER, LABEL
@@ -25,12 +24,4 @@ fn main() {
             "__closed" => println!("the notification was closed"),
             _ => (),
         });
-
-    #[cfg(target_os = "macos")]
-    Notification::new()
-        .summary("PLATFORM ERROR")
-        .subtitle("unsupported functionality")
-        .body("cannot wait for closing on macOS.")
-        .show()
-        .unwrap();
 }
