@@ -138,6 +138,7 @@
 )]
 #![warn(
     missing_docs,
+    // clippy::missing_const_for_fn,
     clippy::doc_markdown,
     clippy::semicolon_if_nothing_returned,
     clippy::single_match_else,
@@ -207,6 +208,7 @@ pub use crate::xdg::at_bus;
     unix,
     not(target_os = "macos")
 ))]
+#[allow(deprecated)]
 pub use crate::xdg::{
     dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
     CloseHandler, CloseReason, DbusStack, NotificationHandle,

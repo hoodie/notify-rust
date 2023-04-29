@@ -28,6 +28,7 @@ zbus = { version = "3.11", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.10", optional = true }
+async-lock = { version = "2.7", optional = true }
 
 # server dependencies
 futures-util = { version = "0.3", optional = true }
@@ -45,7 +46,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
 [features]
 default = ["z", "server", "config_bus"]
 d = ["dbus"]
-z = ["zbus", "serde", "async"]
+z = ["zbus", "serde", "async", "async-lock"]
 server = ["server_zbus"]
 server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
 async = []
@@ -57,6 +58,7 @@ env_logger = "0.10"
 color-backtrace = "0.5" # wait for MSVR 1.70 to update
 ctor = "0.2"
 maplit = "1.0"
+ntest = "0.9"
 
 [dev-dependencies.async-std]
 version = "1.12.0"

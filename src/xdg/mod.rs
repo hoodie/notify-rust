@@ -48,7 +48,7 @@ pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
 
 pub(crate) use bus::NotificationBus;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum NotificationHandleInner {
     #[cfg(feature = "dbus")]
     Dbus(dbus_rs::DbusNotificationHandle),
@@ -60,7 +60,7 @@ enum NotificationHandleInner {
 /// A handle to a shown notification.
 ///
 /// This keeps a connection alive to ensure actions work on certain desktops.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NotificationHandle {
     inner: NotificationHandleInner,
 }
@@ -75,17 +75,6 @@ impl NotificationHandle {
     ) -> NotificationHandle {
         NotificationHandle {
             inner: dbus_rs::DbusNotificationHandle::new(id, connection, notification).into(),
-        }
-    }
-
-    #[cfg(feature = "zbus")]
-    pub(crate) fn for_zbus(
-        id: u32,
-        connection: zbus::Connection,
-        notification: Notification,
-    ) -> NotificationHandle {
-        NotificationHandle {
-            inner: zbus_rs::ZbusNotificationHandle::new(id, connection, notification).into(),
         }
     }
 
@@ -114,6 +103,22 @@ impl NotificationHandle {
                 );
             }
         };
+    }
+
+    /// Waits for the user to act on a notification and then calls
+    /// `invocation_closure` with the name of the corresponding action.
+    #[cfg(feature = "zbus")]
+    pub async fn on_action<F>(self, invocation_closure: F)
+    where
+        F: FnOnce(&str),
+    {
+        let NotificationHandleInner::Zbus(inner) = self.inner;
+        inner
+            .wait_for_action(|action: &ActionResponse| match action {
+                ActionResponse::Custom(action) => invocation_closure(action),
+                ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+            })
+            .await;
     }
 
     /// Manually close the notification
@@ -186,6 +191,13 @@ impl NotificationHandle {
                 }));
             }
         };
+    }
+
+    /// WIP
+    #[cfg(feature = "zbus")]
+    pub async fn closed(self) {
+        let NotificationHandleInner::Zbus(inner) = self.inner;
+        inner.closed().await;
     }
 
     /// Replace the original notification with an updated version
@@ -398,7 +410,7 @@ pub mod at_bus {
     /// (zbus only)
     #[cfg(all(feature = "zbus", not(feature = "dbus")))]
     pub fn get_server_information(sub_bus: &str) -> Result<ServerInformation> {
-        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        let bus = NotificationBus::custom(sub_bus)?;
         block_on(zbus_rs::get_server_information_at_bus(bus))
     }
 
@@ -407,7 +419,7 @@ pub mod at_bus {
     /// (zbus only)
     #[cfg(all(feature = "zbus", not(feature = "dbus")))]
     pub fn get_capabilities(sub_bus: &str) -> Result<Vec<String>> {
-        let bus = NotificationBus::custom(sub_bus).ok_or("invalid subpath")?;
+        let bus = NotificationBus::custom(sub_bus)?;
         block_on(zbus_rs::get_capabilities_at_bus(bus))
     }
 
@@ -516,6 +528,7 @@ pub fn stop_server() -> Result<()> {
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// (xdg only)
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "zbus", not(feature = "dbus")))]
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
 pub fn handle_action<F>(id: u32, func: F)
@@ -529,6 +542,7 @@ where
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// (xdg only)
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "dbus", not(feature = "zbus")))]
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F)
@@ -542,6 +556,7 @@ where
 ///
 /// No need to use this, check out [`NotificationHandle::wait_for_action`]
 /// both dbus-rs and zbus, switch via `$ZBUS_NOTIFICATION`
+#[deprecated(note = "will be removed in 5.0")]
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F)
@@ -563,6 +578,7 @@ where
 #[cfg_attr(feature = "zbus", derive(serde::Serialize, serde::Deserialize))]
 pub enum CloseReason {
     /// Undefined/Reserved reason
+    /// TODO: e.g. `Other(42)` does not serialize correctly
     Other(u32),
     /// The notification expired
     Expired,
@@ -658,5 +674,21 @@ where
 {
     fn call(&self, _: CloseReason) {
         self();
+    }
+}
+
+/// Helper Trait implemented by `Fn()`
+/// TODO: this should probably replace `CloseHandler<T>` with its redundant `T`
+pub trait CloseResponseHandler {
+    fn call(self, reason: &CloseReason);
+}
+
+// impl<F: Send + Sync + 'static> ActionResponseHandler for F
+impl<F> CloseResponseHandler for F
+where
+    F: FnOnce(&CloseReason),
+{
+    fn call(self, reason: &CloseReason) {
+        (self)(reason);
     }
 }

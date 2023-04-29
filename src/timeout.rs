@@ -24,6 +24,12 @@ pub enum Timeout {
     Milliseconds(u32),
 }
 
+impl PartialEq<i32> for Timeout {
+    fn eq(&self, other: &i32) -> bool {
+        Timeout::from(*other) == *self
+    }
+}
+
 impl Default for Timeout {
     fn default() -> Self {
         Timeout::Default
