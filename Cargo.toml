@@ -60,11 +60,6 @@ path = "examples/images.rs"
 required-features = ["images"]
 
 [[example]]
-name = "hints_server"
-path = "examples/hints_server.rs"
-required-features = ["server"]
-
-[[example]]
 name = "schedule"
 path = "examples/schedule.rs"
 required-features = ["chrono"]
