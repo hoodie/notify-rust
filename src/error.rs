@@ -40,6 +40,8 @@ pub enum ErrorKind {
     #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
     Image(ImageError),
 
+    InvalidBusName(String),
+
     ImplementationMissing,
 }
 
@@ -64,6 +66,7 @@ impl fmt::Display for Error {
                 f,
                 r#"No Dbus implementation available, please compile with either feature ="z" or feature="d""#
             ),
+            ErrorKind::InvalidBusName(ref e) => write!(f, "the bus name {e} is not valid"),
         }
     }
 }
@@ -92,6 +95,15 @@ impl From<zbus::Error> for Error {
     fn from(e: zbus::Error) -> Error {
         Error {
             kind: ErrorKind::Zbus(e),
+        }
+    }
+}
+
+#[cfg(all(feature = "zbus", unix, not(target_os = "macos")))]
+impl From<zbus::names::Error> for Error {
+    fn from(e: zbus::names::Error) -> Error {
+        Error {
+            kind: ErrorKind::InvalidBusName(e.to_string()),
         }
     }
 }

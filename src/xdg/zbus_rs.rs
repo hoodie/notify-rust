@@ -1,11 +1,21 @@
+use std::sync::Arc;
+
 use crate::{error::*, notification::Notification, xdg};
+use async_lock::Mutex;
 use zbus::{export::futures_util::TryStreamExt, MatchRule};
 
 use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
 
+pub use self::handle::ZbusNotificationHandle;
+
 pub mod bus {
 
-    use crate::xdg::NOTIFICATION_DEFAULT_BUS;
+    use zbus::names::BusName;
+
+    use crate::{
+        error::{ErrorKind, Result},
+        xdg::NOTIFICATION_DEFAULT_BUS,
+    };
 
     fn skip_first_slash(s: &str) -> &str {
         if let Some('/') = s.chars().next() {
@@ -30,114 +40,49 @@ pub mod bus {
     }
 
     impl NotificationBus {
-        fn namespaced_custom(custom_path: &str) -> Option<String> {
+        fn namespaced_custom(custom_path: &str) -> Result<String> {
             // abusing path for semantic join
-            skip_first_slash(
-                PathBuf::from("/de/hoodie/Notification")
-                    .join(custom_path)
-                    .to_str()?,
-            )
-            .replace('/', ".")
-            .into()
+            PathBuf::from("/de/hoodie/Notification")
+                .join(custom_path)
+                .to_str()
+                .map(skip_first_slash)
+                .map(|path| path.replace('/', "."))
+                .ok_or_else(|| ErrorKind::InvalidBusName(custom_path.into()).into())
         }
 
-        pub fn custom(custom_path: &str) -> Option<Self> {
-            let name =
-                zbus::names::WellKnownName::try_from(Self::namespaced_custom(custom_path)?).ok()?;
-            Some(Self(name))
+        pub fn custom(custom_path: &str) -> Result<Self> {
+            let inner = Self::namespaced_custom(custom_path)?;
+            let name = zbus::names::WellKnownName::try_from(inner)?;
+            Ok(Self(name))
+        }
+
+        pub fn to_name(&self) -> BusNameType {
+            self.0.clone()
         }
 
         pub fn into_name(self) -> BusNameType {
             self.0
         }
     }
-}
-
-/// A handle to a shown notification.
-///
-/// This keeps a connection alive to ensure actions work on certain desktops.
-#[derive(Debug)]
-pub struct ZbusNotificationHandle {
-    pub(crate) id: u32,
-    pub(crate) connection: zbus::Connection,
-    pub(crate) notification: Notification,
-}
-
-impl ZbusNotificationHandle {
-    pub(crate) fn new(
-        id: u32,
-        connection: zbus::Connection,
-        notification: Notification,
-    ) -> ZbusNotificationHandle {
-        ZbusNotificationHandle {
-            id,
-            connection,
-            notification,
+    impl From<NotificationBus> for BusName<'static> {
+        fn from(value: NotificationBus) -> Self {
+            value.into_name().into()
         }
     }
-
-    pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
-        log::trace!("wait_for_action...");
-        wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
-        log::trace!("wait_for_action. done");
-    }
-
-    pub async fn close_fallible(self) -> Result<()> {
-        log::trace!("close id {}", self.id);
-        self.connection
-            .call_method(
-                Some(self.notification.bus.clone().into_name()),
-                xdg::NOTIFICATION_OBJECTPATH,
-                Some(xdg::NOTIFICATION_INTERFACE),
-                "CloseNotification",
-                &(self.id),
-            )
-            .await?;
-        Ok(())
-    }
-
-    pub async fn close(self) {
-        self.close_fallible().await.unwrap();
-    }
-
-    pub fn on_close<F>(self, closure: F)
-    where
-        F: FnOnce(CloseReason),
-    {
-        zbus::block_on(self.wait_for_action(|action: &ActionResponse| {
-            if let ActionResponse::Closed(reason) = action {
-                closure(*reason);
-            }
-        }));
-    }
-
-    pub fn update_fallible(&mut self) -> Result<()> {
-        self.id = zbus::block_on(send_notification_via_connection(
-            &self.notification,
-            self.id,
-            &self.connection,
-        ))?;
-        Ok(())
-    }
-
-    pub fn update(&mut self) {
-        self.update_fallible().unwrap();
-    }
 }
-
 async fn send_notification_via_connection(
     notification: &Notification,
     id: u32,
     connection: &zbus::Connection,
 ) -> Result<u32> {
-    send_notification_via_connection_at_bus(notification, id, connection, Default::default()).await
+    send_notification_via_connection_at_bus(notification, id, connection, &Default::default()).await
 }
 
 async fn send_notification_via_connection_at_bus(
     notification: &Notification,
     id: u32,
     connection: &zbus::Connection,
-    bus: NotificationBus,
+    bus: &NotificationBus,
 ) -> Result<u32> {
     // if let Some(ref close_handler) = notification.close_handler {
     //     // close_handler.
@@ -148,7 +93,7 @@ async fn send_notification_via_connection_at_bus(
     // }
     let reply: u32 = connection
         .call_method(
-            Some(bus.into_name()),
+            Some(bus.to_name()),
             xdg::NOTIFICATION_OBJECTPATH,
             Some(xdg::NOTIFICATION_INTERFACE),
             "Notify",
@@ -185,13 +130,34 @@ pub(crate) async fn connect_and_send_notification_at_bus(
     let connection = zbus::Connection::session().await?;
     let inner_id = notification.id.unwrap_or(0);
     let id =
-        send_notification_via_connection_at_bus(notification, inner_id, &connection, bus).await?;
+        send_notification_via_connection_at_bus(notification, inner_id, &connection, &bus).await?;
 
-    Ok(ZbusNotificationHandle::new(
+    let closed: Arc<Mutex<Option<CloseReason>>> = Default::default();
+    let wait_for_close = {
+        // locks `closed` until the closed signal is received
+        let connection = connection.clone();
+        let closed = closed.clone();
+        let bus = bus.clone();
+        async move {
+            log::trace!("waiting for Notification #{id} to close");
+            let mut closed = closed.lock().await;
+            let reason = handle::await_close_signal(&connection, id, &bus).await;
+            if let Some(reason) = reason {
+                closed.replace(reason);
+                log::trace!("Notification #{id} closed, writing reason: {reason:?}");
+            } else {
+                log::warn!("awaited close reason resulted in None");
+            }
+        }
+    };
+    async_std::task::spawn(wait_for_close);
+
+    Ok(ZbusNotificationHandle {
         id,
         connection,
-        notification.clone(),
-    ))
+        notification: notification.clone(),
+        closed,
+    })
 }
 
 pub async fn get_capabilities_at_bus(bus: NotificationBus) -> Result<Vec<String>> {
@@ -247,62 +213,198 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
     log::trace!("handle_action");
     let connection = zbus::Connection::session().await.unwrap();
-    wait_for_action_signal(&connection, id, func).await;
+    handle::wait_for_action_signal(&connection, id, &Default::default(), func).await;
 }
 
-async fn wait_for_action_signal(
-    connection: &zbus::Connection,
-    id: u32,
-    handler: impl ActionResponseHandler,
-) {
-    let action_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
-        .interface(xdg::NOTIFICATION_INTERFACE)
-        .unwrap()
-        .member("ActionInvoked")
-        .unwrap()
-        .build();
+mod handle {
+    use super::*;
 
-    let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
-    proxy.add_match_rule(action_signal_rule).await.unwrap();
+    /// A handle to a shown notification.
+    ///
+    /// This keeps a connection alive to ensure actions work on certain desktops.
+    #[derive(Clone, Debug)]
+    pub struct ZbusNotificationHandle {
+        pub(crate) id: u32,
+        pub(crate) connection: zbus::Connection,
+        pub(crate) notification: Notification,
+        pub(crate) closed: Arc<Mutex<Option<CloseReason>>>,
+    }
 
-    let close_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
-        .interface(xdg::NOTIFICATION_INTERFACE)
-        .unwrap()
-        .member("NotificationClosed")
-        .unwrap()
-        .build();
-    proxy.add_match_rule(close_signal_rule).await.unwrap();
+    impl ZbusNotificationHandle {
+        // TODO: soft deprecate: actually add Vec of Handlers
+        pub async fn wait_for_action(&self, handler: impl ActionResponseHandler) {
+            log::trace!("wait_for_action...");
+            wait_for_action_signal(&self.connection, self.id, &self.notification.bus, handler)
+                .await;
+            log::trace!("wait_for_action. done");
+        }
 
-    while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
-        let header = msg.header();
-        log::trace!("signal received {:?}", header);
+        pub async fn close_fallible(self) -> Result<()> {
+            log::trace!("close id {}", self.id);
+            self.connection
+                .call_method(
+                    Some(self.notification.bus.clone().into_name()),
+                    xdg::NOTIFICATION_OBJECTPATH,
+                    Some(xdg::NOTIFICATION_INTERFACE),
+                    "CloseNotification",
+                    &(self.id),
+                )
+                .await?;
+            Ok(())
+        }
 
-        if zbus::MessageType::Signal == header.message_type() {
-            log::trace!("it's a signal message");
+        pub async fn close(self) {
+            self.close_fallible().await.unwrap();
+        }
 
-            match header.member() {
-                Some(name) if name == "ActionInvoked" => {
-                    match msg.body().deserialize::<(u32, String)>() {
-                        Ok((nid, action)) if nid == id => {
-                            handler.call(&ActionResponse::Custom(&action));
-                            break;
+        pub async fn closed(&self) {
+            self.closed.lock().await;
+        }
+
+        pub fn on_close<F>(self, closure: F)
+        where
+            F: FnOnce(CloseReason),
+        {
+            zbus::block_on(self.wait_for_action(|action: &ActionResponse| {
+                if let ActionResponse::Closed(reason) = action {
+                    closure(*reason);
+                }
+            }));
+        }
+
+        #[deprecated(note = "this will be renamed into update in 5.0")]
+        pub fn update_fallible(&mut self) -> Result<()> {
+            self.id = zbus::block_on(send_notification_via_connection(
+                &self.notification,
+                self.id,
+                &self.connection,
+            ))?;
+            Ok(())
+        }
+
+        pub fn update(&mut self) {
+            #[allow(deprecated)]
+            self.update_fallible().unwrap();
+        }
+    }
+
+    // TODO: this also waits for close-signals, maybe we want to separate these tasks
+    pub(super) async fn wait_for_action_signal(
+        connection: &zbus::Connection,
+        id: u32,
+        bus: &NotificationBus,
+        handler: impl ActionResponseHandler,
+    ) {
+        log::trace!("wait for action on #{id} on bus {bus:?}");
+        let action_signal_rule = MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .sender(bus.clone())
+            .unwrap()
+            .interface(xdg::NOTIFICATION_INTERFACE)
+            .unwrap()
+            .member("ActionInvoked")
+            .unwrap()
+            .build();
+
+        let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
+        proxy.add_match_rule(action_signal_rule).await.unwrap();
+
+        let close_signal_rule = MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .sender(bus.clone())
+            .unwrap()
+            .interface(xdg::NOTIFICATION_INTERFACE)
+            .unwrap()
+            .member("NotificationClosed")
+            .unwrap()
+            .build();
+        proxy.add_match_rule(close_signal_rule).await.unwrap();
+
+        while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
+            let header = msg.header();
+            if let zbus::MessageType::Signal = header.message_type() {
+                log::trace!("it's a signal message");
+
+                match header.member() {
+                    Some(name) if name == "ActionInvoked" => {
+                        match msg.body().deserialize::<(u32, String)>() {
+                            Ok((nid, action)) if nid == id => {
+                                log::trace!("ActionInvoked {}", action);
+                                handler.call(&ActionResponse::Custom(&action));
+                                break;
+                            }
+                            other => {
+                                log::warn!("ActionInvoked failed {:?}", other);
+                            }
                         }
-                        _ => {}
+                    }
+                    Some(name) if name == "NotificationClosed" => {
+                        match msg.body().deserialize::<(u32, u32)>() {
+                            Ok((nid, reason)) if nid == id => {
+                                let reason: CloseReason = reason.into();
+                                log::trace!("NotificationClosed {:?}", reason);
+                                handler.call(&ActionResponse::Closed(reason));
+                                break;
+                            }
+                            other => {
+                                log::warn!("NotificationClosed failed {:?}", other);
+                            }
+                        }
+                    }
+                    _ => {
+                        log::warn!("received unhandled signal");
                     }
                 }
-                Some(name) if name == "NotificationClosed" => {
-                    match msg.body().deserialize::<(u32, u32)>() {
-                        Ok((nid, reason)) if nid == id => {
-                            handler.call(&ActionResponse::Closed(reason.into()));
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-                _ => {}
             }
         }
+    }
+
+    pub(super) async fn await_close_signal(
+        connection: &zbus::Connection,
+        id: u32,
+        bus: &NotificationBus,
+    ) -> Option<CloseReason> {
+        log::trace!("wait for close signal on #{id} on bus {bus:?}");
+
+        let close_signal_rule = MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .sender(bus.to_owned())
+            .unwrap()
+            .interface(xdg::NOTIFICATION_INTERFACE)
+            .unwrap()
+            .member("NotificationClosed")
+            .unwrap()
+            .build();
+
+        let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
+        proxy.add_match_rule(close_signal_rule).await.unwrap();
+
+        while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
+            let header = msg.header();
+            if let zbus::MessageType::Signal = header.message_type() {
+                match header.member() {
+                    Some(name) if name == "NotificationClosed" => {
+                        return match msg.body().deserialize::<(u32, u32)>() {
+                            Ok((nid, reason)) if nid == id => {
+                                let reason: CloseReason = reason.into();
+                                log::debug!("Notification Closed {:?}, await done", reason);
+                                Some(reason)
+                            }
+                            other => {
+                                log::warn!("NotificationClosed failed {:?}", other);
+                                None
+                            }
+                        }
+                    }
+                    _ => {
+                        log::trace!("received unhandled signal");
+                    }
+                };
+            } else {
+                log::warn!("signal not ok");
+                return None;
+            }
+        }
+        None
     }
 }

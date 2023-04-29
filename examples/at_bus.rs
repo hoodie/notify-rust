@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[allow(deprecated)]
     Notification::at_bus("example")
+        .unwrap()
         .summary("Critical Error")
         .body("Just <b>kidding</b>, this is just the notification (example).")
         .icon("dialog-error")

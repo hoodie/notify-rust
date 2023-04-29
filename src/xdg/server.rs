@@ -11,26 +11,67 @@ pub use crate::xdg::server_zbus::stop;
 
 // ////// Actions and Hints
 
-// TODO: move 
-#[derive(Debug)]
+// TODO: move
+#[derive(Debug, PartialEq)]
 pub struct Action {
     pub tag: String,
     pub description: String,
 }
 
 impl Action {
-    fn from_pair(pair: (&String, &String)) -> Action {
+    pub fn new(description: impl ToString, tag: impl ToString) -> Action {
         Self {
-            tag: pair.0.to_owned(),
-            description: pair.1.to_owned(),
+            tag: tag.to_string(),
+            description: description.to_string(),
         }
     }
+
+    pub fn from_single(key: impl ToString) -> Action {
+        Self {
+            tag: key.to_string(),
+            description: key.to_string(),
+        }
+    }
+
     pub fn from_vec(raw: &[String]) -> Vec<Action> {
         raw.iter()
-            .zip(raw.iter().map(Some).chain(Some(None)))
-            .filter_map(|(a, b)| b.map(|b| (a, b)))
-            .map(Action::from_pair)
+            .zip(raw.iter().skip(1).map(Some).chain(Some(None)))
+            .enumerate()
+            //.filter_map(|(i, pair)| (i % 2 == 0).then_some(pair))
+            .filter(|(i, _pair)| (i % 2 == 0))
+            .filter_map(|(_, (a, b))| b.map(|b| Action::new(a, b)))
             .collect()
+    }
+}
+
+#[test]
+fn test_action_from_vec() {
+    let raw = [
+        "click for one", // one
+        "one",           //
+        "click for two",
+        "two",
+        "click for three",
+        "three",
+    ]
+    .map(|s| s.to_string());
+    assert_eq!(
+        Action::from_vec(&raw),
+        vec![
+            Action::new("click for one", "one"),
+            Action::new("click for two", "two"),
+            Action::new("click for three", "three"),
+        ]
+    );
+}
+
+impl From<&str> for Action {
+    fn from(value: &str) -> Self {
+        eprintln!("action from str");
+        Action {
+            tag: value.into(),
+            description: value.into(),
+        }
     }
 }
 
@@ -93,19 +134,42 @@ impl ReceivedNotification {
 
 // ////// Handler
 
+// // TODO: can there be a `None` CloseReason at all?
+// pub type CloseOrDefer  = ControlFlow<Option<CloseReason>, ()>;
+
+// pub type HandlerResult = Result<CloseOrDefer, String>;
+
+pub type HandlerResult = Result<Option<CloseReason>, String>;
+
 #[async_trait::async_trait]
-pub trait NotificationHandler {
-    async fn call(&self, notification: ReceivedNotification);
+pub trait NotificationHandler<T>
+where
+    T: Send,
+{
+    async fn call(&self, notification: ReceivedNotification) -> HandlerResult;
 }
 
 #[async_trait::async_trait]
-impl<F, Fut> NotificationHandler for F
+impl<F, Fut> NotificationHandler<()> for F
 where
     F: Send + Sync + 'static + Fn(ReceivedNotification) -> Fut,
     Fut: std::future::Future<Output = ()> + Send + 'static,
 {
-    async fn call(&self, notification: ReceivedNotification) {
+    async fn call(&self, notification: ReceivedNotification) -> HandlerResult {
         self(notification).await;
+        // Ok(CloseOrDefer::Break(None))
+        Ok(None)
+    }
+}
+
+#[async_trait::async_trait]
+impl<F, Fut> NotificationHandler<HandlerResult> for F
+where
+    F: Send + Sync + 'static + Fn(ReceivedNotification) -> Fut,
+    Fut: std::future::Future<Output = HandlerResult> + Send + 'static,
+{
+    async fn call(&self, notification: ReceivedNotification) -> HandlerResult {
+        self(notification).await
     }
 }
 

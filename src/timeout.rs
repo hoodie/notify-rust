@@ -25,6 +25,12 @@ pub enum Timeout {
     Milliseconds(u32),
 }
 
+impl PartialEq<i32> for Timeout {
+    fn eq(&self, other: &i32) -> bool {
+        Timeout::from(*other) == *self
+    }
+}
+
 #[test]
 fn timeout_from_i32() {
     assert_eq!(Timeout::from(234), Timeout::Milliseconds(234));

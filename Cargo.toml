@@ -28,11 +28,12 @@ zbus = { version = "4", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.11", optional = true }
+async-lock = { version = "3.4", optional = true }
 
 # server dependencies
 futures-util = { version = "0.3", optional = true }
 async-std = { version = "1", optional = true, features = ["attributes"] }
-event-listener= { version = "2", optional = true }
+event-listener= { version = "5", optional = true }
 async-trait = "0.1"
 
 [target.'cfg(target_os="macos")'.dependencies]
@@ -46,7 +47,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 default = ["z", "server", "config_bus"]
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
-z = ["zbus", "serde", "async"]
+z = ["zbus", "serde", "async", "async-lock"]
 server = ["server_zbus"]
 server_zbus = ["zbus", "async-std", "futures-util", "event-listener"]
 async = []
@@ -58,6 +59,7 @@ color-backtrace = "0.6" # wait for MSVR 1.70 to update
 env_logger = "0.10"
 ctor = "0.2"
 maplit = "1.0"
+ntest = "0.9"
 
 [dev-dependencies.async-std]
 version = "1.12.0"

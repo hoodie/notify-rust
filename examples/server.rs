@@ -1,9 +1,4 @@
-#[cfg(target_os = "macos")]
-fn main() {
-    println!("this is a xdg only feature")
-}
-
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn main() {
     println!("this is a xdg only feature")
 }
@@ -28,36 +23,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(1);
 
     std::env::set_var("RUST_LOG", "zbus=trace,server=trace,notify_rust=trace");
-    color_backtrace::install();
     env_logger::init();
 
-    if let Err(error) = server::start_at(
-        "example",
-        move |received: ReceivedNotification| async move {
+    server::start_at("example", move |received: ReceivedNotification| {
+        async move {
             // sleep some time, if the timeout is longer than the timeout of the notification
             // then .channels() will return undefined
             print_notification(&received);
+
             async_std::task::sleep(std::time::Duration::from_secs(timeout)).await;
-            if let Some((action, closer)) = received.channels() {
-                // if received.actions.contains(Action"action") {
+
+            let Some((action, closer)) = received.channels() else {
+                log::warn!("channel upgrade failed, can no longer send action or close");
+                return Err("foobar".into());
+            };
+
+            if received
+                .actions
+                .iter()
+                .any(|action| action.tag == "default")
+            {
+                log::info!("responding to default action");
+                action
+                    .send("default".into())
+                    .await
+                    .map_err(|e| e.to_string())?;
+                log::info!("respond sent");
+                async_std::task::sleep(std::time::Duration::from_millis(2_000)).await;
+            } else {
+                log::info!("no default action");
                 select!(
                     _ = action.send("action".into()).fuse() => (),
                     _ = closer.send(CloseReason::Dismissed).fuse() => {},
                 );
-                // }
-            } else {
-                log::warn!("channel upgrade failed, can no longer send action or close")
             }
-            //   });
 
             log::debug!("handler done");
-        },
-    )
-    .await
-    {
-        log::warn!("failed to start notification server {error}")
-    }
-    // });
+            Ok(None)
+        }
+    })
+    .await?
+    .stopped()
+    .await;
 
     Ok(())
 }

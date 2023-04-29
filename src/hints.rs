@@ -125,6 +125,7 @@ impl Hint {
     }
 
     /// convenience converting a name and value into a hint
+    #[cfg(feature = "server")]
     pub fn from_zbus(name: &str, value: zvariant::Value<'_>) -> Result<Hint, String> {
         use constants::*;
         use zvariant::Value::*;
