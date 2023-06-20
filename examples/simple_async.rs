@@ -1,9 +1,9 @@
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(any(target_os = "windows"))]
 fn main() {
     println!("this is an xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(unix)]
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::Notification;
