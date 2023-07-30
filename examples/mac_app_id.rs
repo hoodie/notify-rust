@@ -29,7 +29,7 @@ fn main() {
     println!("this is a mac only feature")
 }
 
-#[cfg(any(target_os = "windows"))]
+#[cfg(target_os = "windows")]
 fn main() {
     println!("this is a mac only feature")
 }

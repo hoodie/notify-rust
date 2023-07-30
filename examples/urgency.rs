@@ -6,7 +6,6 @@ fn main() {
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use notify_rust::{Notification, Urgency::*};
-    use std::convert::TryInto;
     // use it this way
     for urgency in &[Low, Normal, Critical] {
         Notification::new()
