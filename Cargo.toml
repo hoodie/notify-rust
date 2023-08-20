@@ -42,7 +42,9 @@ default = ["z"]
 #`server = []
 d = ["dbus"]
 z = ["zbus", "serde", "async"]
-async = ["blocking"]
+async = [
+  "blocking", # technically only used on macos
+]
 debug_namespace = []
 images = ["image", "lazy_static"]
 

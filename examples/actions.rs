@@ -1,19 +1,18 @@
 #![allow(unused_imports)]
 use notify_rust::{Hint, Notification};
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "windows")]
 fn main() {
     println!("this is a xdg only feature");
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(unix)]
 fn main() {
-    Notification::new()
+    let handle = Notification::new()
         .summary("click me")
         .action("default", "default") // IDENTIFIER, LABEL
         .action("clicked_a", "button a") // IDENTIFIER, LABEL
         .action("clicked_b", "button b") // IDENTIFIER, LABEL
-        .hint(Hint::Resident(true))
         .show()
         .unwrap()
         .wait_for_action(|action| match action {

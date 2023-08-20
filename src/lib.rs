@@ -225,8 +225,6 @@ lazy_static! {
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation {
-    /// The product name of the server.
-    pub name: String,
     /// The vendor name.
     pub vendor: String,
     /// The server's version string.
