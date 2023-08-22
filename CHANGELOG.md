@@ -1,5 +1,23 @@
 # Changelog
 
+## [v4.9.0](https://github.com/hoodie/notify-rust/compare/v4.8.0...v4.9.0) (2023-08-22)
+
+### Features
+
+* base `Urgency` on `u8` instead of `u64`
+([e9e3c30](https://github.com/hoodie/notify-rust/commit/e9e3c3068478bd2133a202fb4cc7f03af8160836))
+* **xdg:** make dbus bus configurable
+([a514664](https://github.com/hoodie/notify-rust/commit/a514664cbe3277231106775482a87ac792f21635))
+
+### Fixes
+
+* remove redundant action button on macOS
+([c0ffee9](https://github.com/hoodie/notify-rust/commit/c0ffee958afdf312d4c8eee5433345690686efb9))
+* remove server feature
+([f8e89cf](https://github.com/hoodie/notify-rust/commit/f8e89cfd1a392d9b6cff43adcb167e9f64ebbdec))
+* building with both dbus and zbus backend
+([83d4489](https://github.com/hoodie/notify-rust/commit/83d44898a853944b9e62b77655c6384c5e75030c))
+
 ## [v4.8.0](https://github.com/hoodie/notify-rust/compare/v4.7.1...v4.8.0) (2023-02-19)
 
 ### Features
