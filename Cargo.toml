@@ -30,7 +30,7 @@ log = "0.4"
 env_logger ={ version ="0.10", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
-mac-notification-sys = "0.5"
+mac-notification-sys = "0.6"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
@@ -46,8 +46,8 @@ debug_namespace = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]
-color-backtrace = "0.5"
-ctor = "0.1"
+color-backtrace = "0.5" # wait for MSVR 1.70 to update
+ctor = "0.2"
 maplit = "1.0"
 
 [dev-dependencies.async-std]
