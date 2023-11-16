@@ -50,7 +50,7 @@ Notification::new()
 ```
 
 ## Linux/BSD support
-The main audience of this library are Linux/BSD based desktop environments that follow the XDG specification (see [gnome dev docs](https://developer.gnome.org/notification-spec/) or [libnotify docs](https://www.galago-project.org/specs/notification/0.9/index.html)). These include KDE, Gnome, XFCE, LXDC, Mate (and probably also most others that I haven't personally tested).
+The main audience of this library are Linux/BSD based desktop environments that follow the XDG specification (see [gnome dev docs](http://web.archive.org/web/20200606201408/https://developer.gnome.org/notification-spec/) or [libnotify docs](https://www.galago-project.org/specs/notification/0.9/index.html)). These include KDE, Gnome, XFCE, LXDC, Mate (and probably also most others that I haven't personally tested).
 
 ### Features
 
