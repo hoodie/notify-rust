@@ -1,5 +1,12 @@
 # Changelog
 
+## [v4.10.0](https://github.com/hoodie/notify-rust/compare/v4.9.0...v4.10.0) (2023-11-16)
+
+### Features
+
+* add feature `d_vendored` to enable dbus/vendored feature
+([a34239c](https://github.com/hoodie/notify-rust/commit/a34239c99e9caedf8f327226de82ad36dc6b3dcc))
+
 ## [v4.9.0](https://github.com/hoodie/notify-rust/compare/v4.8.0...v4.9.0) (2023-08-22)
 
 ### Features
