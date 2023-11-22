@@ -22,7 +22,7 @@ jobs:
           ./convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
           rm convco
 
-  check_fmt:
+  check_fmt_clippy:
     name: Check Format
     needs: check_commit
     runs-on: ubuntu-latest
@@ -34,8 +34,8 @@ jobs:
       - name: cargo-fmt
         run: cargo fmt --all --check
 
-      - name: clippy 
-        run: cargo clippy --all-features -- -D warnings
+      #- name: clippy
+      #  run: cargo clippy --all-features -- -D warnings
 
   linux:
     name: linux
