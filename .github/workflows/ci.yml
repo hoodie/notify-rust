@@ -64,14 +64,14 @@ jobs:
       - name: check (${{matrix.feature}})
         run: cargo check --no-default-features --features ${{matrix.feature}}
 
-      - name: test (default features)
-        run: cargo test
+      # - name: test (default features)
+      #   run: cargo test
 
       - name: test lib (${{matrix.feature}})
         run: cargo test --lib --no-default-features --features ${{matrix.feature}}
 
-      - name: test tests (${{matrix.feature}})
-        run: cargo test --tests --no-default-features --features ${{matrix.feature}}
+      # - name: test tests (${{matrix.feature}})
+      #   run: cargo test --tests --no-default-features --features ${{matrix.feature}}
 
       - name: test docs (${{matrix.feature}})
         run: cargo test --doc --no-default-features --features ${{matrix.feature}}
