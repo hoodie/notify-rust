@@ -6,202 +6,73 @@ on:
   pull_request:
 
 jobs:
-  linux_dbus:
-    name: linux (dbus)
+  check_commit:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A PR should not contain too many commits
+          fetch-depth: 10
+      - name: Validate commit messages
+        run: |
+          git show-ref
+          curl -sSfL https://github.com/convco/convco/releases/latest/download/convco-ubuntu.zip | zcat > convco
+          chmod +x convco
+          ./convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+          rm convco
+
+  linux:
+    name: linux
+    needs: check_commit
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
           - stable
-          - 1.70.0
+          - beta 
+          - stable minus 8 releases
+        feature:
+          - d
+          - d,images
+          - z
+          - z,images
+          - z,d
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
+          components: clippy, rustfmt
       - run: sudo apt-get install -y libdbus-1-dev
 
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features d
+      - name: check (default features)
+        run: cargo check
 
-      - name: test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --lib --no-default-features --features d
+      - name: cargo-fmt
+        run: cargo fmt --all --check
 
-      - name: doc_test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --no-default-features --features d
+      - name: check (${{matrix.feature}})
+        run: cargo check --no-default-features --features ${{matrix.feature}}
 
-      - name: clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --no-default-features --features d -- -D warnings
+      - name: test (default features)
+        run: cargo test
 
-  linux_dbus_with_image_feature:
-    name: linux (dbus + image)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.70.0
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-      - run: sudo apt-get install -y libdbus-1-dev
+      - name: test lib (${{matrix.feature}})
+        run: cargo test --lib --no-default-features --features ${{matrix.feature}}
 
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features d,images
+      - name: test tests (${{matrix.feature}})
+        run: cargo test --tests --no-default-features --features ${{matrix.feature}}
 
-      - name: test_features_images
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --lib --no-default-features --features d,images
+      - name: test docs (${{matrix.feature}})
+        run: cargo test --doc --no-default-features --features ${{matrix.feature}}
 
-      - name: doc_test_features_images
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --no-default-features --features d,images
+      - name: clippy (default features)
+        run: cargo clippy
 
-      - name: clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --no-default-features --features d,images -- -D warnings
-
-  linux_zbus:
-    name: linux (zbus)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.70.0
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features z
-
-      - name: test (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --lib --no-default-features --features z
-
-      - name: doc_test (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --no-default-features --features z
-
-  linux_zbus_with_image_feature:
-    name: linux (zbus + image)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.70.0
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features z,images
-
-      - name: test_features_images (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --lib --no-default-features --features z,images
-
-      - name: doctest_features_images (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --no-default-features --features z,images
-
-      - name: clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --no-default-features --features z,images -- -D warnings
-
-  linux_zbus_and_dbus:
-    name: linux (zbus and dbus)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.70.0
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-      - run: sudo apt-get install -y libdbus-1-dev
-
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features z,d
-
-      - name: test (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --lib --no-default-features --features z,d
-
-      - name: doc_test (zbus)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc --no-default-features --features z,d
-
+      - name: clippy (${{matrix.feature}})
+        run: cargo clippy --no-default-features --features ${{matrix.feature}} -- -D warnings
 
   windows:
     name: windows
@@ -212,7 +83,7 @@ jobs:
           - stable
           - 1.70.0
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -243,7 +114,7 @@ jobs:
           - stable
           - 1.70.0
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
