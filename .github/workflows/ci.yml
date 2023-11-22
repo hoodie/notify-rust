@@ -82,29 +82,25 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.70.0
+          - beta 
+          - stable minus 8 releases
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-      - name: test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-run
-      - name: clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          components: clippy, rustfmt
+
+      - name: check (default features)
+        run: cargo check
+
+      - name: test (default features)
+        run: cargo test --no-run
+
+      - name: clippy (default features)
+        run: cargo clippy -- -D warnings
+
 
   macos:
     name: macos
@@ -114,27 +110,21 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.70.0
+          - beta 
+          - stable minus 8 releases
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-      - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-      - name: test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-run
-      - name: clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-t a
+          components: clippy, rustfmt
+
+      - name: check (default features)
+        run: cargo check
+
+      - name: test (default features)
+        run: cargo test --no-run
+
+      - name: clippy (default features)
+        run: cargo clippy -- -D warnings
