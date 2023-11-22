@@ -28,16 +28,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
       - name: cargo-fmt
         run: cargo fmt --all --check
+
+      - name: clippy 
+        run: cargo clippy --all-features -- -D warnings
 
   linux:
     name: linux
     needs: check_commit
     runs-on: ubuntu-latest
     strategy:
+      #fail-fast: true
       matrix:
         rust:
           - stable
@@ -78,9 +83,6 @@ jobs:
 
       - name: clippy (default features)
         run: cargo clippy
-
-      - name: clippy (${{matrix.feature}})
-        run: cargo clippy --no-default-features --features ${{matrix.feature}} -- -D warnings
 
   windows:
     name: windows
