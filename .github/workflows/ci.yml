@@ -47,7 +47,7 @@ jobs:
         rust:
           - stable
           - beta 
-          - stable minus 8 releases
+          - stable minus 6 releases
         feature:
           - d
           - d,images
@@ -93,7 +93,7 @@ jobs:
         rust:
           - stable
           - beta 
-          - stable minus 8 releases
+          - stable minus 6 releases
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -121,7 +121,7 @@ jobs:
         rust:
           - stable
           - beta 
-          - stable minus 8 releases
+          - stable minus 6 releases
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
