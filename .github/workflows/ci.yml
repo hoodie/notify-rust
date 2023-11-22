@@ -76,6 +76,7 @@ jobs:
 
   windows:
     name: windows
+    needs: check_commit
     runs-on: windows-latest
     strategy:
       matrix:
@@ -107,6 +108,7 @@ jobs:
 
   macos:
     name: macos
+    needs: check_commit
     runs-on: macos-latest
     strategy:
       matrix:
@@ -135,3 +137,4 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+t a
