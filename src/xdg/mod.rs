@@ -24,14 +24,14 @@ use zbus_rs::bus;
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 mod bus;
 
-#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
-pub mod server_dbus;
+// #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+// pub mod server_dbus;
 
-#[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
-pub mod server_zbus;
+// #[cfg(all(feature = "server", feature = "zbus", unix, not(target_os = "macos")))]
+// pub mod server_zbus;
 
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-pub mod server;
+// #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+// pub mod server;
 
 #[cfg(not(feature = "debug_namespace"))]
 #[doc(hidden)]

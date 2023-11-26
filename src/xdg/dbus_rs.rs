@@ -143,7 +143,7 @@ pub fn send_notification_via_connection_at_bus(
 
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
-    match reply.get_items().get(0) {
+    match reply.get_items().first() {
         Some(MessageItem::UInt32(ref id)) => Ok(*id),
         _ => Ok(0),
     }
@@ -220,7 +220,7 @@ pub fn get_capabilities() -> Result<Vec<String>> {
     let connection = Connection::get_private(BusType::Session)?;
     let reply = connection.send_with_reply_and_block(message, 2000)?;
 
-    if let Some(MessageItem::Array(items)) = reply.get_items().get(0) {
+    if let Some(MessageItem::Array(items)) = reply.get_items().first() {
         for item in items.iter() {
             if let MessageItem::Str(ref cap) = *item {
                 capabilities.push(cap.clone());
@@ -238,6 +238,7 @@ fn unwrap_message_string(item: Option<&MessageItem>) -> String {
     }
 }
 
+#[allow(clippy::get_first)]
 pub fn get_server_information() -> Result<ServerInformation> {
     let message = build_message("GetServerInformation", Default::default());
     let connection = Connection::get_private(BusType::Session)?;
