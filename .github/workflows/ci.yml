@@ -6,40 +6,13 @@ on:
   pull_request:
 
 jobs:
-  check_commit:
-    name: Check Commit Message
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # A PR should not contain too many commits
-          fetch-depth: 10
-      - name: Validate commit messages
-        run: |
-          git show-ref
-          curl -sSfL https://github.com/convco/convco/releases/latest/download/convco-ubuntu.zip | zcat > convco
-          chmod +x convco
-          ./convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
-          rm convco
-
-  check_fmt_clippy:
-    name: Check Format
-    needs: check_commit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
-      - name: cargo-fmt
-        run: cargo fmt --all --check
-
-      #- name: clippy
-      #  run: cargo clippy --all-features -- -D warnings
+  pr_check:
+      name: Pull Request Check
+      uses: ./.github/workflows/pull-request.yml
 
   linux:
     name: linux
-    needs: check_commit
+    needs: pr_check
     runs-on: ubuntu-latest
     strategy:
       #fail-fast: true
@@ -86,7 +59,7 @@ jobs:
 
   windows:
     name: windows
-    needs: check_commit
+    needs: pr_check
     runs-on: windows-latest
     strategy:
       matrix:
@@ -114,7 +87,7 @@ jobs:
 
   macos:
     name: macos
-    needs: check_commit
+    needs: pr_check
     runs-on: macos-latest
     strategy:
       matrix:
