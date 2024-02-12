@@ -21,7 +21,7 @@ include = [
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
-dbus = { version = "0.9", optional = true }
+dbus = { version = "0.9.7", optional = true }
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
 zbus = { version = "3.10", optional = true }
@@ -34,7 +34,7 @@ mac-notification-sys = "0.6"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
-winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
+winrt-notification = { package = "tauri-winrt-notification", version = "0.10.1" }
 
 [features]
 default = ["z"]
