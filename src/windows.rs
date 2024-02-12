@@ -1,8 +1,24 @@
 use winrt_notification::Toast;
 
-pub use crate::{error::*, notification::Notification, timeout::Timeout};
+pub use crate::{error::*, notification::Notification, timeout::Timeout,NotificationListener, NotificationTriggerDetails};
 
 use std::{path::Path, str::FromStr};
+
+pub(crate) fn listen_notification()-> Result<()> {
+    let listener = NotificationListener::new().unwrap();
+
+    listener.add_listener(Box::new(move |details: NotificationTriggerDetails| {
+        println!("Received notification: {:?}", details);
+
+        // TODO: Do something with the notification
+    }));
+
+    // Listener in a loop
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+}
+
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let sound = match &notification.sound_name {
