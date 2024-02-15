@@ -452,17 +452,6 @@ impl Notification {
         windows::show_notification(self)
     }
 
-    /// Listen to the notications
-    #[cfg(target_os = "windows")]
-    pub fn listen(&self) -> Result<()> {
-        windows::listen_notification(self)
-    }
-
-    /// Listen to the notification
-    #[cfg(target_os = "macos")]
-    pub fn listen(&self) -> Result<xdg::NotificationHandle> {
-        macos::show_notification(self)
-    }
 
     /// Wraps show() but prints notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]

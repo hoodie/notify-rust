@@ -1,24 +1,32 @@
 use winrt_notification::Toast;
 
-pub use crate::{error::*, notification::Notification, timeout::Timeout,NotificationListener, NotificationTriggerDetails};
+pub use crate::{
+    error::*,
+    notification::Notification,
+    timeout::Timeout,
+    NotificationListener,
+    NotificationTriggerDetails,
+};
 
-use std::{path::Path, str::FromStr};
+use std::{ path::Path, str::FromStr };
 
-pub(crate) fn listen_notification()-> Result<()> {
-    let listener = NotificationListener::new().unwrap();
+pub(crate) type Listener = winrt_notification::NotificationListener;
 
-    listener.add_listener(Box::new(move |details: NotificationTriggerDetails| {
-        println!("Received notification: {:?}", details);
+pub(crate) type Handler = Box<dyn FnMut(NotificationTriggerDetails) + Send + 'static>;
 
-        // TODO: Do something with the notification
-    }));
+impl Listener {
 
-    // Listener in a loop
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    pub(crate) fn new() -> Result<Listener> {
+        winrt_notification::NotificationListener
+            ::new()
+            .map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
     }
-}
 
+    pub(crate) fn add_listener(&self, handler: Handler) -> Result<()> {
+        self.add_listener(handler).map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
+    }
+
+}
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
     let sound = match &notification.sound_name {
@@ -50,7 +58,5 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
         toast = toast.image(Path::new(&image_path), "");
     }
 
-    toast
-        .show()
-        .map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
+    toast.show().map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
 }

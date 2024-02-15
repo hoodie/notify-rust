@@ -1,11 +1,47 @@
-use crate::{error::*, notification::Notification};
+use crate::{ error::*, notification::Notification };
 
-pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
+pub use mac_notification_sys::error::{ ApplicationError, Error as MacOsError, NotificationError };
 
-use std::ops::{Deref, DerefMut};
+use std::ops::{ Deref, DerefMut };
 
-use dbus::{blocking::Connection, BusType, Path};
+use dbus::{ blocking::Connection,blocking::Proxy, BusType, Path };
 use std::time::Duration;
+
+
+
+/// Listen to notification
+pub(crate) fn listen_notification() -> Result<()> {
+    let conn = Connection::new(BusType::Session).unwrap();
+    let notifications_path = Path::from("/org/freedesktop/Notifications");
+
+    // Get a proxy for the Notifications interface
+    let notifications_proxy = conn.with_proxy(
+        notifications_path,
+        "org.freedesktop.Notifications",
+        Duration::from_secs(5)
+    );
+
+    // Register a callback to be called whenever a notification is received
+    notifications_proxy
+        .method_call("org.freedesktop.Notifications", "Notify", (), Some(&[]))
+        .unwrap()
+        .match_path(notifications_path)
+        .for_each(|msg| {
+            println!("Received notification: {:?}", msg);
+
+            // TODO: Do something with the notification
+
+            Ok(())
+        })
+        .unwrap();
+
+    // Run the event loop
+    conn.enter_event_loop();
+}
+
+
+
+
 
 /// A handle to a shown notification.
 ///
@@ -37,36 +73,9 @@ impl DerefMut for NotificationHandle {
     }
 }
 
-/// Listen to notification
-pub(crate) fn listen_notification() -> Result<()> {
-
-    let conn = Connection::new(BusType::Session).unwrap();
-    let notifications_path = Path::from("/org/freedesktop/Notifications");
-
-    // Get a proxy for the Notifications interface
-    let notifications_proxy = conn.with_proxy(notifications_path, "org.freedesktop.Notifications", Duration::from_secs(5));
-
-    // Register a callback to be called whenever a notification is received
-    notifications_proxy
-        .method_call("org.freedesktop.Notifications", "Notify", (), Some(&[]))
-        .unwrap()
-        .match_path(notifications_path)
-        .for_each(|msg| {
-            println!("Received notification: {:?}", msg);
-
-            // TODO: Do something with the notification
-
-            Ok(())
-        })
-        .unwrap();
-
-    // Run the event loop
-    conn.enter_event_loop();
-
-}
-
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    mac_notification_sys::Notification::default()
+    mac_notification_sys::Notification
+        ::default()
         .title(notification.summary.as_str())
         .message(&notification.body)
         .maybe_subtitle(notification.subtitle.as_deref())
@@ -78,9 +87,10 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
 
 pub(crate) fn schedule_notification(
     notification: &Notification,
-    delivery_date: f64,
+    delivery_date: f64
 ) -> Result<NotificationHandle> {
-    mac_notification_sys::Notification::default()
+    mac_notification_sys::Notification
+        ::default()
         .title(notification.summary.as_str())
         .message(&notification.body)
         .maybe_subtitle(notification.subtitle.as_deref())
@@ -90,3 +100,4 @@ pub(crate) fn schedule_notification(
 
     Ok(NotificationHandle::new(notification.clone()))
 }
+
