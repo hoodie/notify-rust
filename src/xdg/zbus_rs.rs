@@ -155,7 +155,7 @@ async fn send_notification_via_connection_at_bus(
         )
         .await?
         .body()
-        .unwrap();
+        .deserialize()?;
     Ok(reply)
 }
 
@@ -193,7 +193,8 @@ pub async fn get_capabilities_at_bus(bus: NotificationBus) -> Result<Vec<String>
             &(),
         )
         .await?
-        .body()?;
+        .body()
+        .deserialize()?;
     Ok(info)
 }
 
@@ -212,7 +213,8 @@ pub async fn get_server_information_at_bus(bus: NotificationBus) -> Result<xdg::
             &(),
         )
         .await?
-        .body()?;
+        .body()
+        .deserialize()?;
 
     Ok(info)
 }
@@ -255,29 +257,28 @@ async fn wait_for_action_signal(
     proxy.add_match_rule(close_signal_rule).await.unwrap();
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
-        if let Ok(header) = msg.header() {
-            if let Ok(zbus::MessageType::Signal) = header.message_type() {
-                match header.member() {
-                    Ok(Some(name)) if name == "ActionInvoked" => {
-                        match msg.body::<(u32, String)>() {
-                            Ok((nid, action)) if nid == id => {
-                                handler.call(&ActionResponse::Custom(&action));
-                                break;
-                            }
-                            _ => {}
+        let header = msg.header();
+        if let zbus::MessageType::Signal = header.message_type() {
+            match header.member() {
+                Some(name) if name == "ActionInvoked" => {
+                    match msg.body().deserialize::<(u32, String)>() {
+                        Ok((nid, action)) if nid == id => {
+                            handler.call(&ActionResponse::Custom(&action));
+                            break;
                         }
+                        _ => {}
                     }
-                    Ok(Some(name)) if name == "NotificationClosed" => {
-                        match msg.body::<(u32, u32)>() {
-                            Ok((nid, reason)) if nid == id => {
-                                handler.call(&ActionResponse::Closed(reason.into()));
-                                break;
-                            }
-                            _ => {}
-                        }
-                    }
-                    Ok(_) | Err(_) => {}
                 }
+                Some(name) if name == "NotificationClosed" => {
+                    match msg.body().deserialize::<(u32, u32)>() {
+                        Ok((nid, reason)) if nid == id => {
+                            handler.call(&ActionResponse::Closed(reason.into()));
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
         }
     }
