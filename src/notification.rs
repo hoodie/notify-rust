@@ -452,7 +452,7 @@ impl Notification {
         windows::show_notification(self)
     }
 
-    /// Wraps show() but prints notification to stdout.
+    /// Wraps `show()` but prints notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[deprecated = "this was never meant to be public API"]
     pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {

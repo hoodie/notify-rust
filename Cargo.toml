@@ -24,7 +24,7 @@ include = [
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1", optional = true }
 image = { version = "0.24", optional = true }
-zbus = { version = "3.10", optional = true }
+zbus = { version = "4", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.10", optional = true }
