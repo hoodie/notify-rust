@@ -25,8 +25,8 @@ use zbus_rs::bus;
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 mod bus;
 
-#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
-pub mod server_dbus;
+// #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
+// pub mod server_dbus;
 
 #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
 pub mod server;
