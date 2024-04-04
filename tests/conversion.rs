@@ -2,7 +2,6 @@
 mod conversion {
 
     use notify_rust::Urgency;
-    use std::convert::{TryFrom, TryInto};
 
     #[test]
     fn urgency_from_int() {

@@ -4,7 +4,7 @@
 use crate::image::ImageError;
 use std::{fmt, num};
 /// Convenient wrapper around `std::Result`.
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(target_os = "macos")]
 pub use crate::macos::{ApplicationError, MacOsError, NotificationError};
