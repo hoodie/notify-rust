@@ -1,5 +1,21 @@
 # Changelog
 
+## [v4.11.0](https://github.com/hoodie/notify-rust/compare/v4.10.0...v4.11.0) (2024-04-04)
+
+### Features
+
+* update to zbus v4
+([9683d01](https://github.com/hoodie/notify-rust/commit/9683d012568e4975f4e99068c7653b844146b536))
+
+### Fixes
+
+* **deps:** update rust crate image to 0.25
+([c453121](https://github.com/hoodie/notify-rust/commit/c4531213af4d7319c5c3b23095d48d75c14f2181))
+* **deps:** update rust crate env_logger to 0.11
+([656a915](https://github.com/hoodie/notify-rust/commit/656a915063484f1f96a5c3c5e0a566cf8dad71a7))
+* **deps:** update rust crate winrt-notification to 0.2
+([730d563](https://github.com/hoodie/notify-rust/commit/730d5632f541ed3f452c62612c7b14992923d978))
+
 ## [v4.10.0](https://github.com/hoodie/notify-rust/compare/v4.9.0...v4.10.0) (2023-11-16)
 
 ### Features
@@ -74,7 +90,8 @@
 * raise minimum rustc version to 1.60.0 for zbus
 ([b3b9aba](https://github.com/hoodie/notify-rust/commit/b3b9aba88fbacfd2c2c406e58cbc020c46895879))
 * update winrt-notification to a maintained fork, closes #148
-([7cc6824](https://github.com/hoodie/notify-rust/commit/7cc682428d2f5f0c2335c8ff141fb71af1e01a26))
+([7cc6824](https://github.com/hoodie/notify-rust/commit/7cc682428d2f5f0c2335c8ff141fb71af1e01a26)),
+closes [#148](https://github.com/hoodie/notify-rust/issues/148)
 
 ### [v4.5.8](https://github.com/hoodie/notify-rust/compare/v4.5.7...v4.5.8) (2022-03-26)
 
@@ -234,7 +251,8 @@ closes [#88](https://github.com/hoodie/notify-rust/issues/88)
 ### Features
 
 * **windows:** additions to the API (#69)
-([1d9cb0e](https://github.com/hoodie/notify-rust/commit/1d9cb0eb73fdf7f442757a63f2131cb42c4c150f))
+([1d9cb0e](https://github.com/hoodie/notify-rust/commit/1d9cb0eb73fdf7f442757a63f2131cb42c4c150f)),
+closes [#69](https://github.com/hoodie/notify-rust/issues/69)
 * make notification non-exhaustive
 ([0304274](https://github.com/hoodie/notify-rust/commit/03042744a05fdab5eff1eee5023c93b2930710d2))
 * make error non-exhaustive
