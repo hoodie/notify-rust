@@ -1,4 +1,4 @@
-use std::{convert::TryInto, num::ParseIntError, str::FromStr, time::Duration};
+use std::{num::ParseIntError, str::FromStr, time::Duration};
 
 /// Describes the timeout of a notification
 ///
@@ -10,11 +10,12 @@ use std::{convert::TryInto, num::ParseIntError, str::FromStr, time::Duration};
 /// assert_eq!("never".parse(), Ok(Timeout::Never));
 /// assert_eq!("42".parse(), Ok(Timeout::Milliseconds(42)));
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum Timeout {
     /// Expires according to server default.
     ///
     /// Whatever that might be...
+    #[default]
     Default,
 
     /// Do not expire, user will have to close this manually.
@@ -22,12 +23,6 @@ pub enum Timeout {
 
     /// Expire after n milliseconds.
     Milliseconds(u32),
-}
-
-impl Default for Timeout {
-    fn default() -> Self {
-        Timeout::Default
-    }
 }
 
 #[test]

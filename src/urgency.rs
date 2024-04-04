@@ -1,5 +1,4 @@
 use crate::error::ErrorKind;
-use std::convert::TryFrom;
 
 /// Levels of Urgency.
 ///
