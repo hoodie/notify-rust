@@ -47,7 +47,7 @@ debug_namespace = []
 images = ["image", "lazy_static"]
 
 [dev-dependencies]
-color-backtrace = "0.5" # wait for MSVR 1.70 to update
+color-backtrace = "0.6" # wait for MSVR 1.70 to update
 ctor = "0.2"
 maplit = "1.0"
 
