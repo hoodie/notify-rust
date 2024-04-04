@@ -20,7 +20,7 @@ jobs:
         rust:
           - stable
           - beta 
-          - stable minus 6 releases
+          - stable minus 2 releases
         feature:
           - d
           - d,images
