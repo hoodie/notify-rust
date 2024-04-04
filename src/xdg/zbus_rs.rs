@@ -155,8 +155,7 @@ async fn send_notification_via_connection_at_bus(
         )
         .await?
         .body()
-        .deserialize()
-        .unwrap();
+        .deserialize()?;
     Ok(reply)
 }
 
