@@ -6,7 +6,7 @@ description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus clie
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
 edition = "2021"
-rust-version = "1.59.0"
+rust-version = "1.63.0"
 license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
@@ -23,8 +23,8 @@ include = [
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1", optional = true }
-image = { version = "0.24", optional = true }
-zbus = { version = "4", optional = true }
+image = { version = "0.25", optional = true }
+zbus = { version = "4.1", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.10", optional = true }
@@ -34,7 +34,7 @@ mac-notification-sys = "0.6"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
-winrt-notification = { package = "tauri-winrt-notification", version = "0.1" }
+winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 
 [features]
 default = ["z"]
