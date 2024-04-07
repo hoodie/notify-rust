@@ -62,13 +62,6 @@ Enables the usage of [**dbus-rs**](https://lib.rs/dbus) instead of [**zbus**](ht
 This is functionally identical to the default feature set.
 **As long as you still compile with default-features this will only enable dbus-rs usage, but not default to it!** In order to use the dbus-rs implementation set the environment variable **`DBUSRS `** or compile notify-rust with **`--no-default-features`**.
 
-### Requirements
-
-|             | with dbus | with zbus|
-| ----------- | ---       |   ---    |
-| **`rustc`** | >= 1.59   |  >= 1.60 |
-| **libdbus** | **yes**   |  nope!   |
-
 ## macOS support
 This library shines on linux and bsd, which is its original target platform.
 Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
