@@ -87,7 +87,7 @@ impl DbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure);
     }
 

@@ -76,7 +76,7 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub async fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
     }
 
@@ -231,7 +231,7 @@ pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
     wait_for_action_signal(&connection, id, func).await;
 }
 
-async fn wait_for_action_signal(
+pub(crate) async fn wait_for_action_signal(
     connection: &zbus::Connection,
     id: u32,
     handler: impl ActionResponseHandler,

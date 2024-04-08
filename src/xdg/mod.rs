@@ -169,8 +169,8 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|reason| println!("closed: {:?}", reason));
     /// ```
-    pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
-        match self.inner {
+    pub fn on_close<A>(&self, handler: impl CloseHandler<A>) {
+        match &self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
                 inner.wait_for_action(|action: &ActionResponse| {
@@ -181,11 +181,16 @@ impl NotificationHandle {
             }
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
-                block_on(inner.wait_for_action(|action: &ActionResponse| {
-                    if let ActionResponse::Closed(reason) = action {
-                        handler.call(*reason);
-                    }
-                }));
+                let connection = inner.connection.clone();
+                block_on(zbus_rs::wait_for_action_signal(
+                    &connection,
+                    inner.id,
+                    |action: &ActionResponse| {
+                        if let ActionResponse::Closed(reason) = action {
+                            handler.call(*reason);
+                        }
+                    },
+                ));
             }
         };
     }
