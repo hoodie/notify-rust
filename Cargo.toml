@@ -48,7 +48,7 @@ images = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.6" # wait for MSVR 1.70 to update
-ctor = "0.2"
+ctor = "0.2.8"
 maplit = "1.0"
 
 [dev-dependencies.async-std]
