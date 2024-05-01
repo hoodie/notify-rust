@@ -30,7 +30,7 @@ log = "0.4"
 env_logger ={ version ="0.11", optional = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
-mac-notification-sys = "0.6"
+mac-notification-sys = "0.6.1"
 chrono = { version = "0.4", optional = true}
 
 [target.'cfg(target_os="windows")'.dependencies]
