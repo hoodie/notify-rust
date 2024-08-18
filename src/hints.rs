@@ -27,10 +27,9 @@ pub(crate) enum CustomHintType {
 
 /// `Hints` allow you to pass extra information to the server.
 ///
-/// Many of these are standardized by either:
+/// Many of these are standardized by:
 ///
-/// * <http://www.galago-project.org/specs/notification/0.9/x344.html>
-/// * <https://developer.gnome.org/notification-spec/#hints>
+/// * <https://specifications.freedesktop.org/notification-spec/latest/hints.html>
 ///
 /// Which of these are actually implemented depends strongly on the Notification server you talk to.
 /// Usually the [`get_capabilities()`](`crate::get_capabilities`) gives some clues, but the standards usually mention much more
@@ -44,8 +43,7 @@ pub enum Hint {
 
     /// Check out:
     ///
-    /// * <http://www.galago-project.org/specs/notification/0.9/x211.html>
-    /// * <https://developer.gnome.org/notification-spec/#categories>
+    /// * <https://specifications.freedesktop.org/notification-spec/latest/hints.html>
     Category(String),
 
     /// Name of the `DesktopEntry` representing the calling application. In case of "firefox.desktop"
