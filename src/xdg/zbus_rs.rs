@@ -76,7 +76,7 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub async fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
     }
 
@@ -97,7 +97,7 @@ impl ZbusNotificationHandle {
         self.close_fallible().await.unwrap();
     }
 
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(&self, closure: F)
     where
         F: FnOnce(CloseReason),
     {
@@ -106,6 +106,17 @@ impl ZbusNotificationHandle {
                 closure(*reason);
             }
         }));
+    }
+
+    pub async fn on_close_async<F>(&self, closure: F)
+    where
+        F: FnOnce(CloseReason),
+    {
+        self.wait_for_action(|action: &ActionResponse| {
+            if let ActionResponse::Closed(reason) = action {
+                closure(*reason);
+            }
+        }).await
     }
 
     pub fn update_fallible(&mut self) -> Result<()> {
@@ -202,7 +213,7 @@ pub async fn get_capabilities() -> Result<Vec<String>> {
     get_capabilities_at_bus(Default::default()).await
 }
 
-pub async fn get_server_information_at_bus(bus: NotificationBus) -> Result<xdg::ServerInformation> {
+pub async fn get_server_information_at_bus(bus: NotificationBus) -> Result<dg::ServerInformation> {
     let connection = zbus::Connection::session().await?;
     let info: xdg::ServerInformation = connection
         .call_method(

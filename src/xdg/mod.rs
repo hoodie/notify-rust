@@ -169,10 +169,10 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|reason| println!("closed: {:?}", reason));
     /// ```
-    pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
-        match self.inner {
+    pub fn on_close<A>(&self, handler: impl CloseHandler<A>) {
+        match &self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(inner) => {
+            NotificationHandleInner::Dbus(ref inner) => {
                 inner.wait_for_action(|action: &ActionResponse| {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);

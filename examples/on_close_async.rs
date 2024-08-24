@@ -1,11 +1,6 @@
-#![allow(unused_imports, dead_code)]
-use std::{io, thread};
-
-use notify_rust::Notification;
-
-fn wait_for_keypress() {
-    println!("halted until you hit the \"ANY\" key");
-    io::stdin().read_line(&mut String::new()).unwrap();
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn main() {
+    println!("this is an xdg only feature")
 }
 
 fn print() {
@@ -15,14 +10,11 @@ fn print2() {
     println!("this is an extra callback");
 }
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
-fn main() {
-    println!("this is a xdg only feature")
-}
-
 #[cfg(all(unix, not(target_os = "macos")))]
-fn main() {
-    thread::spawn(|| {
+#[async_std::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use notify_rust::Notification;
+    async_std::task::spawn(|| {
         Notification::new()
             .summary("Time is running out")
             .body("This will go away.")
@@ -33,5 +25,5 @@ fn main() {
                 handler.on_close_async(print2);
             })
     });
-    wait_for_keypress();
+    Ok(())
 }

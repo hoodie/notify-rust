@@ -37,11 +37,16 @@ chrono = { version = "0.4", optional = true}
 winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 
 [features]
-default = ["z"]
+default = ["zbus"]
 #`server = []
-d = ["dbus"]
+d = ["dep:dbus"]
 d_vendored = ["dbus/vendored"]
-z = ["zbus", "serde", "async"]
+z = ["dep:zbus"]
+zbus = [
+ # "dep:zbus",
+  "dep:serde",
+  "async"
+  ]
 async = []
 debug_namespace = []
 images = ["image", "lazy_static"]
