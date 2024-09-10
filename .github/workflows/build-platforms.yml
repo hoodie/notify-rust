@@ -1,6 +1,9 @@
 name: Build Platforms
-# This workflow is triggered on pushes to the repository.
-on: [ pull_request, workflow_call, workflow_dispatch ]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   linux:
