@@ -10,6 +10,17 @@ jobs:
       name: Pull Request Check
       uses: ./.github/workflows/pull-request.yml
 
+  semver:
+    name: cargo-semver-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2.6
+
   linux:
     name: linux
     needs: pr_check
