@@ -1,5 +1,12 @@
 # Changelog
 
+### [v4.11.3](https://github.com/hoodie/notify-rust/compare/v4.11.2...v4.11.3) (2024-09-10)
+
+#### Fixes
+
+* update build badge
+([c0ffeed](https://github.com/hoodie/notify-rust/commit/c0ffeed9455244f616ae738d2ac009e66fc2513a))
+
 ### [v4.11.2](https://github.com/hoodie/notify-rust/compare/v4.11.1...v4.11.2) (2024-09-10)
 
 #### Fixes
