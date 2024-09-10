@@ -63,25 +63,25 @@ impl From<Option<u64>> for Urgency {
 }
 
 // TODO: remove this in v5.0
-#[cfg(not(feature = "server"))]
+// #[cfg(not(feature = "server"))]
 impl From<u64> for Urgency {
     fn from(int: u64) -> Urgency {
         match int {
             0 => Urgency::Low,
             1 => Urgency::Normal,
-            2..=std::u64::MAX => Urgency::Critical,
+            2..=u64::MAX => Urgency::Critical,
         }
     }
 }
 
-// TODO: make this the default in v5.0
-#[cfg(feature = "server")]
-impl From<u8> for Urgency {
-    fn from(int: u8) -> Urgency {
-        match int {
-            0 => Urgency::Low,
-            1 => Urgency::Normal,
-            2..=std::u8::MAX => Urgency::Critical,
-        }
-    }
-}
+// // TODO: make this the default in v5.0
+// #[cfg(feature = "server")]
+// impl From<u8> for Urgency {
+//     fn from(int: u8) -> Urgency {
+//         match int {
+//             0 => Urgency::Low,
+//             1 => Urgency::Normal,
+//             2..=std::u8::MAX => Urgency::Critical,
+//         }
+//     }
+// }

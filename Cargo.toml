@@ -22,7 +22,7 @@ include = [
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = { version = "0.9", optional = true }
-lazy_static = { version = "1", optional = true }
+lazy_static = { version = "1.5", optional = true }
 image = { version = "0.25", optional = true }
 zbus = { version = "4", optional = true }
 serde = { version = "1", optional = true }
@@ -38,7 +38,7 @@ winrt-notification = { package = "tauri-winrt-notification", version = "0.2" }
 
 [features]
 default = ["z"]
-#`server = []
+# server = []
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
 z = ["zbus", "serde", "async"]

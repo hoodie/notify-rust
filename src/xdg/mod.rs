@@ -467,15 +467,15 @@ pub struct ServerInformation {
     pub spec_version: String,
 }
 
-/// Strictly internal.
-/// The NotificationServer implemented here exposes a "Stop" function.
-/// stops the notification server
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-#[doc(hidden)]
-pub fn stop_server() {
-    #[cfg(feature = "dbus")]
-    dbus_rs::stop_server()
-}
+// /// Strictly internal.
+// /// The NotificationServer implemented here exposes a "Stop" function.
+// /// stops the notification server
+// #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+// #[doc(hidden)]
+// pub fn stop_server() {
+//     #[cfg(feature = "dbus")]
+//     dbus_rs::stop_server()
+// }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
