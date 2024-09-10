@@ -1,6 +1,6 @@
 name: Pull request
 # This workflow is triggered on pushes to the repository.
-on: [ pull_request, workflow_call, workflow_dispatch ]
+on: [ pull_request ]
 
 jobs:
   check:
@@ -19,9 +19,8 @@ jobs:
           ./convco check ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
           rm convco
 
-  check_fmt_clippy:
+  check_fmt:
     name: Check Format
-    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +30,4 @@ jobs:
       - name: cargo-fmt
         run: cargo fmt --all --check
 
-      #- name: clippy
-      #  run: cargo clippy --all-features -- -D warnings
 

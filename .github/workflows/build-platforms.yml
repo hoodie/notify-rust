@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Build Platforms
 on:
   push:
     branches:
@@ -6,24 +6,8 @@ on:
   pull_request:
 
 jobs:
-  pr_check:
-      name: Pull Request Check
-      uses: ./.github/workflows/pull-request.yml
-
-  semver:
-    name: cargo-semver-checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
-      - name: check semver
-        uses: obi1kenobi/cargo-semver-checks-action@v2.6
-
   linux:
     name: linux
-    needs: pr_check
     runs-on: ubuntu-latest
     strategy:
       #fail-fast: true
@@ -70,7 +54,6 @@ jobs:
 
   windows:
     name: windows
-    needs: pr_check
     runs-on: windows-latest
     strategy:
       matrix:
@@ -95,10 +78,8 @@ jobs:
       - name: clippy (default features)
         run: cargo clippy -- -D warnings
 
-
   macos:
     name: macos
-    needs: pr_check
     runs-on: macos-latest
     strategy:
       matrix:

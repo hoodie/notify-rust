@@ -1,0 +1,18 @@
+name: Semver Checks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  semver:
+    name: cargo-semver-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2.6
