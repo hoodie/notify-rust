@@ -179,9 +179,6 @@ mod xdg;
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 mod image;
 
-#[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
-pub mod server;
-
 #[cfg(target_os = "macos")]
 pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
@@ -198,8 +195,8 @@ pub use crate::xdg::{
     CloseHandler, CloseReason, DbusStack, NotificationHandle,
 };
 
-#[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-pub use crate::xdg::stop_server;
+// #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
+// pub use crate::xdg::stop_server;
 
 pub use crate::hints::Hint;
 
