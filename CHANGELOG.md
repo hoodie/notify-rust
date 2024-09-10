@@ -1,5 +1,25 @@
 # Changelog
 
+### [v4.11.2](https://github.com/hoodie/notify-rust/compare/v4.11.1...v4.11.2) (2024-09-10)
+
+#### Fixes
+
+* **docs:** update links to Hints specification
+([6312e9c](https://github.com/hoodie/notify-rust/commit/6312e9c2273150d8c844c4725bf9ad29b3ac6021))
+* **docs:** link warning
+([6edff02](https://github.com/hoodie/notify-rust/commit/6edff02d5450b9ae13f8271f32685fe9bca64404))
+* more precise dependency on lazy_static
+([c24169e](https://github.com/hoodie/notify-rust/commit/c24169ef76b2b0be6d2acb4e6b4b445161a19d49))
+
+### [v4.11.1](https://github.com/hoodie/notify-rust/compare/v4.11.0...v4.11.1) (2024-08-01)
+
+#### Fixes
+
+* **docs:** make sure crates.io and readme are in sync
+([2bd2a2c](https://github.com/hoodie/notify-rust/commit/2bd2a2ce94aa9941040a939244ac3798f3a0110d))
+* update maintenance badge
+([789fe44](https://github.com/hoodie/notify-rust/commit/789fe44140416837812889c5cdc0b64ac81f26b7))
+
 ## [v4.11.0](https://github.com/hoodie/notify-rust/compare/v4.10.0...v4.11.0) (2024-04-04)
 
 ### Features
