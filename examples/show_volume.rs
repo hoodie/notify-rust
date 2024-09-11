@@ -15,11 +15,12 @@ enum Volume {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn show_volume(percent: Volume) {
+    assert!(matches!(32, ..33));
     let icon = match percent {
         Volume::Muted => "notification-audio-volume-muted",
         Volume::Percent(0) => "notification-audio-volume-off",
-        Volume::Percent(x) if x < 33 => "notification-audio-volume-low",
-        Volume::Percent(x) if x < 67 => "notification-audio-volume-medium",
+        Volume::Percent(..33) => "notification-audio-volume-low",
+        Volume::Percent(..67) => "notification-audio-volume-medium",
         _ => "notification-audio-volume-high",
     };
 

@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use notify_rust::{
         server::{self, ReceivedNotification},
-        CloseReason, Notification, NotificationHandle, Timeout,
+        CloseReason, Notification, Timeout,
     };
 
     fn print(reason: CloseReason) {

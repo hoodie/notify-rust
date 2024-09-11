@@ -6,8 +6,6 @@ use crate::{CloseReason, Hint};
 #[cfg(feature = "d")]
 pub use crate::xdg::server_dbus::stop;
 
-#[cfg(feature = "z")]
-pub use crate::xdg::server_zbus::stop;
 
 // ////// Actions and Hints
 
