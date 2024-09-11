@@ -10,7 +10,7 @@ use event_listener::Event;
 ///
 use futures_util::{future::pending, select, FutureExt};
 use std::{collections::HashMap, marker::PhantomData, sync::Arc, time::Duration};
-use zbus::{dbus_interface, Connection, SignalContext};
+use zbus::{dbus_interface, interface, Connection, SignalContext};
 
 use crate::{
     xdg::NotificationBus, CloseReason, Hint, ServerInformation, Timeout, NOTIFICATION_DEFAULT_BUS,
@@ -86,7 +86,7 @@ pub enum HandledNotification {
     Handled,
 }
 
-#[dbus_interface(name = "org.freedesktop.Notifications")]
+#[zbus::interface(name = "org.freedesktop.Notifications")]
 impl<H, T> NotificationServer<H, T>
 where
     H: NotificationHandler<T> + 'static + Sync + Send + Clone,
@@ -179,7 +179,7 @@ where
             };
 
             log::trace!("Notification #{id}: handler loop start");
-            loop{
+            loop {
                 select! {
                     action = action_rx.recv().fuse() => {
                         log::trace!("Notification #{id}: action received (persistent: {persistent})");
@@ -261,10 +261,10 @@ where
         true
     }
 
-    #[dbus_interface(signal)]
+    #[zbus(signal)]
     async fn action_invoked(ctx: &SignalContext<'_>, id: u32, action: &str) -> zbus::Result<()>;
 
-    #[dbus_interface(signal)]
+    #[zbus(signal)]
     async fn notification_closed(
         ctx: &SignalContext<'_>,
         id: u32,
