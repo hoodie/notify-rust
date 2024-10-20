@@ -237,7 +237,7 @@ async fn wait_for_action_signal(
     handler: impl ActionResponseHandler,
 ) {
     let action_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
+        .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("ActionInvoked")
@@ -248,7 +248,7 @@ async fn wait_for_action_signal(
     proxy.add_match_rule(action_signal_rule).await.unwrap();
 
     let close_signal_rule = MatchRule::builder()
-        .msg_type(zbus::MessageType::Signal)
+        .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
         .member("NotificationClosed")
@@ -258,7 +258,7 @@ async fn wait_for_action_signal(
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
         let header = msg.header();
-        if let zbus::MessageType::Signal = header.message_type() {
+        if let zbus::message::Type::Signal = header.message_type() {
             match header.member() {
                 Some(name) if name == "ActionInvoked" => {
                     match msg.body().deserialize::<(u32, String)>() {
