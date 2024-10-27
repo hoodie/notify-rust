@@ -521,6 +521,14 @@ impl Notification {
         xdg::show_notification_async(self).await
     }
 
+    /// WIP
+    /// TODO: impl new NotificationHandleType
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "async", feature = "zbus"))]
+    pub async fn show_via_portal(&self, id: &str) -> Result<() /*xdg::NotificationHandle*/> {
+        xdg::show_notification_via_portal(self, id).await
+    }
+
     /// Sends the notification to D-Bus at the given sub-bus path.
     ///
     /// Returns a handle to the notification.

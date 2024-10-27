@@ -6,6 +6,7 @@ use super::bus::NotificationBus;
 use crate::response::{NotificationResponse, ResponseHandler};
 
 pub mod bus;
+pub mod portal;
 mod handle;
 
 pub use handle::ZbusNotificationHandle;
