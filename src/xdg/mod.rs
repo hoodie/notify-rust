@@ -37,6 +37,10 @@ mod bus;
 #[doc(hidden)]
 pub static NOTIFICATION_DEFAULT_BUS: &str = "org.freedesktop.Notifications";
 
+// #[cfg(not(feature = "debug_namespace"))]
+// #[doc(hidden)]
+// pub static NOTIFICATION_PORTAL_BUS: &str = "org.freedesktop.portal.Desktop";
+
 #[cfg(feature = "debug_namespace")]
 #[doc(hidden)]
 // #[deprecated]
@@ -46,7 +50,14 @@ pub static NOTIFICATION_DEFAULT_BUS: &str = "de.hoodie.Notifications";
 pub static NOTIFICATION_INTERFACE: &str = "org.freedesktop.Notifications";
 
 #[doc(hidden)]
+pub static NOTIFICATION_PORTAL_INTERFACE: &str = "org.freedesktop.portal.Notification";
+
+#[doc(hidden)]
 pub static NOTIFICATION_OBJECTPATH: &str = "/org/freedesktop/Notifications";
+
+#[doc(hidden)]
+pub static NOTIFICATION_PORTAL_OBJECTPATH: &str = "/org/freedesktop/portal/desktop";
+pub static NOTIFICATION_PORTAL_BUS_NAME: &str = "org.freedesktop.portal.Desktop";
 
 pub(crate) use bus::NotificationBus;
 
@@ -325,6 +336,14 @@ pub(crate) async fn show_notification_async(
     zbus_rs::connect_and_send_notification(notification)
         .await
         .map(Into::into)
+}
+
+#[cfg(all(feature = "async", feature = "zbus"))]
+pub(crate) async fn show_notification_via_portal(
+    notification: &Notification,
+    id: &str,
+) -> Result<()> {
+    zbus_rs::portal::connect_and_send_notification(notification, id).await
 }
 
 #[cfg(all(feature = "async", feature = "zbus"))]
