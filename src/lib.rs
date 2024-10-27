@@ -164,6 +164,8 @@ pub mod error;
 mod hints;
 mod miniver;
 mod notification;
+#[cfg(feature = "zbus")]
+pub(crate) mod priority;
 mod timeout;
 pub(crate) mod urgency;
 
