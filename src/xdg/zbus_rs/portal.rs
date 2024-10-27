@@ -16,16 +16,30 @@ struct PortalNotification {
     body: String,
     // #[zvariant(rename = "markup-body")]
     // markup_body: Option<String>,
-    priority: String, // low, normal, high, urgent
+    priority: Priority, // low, normal, high, urgent
 }
 
 impl From<&Notification> for PortalNotification {
     fn from(notification: &Notification) -> Self {
+        let urgency = notification
+            .hints
+            .iter()
+            .find(|h| matches!(h, Hint::Urgency(_)));
+
+        eprintln!("urgency: {:?}", urgency);
+
+        let priority = if let Some(Hint::Urgency(urgency)) = urgency {
+            Priority::from(*urgency)
+        } else {
+            Priority::Normal
+        };
+
+        eprintln!("priority: {:?}", priority);
         Self {
             title: notification.summary.clone(),
             body: notification.body.clone(),
             // markup_body: None,
-            priority: "urgent".to_string(),
+            priority,
         }
     }
 }
