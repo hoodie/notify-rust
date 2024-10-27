@@ -163,6 +163,8 @@ mod miniver;
 mod notification;
 mod notification_id;
 mod response;
+#[cfg(feature = "zbus")]
+pub(crate) mod priority;
 mod timeout;
 pub(crate) mod urgency;
 
