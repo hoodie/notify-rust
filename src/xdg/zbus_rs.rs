@@ -4,6 +4,7 @@ use zbus::MatchRule;
 
 use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
 
+pub mod portal;
 pub mod bus {
 
     use crate::xdg::NOTIFICATION_DEFAULT_BUS;
@@ -159,7 +160,6 @@ async fn send_notification_via_connection_at_bus(
         .deserialize()?;
     Ok(reply)
 }
-
 pub async fn connect_and_send_notification(
     notification: &Notification,
 ) -> Result<ZbusNotificationHandle> {
