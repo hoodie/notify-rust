@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::xdg::NOTIFICATION_DEFAULT_BUS;
 
 fn skip_first_slash(s: &str) -> &str {
@@ -7,8 +9,6 @@ fn skip_first_slash(s: &str) -> &str {
         s
     }
 }
-
-use std::path::PathBuf;
 
 type BusNameType = zbus::names::WellKnownName<'static>;
 

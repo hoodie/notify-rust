@@ -1,7 +1,7 @@
 use crate::{
     error::*,
     notification::Notification,
-    // priority::Priority,
+    priority::Priority,
     xdg::{
         NOTIFICATION_PORTAL_BUS_NAME, NOTIFICATION_PORTAL_INTERFACE, NOTIFICATION_PORTAL_OBJECTPATH,
     },
