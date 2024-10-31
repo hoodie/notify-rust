@@ -343,7 +343,7 @@ impl Notification {
     ///
     /// >  Actions are sent over as a list of pairs.
     /// >  Each even element in the list (starting at index 0) represents the identifier for the action.
-    /// >  Each odd element in the list is the localized string that will be displayed to the user.y
+    /// >  Each odd element in the list is the localized string that will be displayed to the user.
     ///
     /// There is nothing fancy going on here yet.
     /// **Careful! This replaces the internal list of actions!**
