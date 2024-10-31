@@ -10,7 +10,8 @@ use zbus::{block_on, zvariant};
 use crate::{error::*, notification::Notification};
 
 pub use crate::response::ActionResponse;
-pub use crate::response::{CloseHandler, NotificationResponse, ResponseHandler};
+pub use crate::response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler};
+pub use crate::response::ResponseHandler as ActionResponseHandler;
 
 use std::ops::{Deref, DerefMut};
 
@@ -129,7 +130,7 @@ impl NotificationHandle {
     /// with a typed [`NotificationResponse`].
     ///
     /// This is the typed, forward-compatible replacement for [`wait_for_action`](Self::wait_for_action).
-    pub fn wait_for_response(self, handler: impl ResponseHandler) -> Result<()> {
+    pub fn wait_for_response(self, handler: impl ActionResponseHandler) -> Result<()> {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => inner.wait_for_action(handler),
