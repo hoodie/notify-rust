@@ -24,6 +24,8 @@ use zbus_rs::bus;
 #[cfg(all(feature = "dbus", feature = "zbus"))]
 mod bus;
 
+mod id;
+
 // #[cfg(all(feature = "server", feature = "dbus", unix, not(target_os = "macos")))]
 // pub mod server_dbus;
 
@@ -68,6 +70,9 @@ enum NotificationHandleInner {
 
     #[cfg(feature = "zbus")]
     Zbus(zbus_rs::ZbusNotificationHandle),
+
+    #[cfg(feature = "zbus")]
+    ZbusPortal(zbus_rs::portal::NotificationHandle),
 }
 
 /// A handle to a shown notification.
@@ -126,6 +131,16 @@ impl NotificationHandle {
                     }),
                 );
             }
+
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(inner) => {
+                block_on(
+                    inner.wait_for_action(|action: &ActionResponse| match action {
+                        ActionResponse::Custom(action) => invocation_closure(action),
+                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                    }),
+                );
+            }
         };
     }
 
@@ -152,6 +167,9 @@ impl NotificationHandle {
             NotificationHandleInner::Dbus(inner) => inner.close(),
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => block_on(inner.close()),
+
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(inner) => block_on(inner.close()),
         }
     }
 
@@ -198,6 +216,14 @@ impl NotificationHandle {
                     }
                 }));
             }
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(inner) => {
+                block_on(inner.wait_for_action(|action: &ActionResponse| {
+                    if let ActionResponse::Closed(reason) = action {
+                        handler.call(*reason);
+                    }
+                }));
+            }
         };
     }
 
@@ -227,16 +253,20 @@ impl NotificationHandle {
             NotificationHandleInner::Dbus(ref mut inner) => inner.update(),
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref mut inner) => inner.update(),
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(ref mut inner) => inner.update(),
         }
     }
 
     /// Returns the Handle's id.
-    pub fn id(&self) -> u32 {
+    pub fn id(&self) -> id::NotificationId {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(ref inner) => inner.id,
+            NotificationHandleInner::Dbus(ref inner) => inner.id.into(),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(ref inner) => inner.id,
+            NotificationHandleInner::Zbus(ref inner) => inner.id.into(),
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(ref inner) => inner.id.clone().into(),
         }
     }
 }
@@ -251,6 +281,8 @@ impl Deref for NotificationHandle {
             NotificationHandleInner::Dbus(ref inner) => &inner.notification,
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref inner) => &inner.notification,
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(ref inner) => &inner.notification,
         }
     }
 }
@@ -263,6 +295,8 @@ impl DerefMut for NotificationHandle {
             NotificationHandleInner::Dbus(ref mut inner) => &mut inner.notification,
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref mut inner) => &mut inner.notification,
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::ZbusPortal(ref mut inner) => &mut inner.notification,
         }
     }
 }
@@ -281,6 +315,13 @@ impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandleInner {
     }
 }
 
+#[cfg(feature = "zbus")]
+impl From<zbus_rs::portal::NotificationHandle> for NotificationHandleInner {
+    fn from(handle: zbus_rs::portal::NotificationHandle) -> NotificationHandleInner {
+        NotificationHandleInner::ZbusPortal(handle)
+    }
+}
+
 #[cfg(feature = "dbus")]
 impl From<dbus_rs::DbusNotificationHandle> for NotificationHandle {
     fn from(handle: dbus_rs::DbusNotificationHandle) -> NotificationHandle {
@@ -293,6 +334,15 @@ impl From<dbus_rs::DbusNotificationHandle> for NotificationHandle {
 #[cfg(feature = "zbus")]
 impl From<zbus_rs::ZbusNotificationHandle> for NotificationHandle {
     fn from(handle: zbus_rs::ZbusNotificationHandle) -> NotificationHandle {
+        NotificationHandle {
+            inner: handle.into(),
+        }
+    }
+}
+
+#[cfg(feature = "zbus")]
+impl From<zbus_rs::portal::NotificationHandle> for NotificationHandle {
+    fn from(handle: zbus_rs::portal::NotificationHandle) -> NotificationHandle {
         NotificationHandle {
             inner: handle.into(),
         }
@@ -341,9 +391,11 @@ pub(crate) async fn show_notification_async(
 #[cfg(all(feature = "async", feature = "zbus"))]
 pub(crate) async fn show_notification_via_portal(
     notification: &Notification,
-    id: &str,
-) -> Result<()> {
-    zbus_rs::portal::connect_and_send_notification(notification, id).await
+    id: &str, // TODO: who verifies/sets these?
+) -> Result<NotificationHandle> {
+    zbus_rs::portal::connect_and_send_notification(notification, id)
+        .await
+        .map(Into::into)
 }
 
 #[cfg(all(feature = "async", feature = "zbus"))]
