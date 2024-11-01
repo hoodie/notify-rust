@@ -1,15 +1,13 @@
 use crate::{
     error::*,
     notification::Notification,
-    xdg::{
-        self, ActionResponseHandler, NOTIFICATION_PORTAL_BUS_NAME, NOTIFICATION_PORTAL_INTERFACE,
-        NOTIFICATION_PORTAL_OBJECTPATH,
-    },
+    xdg::{self, ActionResponseHandler},
     ActionResponse, CloseReason,
 };
 
 use super::{
-    send_notification_via_connection, wait_for_action_signal, wait_for_action_signal_portal,
+    portal::remove_notification, send_notification_via_connection, wait_for_action_signal,
+    wait_for_action_signal_portal,
 };
 
 /// A handle to a shown notification.
@@ -112,17 +110,7 @@ impl PortalNotificationHandle {
     }
 
     pub async fn close_fallible(self) -> Result<()> {
-        self.connection
-            .call_method(
-                // Some(self.notification.bus.clone().into_name()),
-                NOTIFICATION_PORTAL_BUS_NAME.into(),
-                NOTIFICATION_PORTAL_OBJECTPATH,
-                NOTIFICATION_PORTAL_INTERFACE.into(),
-                "CloseNotification",
-                &(self.id),
-            )
-            .await?;
-        Ok(())
+        remove_notification(&self.id, &self.connection).await
     }
 
     pub async fn close(self) {

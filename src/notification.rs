@@ -429,6 +429,7 @@ impl Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     #[cfg(all(feature = "async", feature = "zbus"))]
     pub async fn show_via_portal(&self, id: &str) -> Result<xdg::NotificationHandle> {
+        // TODO: don't accept an id, make up one!!
         xdg::show_notification_via_portal(self, id).await
     }
 
