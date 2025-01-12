@@ -295,7 +295,6 @@ impl Notification {
     /// According to [specification](https://developer.gnome.org/notification-spec/)
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
-
     /// ## [Duration](`std::time::Duration`)
     ///
     /// When passing a [`Duration`](`std::time::Duration`) we will try convert it into milliseconds.
