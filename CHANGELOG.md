@@ -1,5 +1,12 @@
 # Changelog
 
+### [v4.11.4](https://github.com/hoodie/notify-rust/compare/v4.11.3...v4.11.4) (2025-01-12)
+
+#### Fixes
+
+* **deps:** update rust crate zbus to v5
+([0834adc](https://github.com/hoodie/notify-rust/commit/0834adc4635c72420ab52cb58ef573004693cab8))
+
 ### [v4.11.3](https://github.com/hoodie/notify-rust/compare/v4.11.2...v4.11.3) (2024-09-10)
 
 #### Fixes
@@ -49,20 +56,23 @@
 
 * add feature `d_vendored` to enable dbus/vendored feature
 ([a34239c](https://github.com/hoodie/notify-rust/commit/a34239c99e9caedf8f327226de82ad36dc6b3dcc))
-
-## [v4.9.0](https://github.com/hoodie/notify-rust/compare/v4.8.0...v4.9.0) (2023-08-22)
-
-### Features
-
 * base `Urgency` on `u8` instead of `u64`
 ([e9e3c30](https://github.com/hoodie/notify-rust/commit/e9e3c3068478bd2133a202fb4cc7f03af8160836))
-* **xdg:** make dbus bus configurable
-([a514664](https://github.com/hoodie/notify-rust/commit/a514664cbe3277231106775482a87ac792f21635))
 
 ### Fixes
 
 * remove redundant action button on macOS
 ([c0ffee9](https://github.com/hoodie/notify-rust/commit/c0ffee958afdf312d4c8eee5433345690686efb9))
+
+## [v4.9.0](https://github.com/hoodie/notify-rust/compare/v4.8.0...v4.9.0) (2023-04-04)
+
+### Features
+
+* **xdg:** make dbus bus configurable
+([a514664](https://github.com/hoodie/notify-rust/commit/a514664cbe3277231106775482a87ac792f21635))
+
+### Fixes
+
 * remove server feature
 ([f8e89cf](https://github.com/hoodie/notify-rust/commit/f8e89cfd1a392d9b6cff43adcb167e9f64ebbdec))
 * building with both dbus and zbus backend
