@@ -28,6 +28,7 @@ zbus = { version = "5", optional = true }
 serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.11", optional = true }
+futures-lite = { version = "2.6.0"}
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
@@ -74,3 +75,6 @@ required-features = ["async"]
 name = "simple_async"
 path = "examples/simple_async.rs"
 required-features = ["async"]
+
+[dependencies]
+futures-lite = "2.6.0"

@@ -1,5 +1,6 @@
 use crate::{error::*, notification::Notification, xdg};
-use zbus::{export::futures_util::TryStreamExt, MatchRule};
+use futures_lite::stream::StreamExt;
+use zbus::MatchRule;
 
 use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
 
