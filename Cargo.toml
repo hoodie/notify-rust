@@ -75,3 +75,6 @@ required-features = ["async"]
 name = "simple_async"
 path = "examples/simple_async.rs"
 required-features = ["async"]
+
+[dependencies]
+futures-lite = "2.6.0"
