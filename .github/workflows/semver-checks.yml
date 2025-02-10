@@ -14,5 +14,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      # - name: check semver
-      #   uses: obi1kenobi/cargo-semver-checks-action@v2.6
+      - name: check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2.6
