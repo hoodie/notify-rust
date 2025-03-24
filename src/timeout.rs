@@ -47,7 +47,7 @@ impl From<Duration> for Timeout {
     fn from(duration: Duration) -> Timeout {
         if duration.is_zero() {
             Timeout::Never
-        } else if duration.as_millis() > u32::MAX.into() {
+        } else if duration.as_millis() as u128 > u32::MAX as u128 {
             Timeout::Default
         } else {
             Timeout::Milliseconds(duration.as_millis().try_into().unwrap_or(u32::MAX))
