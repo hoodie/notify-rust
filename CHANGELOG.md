@@ -1,5 +1,13 @@
 # Changelog
 
+### [v4.11.6](https://github.com/hoodie/notify-rust/compare/v4.11.5...v4.11.6) (2025-03-28)
+
+#### Fixes
+
+* resolve type inference issue with u32::MAX conversion (#244)
+([0c6c3ff](https://github.com/hoodie/notify-rust/commit/0c6c3ff251dbb32df6d45446940820d2f5d8e375)),
+closes [#244](https://github.com/hoodie/notify-rust/issues/244)
+
 ### [v4.11.5](https://github.com/hoodie/notify-rust/compare/v4.11.4...v4.11.5) (2025-02-10)
 
 #### Fixes
