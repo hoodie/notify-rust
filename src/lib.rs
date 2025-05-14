@@ -156,10 +156,6 @@ extern crate mac_notification_sys;
 #[cfg(target_os = "windows")]
 extern crate winrt_notification;
 
-#[macro_use]
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-extern crate lazy_static;
-
 pub mod error;
 mod hints;
 mod miniver;
@@ -212,13 +208,13 @@ pub use crate::urgency::Urgency;
 pub use crate::{notification::Notification, timeout::Timeout};
 
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
-lazy_static! {
-    /// Read once at runtime. Needed for Images
-    pub static ref SPEC_VERSION: miniver::Version =
-        get_server_information()
+/// Read once at runtime. Needed for Images
+pub static SPEC_VERSION: std::sync::LazyLock<miniver::Version> = std::sync::LazyLock::new(|| {
+    get_server_information()
         .and_then(|info| info.spec_version.parse::<miniver::Version>())
-        .unwrap_or_else(|_| miniver::Version::new(1,1));
-}
+        .unwrap_or_else(|_| miniver::Version::new(1, 1))
+});
+
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation {
