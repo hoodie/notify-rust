@@ -14,8 +14,8 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta 
-          - stable minus 2 releases
+          - beta
+          - stable minus 5 releases
         feature:
           - d
           - d,images
@@ -59,8 +59,8 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta 
-          - stable minus 6 releases
+          - beta
+          - stable minus 5 releases
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -85,8 +85,8 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta 
-          - stable minus 6 releases
+          - beta
+          - stable minus 5 releases
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
