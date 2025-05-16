@@ -36,5 +36,5 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
 
     toast
         .show()
-        .map_err(|e| Error::from(ErrorKind::Msg(format!("{:?}", e))))
+        .map_err(|error| Error::from(ErrorKind::Msg(format!("{error:?}"))))
 }
