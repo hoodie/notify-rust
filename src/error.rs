@@ -53,11 +53,11 @@ impl fmt::Display for Error {
             ErrorKind::Zbus(ref e) => write!(f, "{}", e),
 
             #[cfg(target_os = "macos")]
-            ErrorKind::MacNotificationSys(ref e) => write!(f, "{}", e),
+            ErrorKind::MacNotificationSys(ref e) => write!(f, "{e}"),
 
-            ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {}", e),
-            ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {}", e),
-            ErrorKind::SpecVersion(ref e) | ErrorKind::Msg(ref e) => write!(f, "{}", e),
+            ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {e}"),
+            ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {e}"),
+            ErrorKind::SpecVersion(ref e) | ErrorKind::Msg(ref e) => write!(f, "{e}"),
             #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
             ErrorKind::Image(ref e) => write!(f, "{}", e),
             ErrorKind::ImplementationMissing => write!(

@@ -54,7 +54,7 @@ fn recycling_one_id() {
         std::thread::sleep(Duration::from_millis(500));
         Notification::new()
             .icon("dialog-ok")
-            .body(&format!("notification{}", i))
+            .body(&format!("notification{i}"))
             .id(id)
             .show()
             .unwrap();

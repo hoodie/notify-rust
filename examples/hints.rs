@@ -6,7 +6,7 @@ use notify_rust::Image;
 use notify_rust::{Hint, Notification, Urgency::*};
 
 fn freeze(message: &str) {
-    println!("{}\n", message);
+    println!("{message}\n");
     let mut _devnull = String::new();
     let _ = std::io::stdin().read_line(&mut _devnull);
 }

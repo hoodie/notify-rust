@@ -47,7 +47,7 @@ impl TryFrom<&str> for Urgency {
             "critical" |
             "high"     |
             "hi"       => Ok(Urgency::Critical),
-            _ => Err(ErrorKind::Conversion(format!("invalid input {:?}", string)).into())
+            _ => Err(ErrorKind::Conversion(format!("invalid input {string:?}")).into())
         }
     }
 }

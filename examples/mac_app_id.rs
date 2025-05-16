@@ -5,12 +5,12 @@ fn main() -> Result<(), String> {
     };
 
     let safari_id = get_bundle_identifier_or_default("Safari");
-    set_application(&safari_id).map_err(|f| format!("{}", f))?;
+    set_application(&safari_id).map_err(|f| format!("{f}"))?;
 
     match set_application(&safari_id) {
         Ok(_) => {}
-        Err(MacOsError::Application(error)) => println!("{}", error),
-        Err(MacOsError::Notification(error)) => println!("{}", error),
+        Err(MacOsError::Application(error)) => println!("{error}"),
+        Err(MacOsError::Notification(error)) => println!("{error}"),
     }
 
     Notification::new()
@@ -19,7 +19,7 @@ fn main() -> Result<(), String> {
         .appname("Safari")
         .icon("Safari")
         .show()
-        .map_err(|f| format!("{}", f))?;
+        .map_err(|f| format!("{f}"))?;
 
     Ok(())
 }
