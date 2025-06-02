@@ -45,6 +45,13 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     Ok(NotificationHandle::new(notification.clone()))
 }
 
+/// This directly wraps the synchronous API and only exists to make the async API more similar
+/// across OSes.
+#[cfg(feature = "async")]
+pub(crate) async fn show_notification_async(notification: &Notification) -> Result<NotificationHandle> {
+    show_notification(notification)
+}
+
 pub(crate) fn schedule_notification(
     notification: &Notification,
     delivery_date: f64,
