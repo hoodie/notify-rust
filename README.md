@@ -10,6 +10,7 @@
 [![version](https://img.shields.io/crates/v/notify-rust)](https://crates.io/crates/notify-rust/)
 [![documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/notify-rust/)
 [![license](https://img.shields.io/crates/l/notify-rust.svg?style=flat)](https://crates.io/crates/notify-rust/)
+[![dependency status](https://deps.rs/repo/github/hoodie/notify-rust/status.svg)](https://deps.rs/repo/github/hoodie/notify-rust)
 
 </div>
 
@@ -77,7 +78,7 @@ Similar to macOS we support windows via the help of [winrt-notification](https:/
 Checkout [toastify](https://github.com/hoodie/toastify), it exposes most of the functionality of the lib to the commandline.
 
 ## Contribution
-Any help in form of descriptive and friendly [issues](https://github.com/hoodie/notify-rust/issues) or comprehensive pull requests are welcome! 
+Any help in form of descriptive and friendly [issues](https://github.com/hoodie/notify-rust/issues) or comprehensive pull requests are welcome!
 
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in notify-rust by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
