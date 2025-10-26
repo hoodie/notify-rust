@@ -11,7 +11,7 @@ use crate::image::Image;
 #[cfg(all(unix, target_os = "macos"))]
 use crate::macos;
 #[cfg(target_os = "windows")]
-use crate::windows;
+use crate::{windows, Urgency};
 
 use crate::{error::*, timeout::Timeout};
 
@@ -87,6 +87,9 @@ pub struct Notification {
 
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
+
+    #[cfg(target_os = "windows")]
+    pub(crate) urgency: Option<Urgency>,
 
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) bus: xdg::NotificationBus,
@@ -325,14 +328,47 @@ impl Notification {
 
     /// Set the `urgency`.
     ///
-    /// Pick between Medium, Low and High.
+    /// Pick between Low, Normal, and Critical.
     ///
     /// # Platform support
-    /// Most Desktops on linux and bsd are far too relaxed to pay any attention to this.
-    /// In macOS this does not exist
+    ///
+    /// ## Linux/BSD (XDG)
+    /// Urgency is sent as a hint to the notification server. Most desktops are fairly relaxed
+    /// about urgency and may not change behavior significantly. Critical notifications are
+    /// intended to not timeout automatically.
+    ///
+    /// ## Windows
+    /// Urgency is mapped to toast scenarios:
+    /// - `Low` and `Normal` → Default scenario (standard toast behavior)
+    /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
+    ///
+    /// ## macOS
+    /// Not currently supported.
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
         self.hint(Hint::Urgency(urgency)); // TODO impl as T where T: Into<Urgency>
+        self
+    }
+
+    /// Set the `urgency`.
+    ///
+    /// Pick between Low, Normal, and Critical.
+    ///
+    /// # Platform support
+    ///
+    /// ## Windows
+    /// Urgency is mapped to toast scenarios:
+    /// - `Low` and `Normal` → Default scenario (standard toast behavior)
+    /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
+    ///
+    /// ## Linux/BSD (XDG)
+    /// See the Unix implementation documentation.
+    ///
+    /// ## macOS
+    /// Not currently supported.
+    #[cfg(target_os = "windows")]
+    pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
+        self.urgency = Some(urgency);
         self
     }
 
@@ -514,6 +550,7 @@ impl Default for Notification {
             id: None,
             path_to_image: None,
             app_id: None,
+            urgency: None,
         }
     }
 }
