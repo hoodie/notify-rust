@@ -34,7 +34,7 @@ async fn send_notification_via_connection_at_bus(
             &(
                 &notification.appname,
                 id,
-                &notification.icon,
+                notification.icon.as_deref().unwrap_or(""),
                 &notification.summary,
                 &notification.body,
                 &notification.actions,

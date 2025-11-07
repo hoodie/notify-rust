@@ -83,7 +83,10 @@ mod realworld {
         assert_eq!(notification.body, "foo");
 
         let mut notification = Notification::new();
-        notification.icon = "foo".to_string();
+        notification.icon("foo");
+        #[cfg(all(unix, not(target_os = "macos")))]
+        assert_eq!(notification.icon.as_deref(), Some("foo"));
+        #[cfg(not(all(unix, not(target_os = "macos"))))]
         assert_eq!(notification.icon, "foo");
 
         let mut notification = Notification::new();

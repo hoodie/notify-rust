@@ -17,7 +17,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // .body("this notification was sent via an async api")
         // .urgency(Urgency::Critical)
         // .icon("dialog-positive")
-        .icon("./examples/octodex.jpg")
+        // Use a themed icon name explicitly:
+        // .icon_named("dialog-information")
+        // Or use a file path explicitly (preferred for portals):
+        // .icon_path("./examples/octodex.jpg")
+        .image_path("./examples/octodex.jpg")
         .show_via_portal("de.hoodie.notify-rust.examples.portal-notification")
         .await?;
 

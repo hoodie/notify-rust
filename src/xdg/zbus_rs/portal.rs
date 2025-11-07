@@ -115,9 +115,7 @@ mod icon {
             seals.insert(FileSeal::SealGrow);
             mfd.add_seals(&seals).unwrap();
 
-            // Step 6: Add the SealSeal flag to prevent further modifications
-            let add_seal = mfd.add_seal(FileSeal::SealSeal);
-            add_seal.unwrap();
+            // Step 6: Do not add SealSeal here; let the portal add required seals
 
             // Return the memfd as a File object for further reading
             mfd.into_file()
@@ -164,11 +162,23 @@ impl From<&Notification> for PortalNotification {
             Priority::Normal
         };
 
-        let icon = notification
-            .icon
-            .as_deref()
-            .and_then(Icon::open)
-            .map(Into::into);
+        // Use only explicit path via Hint::ImagePath or a themed icon name; no guessing.
+        let icon = {
+            // Check for an explicit image path hint first
+            let path_from_hint = notification.get_hints().find_map(|h| match h {
+                Hint::ImagePath(ref p) => Some(p.as_str()),
+                _ => None,
+            });
+
+            if let Some(path) = path_from_hint {
+                Icon::open(path).map(Into::into)
+            } else if let Some(name) = notification.icon.as_deref() {
+                // Treat .icon() strictly as a themed icon name
+                Some(Icon::themed(vec![name]).into())
+            } else {
+                None
+            }
+        };
 
         eprintln!("priority: {:?}", priority);
         Self {

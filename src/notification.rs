@@ -210,17 +210,41 @@ impl Notification {
         self
     }
 
-    /// Set the `icon` field.
+    /// Set the themed icon name.
     ///
-    /// You can use common icon names here, usually those in `/usr/share/icons`
-    /// can all be used.
-    /// You can also use an absolute path to file.
+    /// This sets a freedesktop.org themed icon name (e.g. "dialog-information").
+    /// For file-based icons, use [`icon_path`](#method.icon_path) or [`image_path`](#method.image_path).
     ///
     /// # Platform support
     /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn icon(&mut self, icon: &str) -> &mut Notification {
         self.icon.insert(icon.into());
         self
+    }
+
+    /// Set a themed icon name explicitly (same as [`icon`](#method.icon)).
+    ///
+    /// Use this when you want to pass an icon name from the current icon theme.
+    pub fn icon_named(&mut self, name: &str) -> &mut Notification {
+        self.icon.insert(name.into());
+        self
+    }
+
+    /// Set a file-based icon path explicitly.
+    ///
+    /// This is preferred for passing image files to the portal implementation.
+    /// On XDG this is equivalent to calling [`image_path`](#method.image_path).
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn icon_path(&mut self, path: &str) -> &mut Notification {
+        self.image_path(path)
+    }
+
+    /// Set a file-based icon path explicitly (Windows).
+    ///
+    /// On Windows this is equivalent to calling [`image_path`](#method.image_path).
+    #[cfg(target_os = "windows")]
+    pub fn icon_path(&mut self, path: &str) -> &mut Notification {
+        self.image_path(path)
     }
 
     /// Set the `icon` field automatically.
