@@ -89,7 +89,7 @@ mod icon {
             // let file = File::open(path).ok()?;
             // let file = Self::open_and_seal_file(path).unwrap();
             //
-            let file = Self::copy_file_to_sealed_memfd(path);
+            let file = Self::copy_file_to_sealed_memfd(dbg!(path));
 
             Some(file.into())
         }
@@ -164,7 +164,11 @@ impl From<&Notification> for PortalNotification {
             Priority::Normal
         };
 
-        let icon = Icon::open(&notification.icon).map(Into::into);
+        let icon = notification
+            .icon
+            .as_deref()
+            .and_then(Icon::open)
+            .map(Into::into);
 
         eprintln!("priority: {:?}", priority);
         Self {

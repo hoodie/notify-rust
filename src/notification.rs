@@ -60,7 +60,7 @@ pub struct Notification {
     pub body: String,
 
     /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
-    pub icon: String,
+    pub icon: Option<String>,
 
     /// Check out `Hint`
     ///
@@ -219,7 +219,7 @@ impl Notification {
     /// # Platform support
     /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn icon(&mut self, icon: &str) -> &mut Notification {
-        icon.clone_into(&mut self.icon);
+        self.icon.insert(icon.into());
         self
     }
 
@@ -230,7 +230,7 @@ impl Notification {
     /// # Platform support
     /// macOS does not support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn auto_icon(&mut self) -> &mut Notification {
-        self.icon = exe_name();
+        self.icon = exe_name().into();
         self
     }
 
@@ -471,7 +471,7 @@ impl Notification {
             summary = self.summary,
             body = self.body,
             hints = self.hints,
-            icon = self.icon,
+            icon = self.icon.as_deref().unwrap_or_default()
         );
         self.show()
     }
@@ -485,7 +485,7 @@ impl Default for Notification {
             summary: String::new(),
             subtitle: None,
             body: String::new(),
-            icon: String::new(),
+            icon: Default::default(),
             hints: HashSet::new(),
             hints_unique: HashMap::new(),
             actions: Vec::new(),
