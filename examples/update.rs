@@ -43,7 +43,9 @@ fn update_via_manually_stored_id() {
         .appname("foo") // changing appname to keep plasma from merging the new and the old one
         .icon("dialog-ok")
         .body("<b>This</b> has been changed by sending a new notification with the same id")
-        .id(id)
+        .id(id
+            .as_global()
+            .expect("notification id was constructed as wrong variant"))
         .show()
         .unwrap();
 }

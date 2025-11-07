@@ -11,13 +11,13 @@ license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
 include = [
-  "README.md",
-  "History.md",
-  "CHANGELOG.md",
-  "LICENSE-*",
-  "Cargo.toml",
-  "src/**/*.rs",
-  "tests/*.rs"
+    "README.md",
+    "History.md",
+    "CHANGELOG.md",
+    "LICENSE-*",
+    "Cargo.toml",
+    "src/**/*.rs",
+    "tests/*.rs",
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
@@ -29,17 +29,20 @@ serde = { version = "1", optional = true }
 log = "0.4"
 env_logger ={ version ="0.11", optional = true }
 futures-lite = { version = "2.6.0"}
+memfd = "0.6.4"
+nix = { version = "0.26.4", features = ["fs"] }
+
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
-chrono = { version = "0.4", optional = true}
+chrono = { version = "0.4", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
 winrt-notification = { package = "tauri-winrt-notification", version = "0.7" }
 
 [features]
 default = ["z"]
-# server = []
+server = []
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
 z = ["zbus", "serde", "async"]
@@ -77,6 +80,3 @@ required-features = ["async"]
 name = "simple_async"
 path = "examples/simple_async.rs"
 required-features = ["async"]
-
-[dependencies]
-futures-lite = "2.6.0"
