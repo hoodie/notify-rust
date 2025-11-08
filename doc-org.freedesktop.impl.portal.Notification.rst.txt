@@ -1,0 +1,178 @@
+.. _org.freedesktop.impl.portal.Notification:
+
+========================================
+ Notification
+========================================
+
+-----------
+Description
+-----------
+
+.. _org.freedesktop.impl.portal.Notification Description:
+
+Notification portal backend interface
+
+This notification interface lets sandboxed applications
+send and withdraw notifications.
+
+This documentation describes version 2 of this interface.
+
+
+
+.. _org.freedesktop.impl.portal.Notification Properties:
+
+----------
+Properties
+----------
+
+.. _org.freedesktop.impl.portal.Notification:SupportedOptions:
+
+org.freedesktop.impl.portal.Notification:SupportedOptions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    SupportedOptions readable a{sv}
+
+
+Some properties in :ref:`org.freedesktop.impl.portal.Notification.AddNotification`
+may have options advertised by the notification server.
+
+The format is the same as for ``SupportedOptions`` property of
+:ref:`org.freedesktop.portal.Notification`.
+
+
+
+
+.. _org.freedesktop.impl.portal.Notification:version:
+
+org.freedesktop.impl.portal.Notification:version
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    version readable u
+
+
+
+
+.. _org.freedesktop.impl.portal.Notification Methods:
+
+-------
+Methods
+-------
+
+.. _org.freedesktop.impl.portal.Notification.AddNotification:
+
+org.freedesktop.impl.portal.Notification.AddNotification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    AddNotification (
+      IN app_id s,
+      IN id s,
+      IN notification a{sv}
+    )
+
+
+
+Sends a notification.
+
+The ID can be used to later withdraw the notification.
+If the application reuses the same ID without withdrawing,
+the notification is updated with the new one. It's possible
+to set ``show-as-new`` hint in the ``display-hint`` property
+to animate replacing the notification instead of updating it.
+
+The format of the ``notification`` is the same as for
+:ref:`org.freedesktop.portal.Notification.AddNotification`.
+
+Since version 2, the icon property never uses the ``bytes`` option.
+
+
+
+app_id
+  App id of the application
+
+id
+  Application-provided ID for this notification
+
+notification
+  Vardict with the serialized notification
+
+
+
+.. _org.freedesktop.impl.portal.Notification.RemoveNotification:
+
+org.freedesktop.impl.portal.Notification.RemoveNotification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    RemoveNotification (
+      IN app_id s,
+      IN id s
+    )
+
+
+
+Withdraws a notification.
+
+
+
+app_id
+  App id of the application
+
+id
+  Application-provided ID for this notification
+
+
+.. _org.freedesktop.impl.portal.Notification Signals:
+
+-------
+Signals
+-------
+
+.. _org.freedesktop.impl.portal.Notification::ActionInvoked:
+
+org.freedesktop.impl.portal.Notification::ActionInvoked
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    ActionInvoked (
+      app_id s,
+      id s,
+      action s,
+      parameter av
+    )
+
+
+
+Send to the application when a non-exported action is
+activated.
+
+The ``parameter`` contains the following values in order:
+
+#. The `target` for the action, if one was specified.
+
+#. The `platform-data` as vardict containing an ``activation-token`` (``s``) for
+   `XDG Activation
+   <https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/xdg-activation/xdg-activation-v1.xml>`_
+
+
+
+app_id
+  App id of the application
+
+id
+  the application-provided ID for the notification
+
+action
+  the name of the action
+
+parameter
+  an array containing additional information
+
+
