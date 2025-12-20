@@ -77,14 +77,17 @@ impl FromStr for Timeout {
     }
 }
 
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 pub struct TimeoutMessage(Timeout);
 
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl From<Timeout> for TimeoutMessage {
     fn from(hint: Timeout) -> Self {
         TimeoutMessage(hint)
     }
 }
 
+#[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 impl std::ops::Deref for TimeoutMessage {
     type Target = Timeout;
 
