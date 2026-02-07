@@ -12,10 +12,7 @@ jobs:
     strategy:
       #fail-fast: true
       matrix:
-        rust:
-          - stable
-          - beta
-          - stable minus 5 releases
+        rust: [stable, beta, stable minus 5 releases, nightly]
         feature:
           - d
           - d,images
@@ -43,24 +40,25 @@ jobs:
       - name: test lib (${{matrix.feature}})
         run: cargo test --lib --no-default-features --features ${{matrix.feature}}
 
-      # - name: test tests (${{matrix.feature}})
-      #   run: cargo test --tests --no-default-features --features ${{matrix.feature}}
-
       - name: test docs (${{matrix.feature}})
         run: cargo test --doc --no-default-features --features ${{matrix.feature}}
 
       - name: clippy (default features)
         run: cargo clippy
 
+      - name: minimal versions check (nightly only)
+        if: matrix.rust == 'nightly'
+        run: |
+          cargo update -Z minimal-versions
+          cargo check
+          cargo check --all-features
+
   windows:
     name: windows
     runs-on: windows-latest
     strategy:
       matrix:
-        rust:
-          - stable
-          - beta
-          - stable minus 5 releases
+        rust: [stable, beta, stable minus 5 releases, nightly]
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -77,16 +75,20 @@ jobs:
 
       - name: clippy (default features)
         run: cargo clippy -- -D warnings
+
+      - name: minimal versions check (nightly only)
+        if: matrix.rust == 'nightly'
+        run: |
+          cargo update -Z minimal-versions
+          cargo check
+          cargo check --all-features
 
   macos:
     name: macos
     runs-on: macos-latest
     strategy:
       matrix:
-        rust:
-          - stable
-          - beta
-          - stable minus 5 releases
+        rust: [stable, beta, stable minus 5 releases, nightly]
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -103,3 +105,10 @@ jobs:
 
       - name: clippy (default features)
         run: cargo clippy -- -D warnings
+
+      - name: minimal versions check (nightly only)
+        if: matrix.rust == 'nightly'
+        run: |
+          cargo update -Z minimal-versions
+          cargo check
+          cargo check --all-features
