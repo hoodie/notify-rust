@@ -87,7 +87,7 @@ impl DbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure);
     }
 
@@ -97,7 +97,7 @@ impl DbusNotificationHandle {
         let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(&self, closure: F)
     where
         F: FnOnce(CloseReason),
     {

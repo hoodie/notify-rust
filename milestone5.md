@@ -15,7 +15,7 @@
 
 ## Allow an `on_close` handler without consuming the `NotificationHandle` #199
 
-- [ ] change signature so the handle is not consumed
+- [x] change signature so the handle is not consumed
 
 ## Image API — unify and clarify `image()` / `image_path()` / `image_data()`
 
