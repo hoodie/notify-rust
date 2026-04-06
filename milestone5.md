@@ -7,7 +7,7 @@
 
 ## Noops Methods for other Platforms
 
-- [ ] add `noops` feature that adds no-op stubs so cross-platform code compiles without `cfg` guards
+- [x] add `noops` feature that adds no-op stubs so cross-platform code compiles without `cfg` guards
 
 ## Issue Template
 

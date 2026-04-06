@@ -22,6 +22,7 @@ jobs:
           - z
           - z,images
           - z,d
+          - noops
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -72,6 +73,9 @@ jobs:
       - name: check (default features)
         run: cargo check
 
+      - name: check (noops)
+        run: cargo check --no-default-features --features noops
+
       - name: test (default features)
         run: cargo test --no-run
 
@@ -97,6 +101,9 @@ jobs:
 
       - name: check (default features)
         run: cargo check
+
+      - name: check (noops)
+        run: cargo check --no-default-features --features noops
 
       - name: test (default features)
         run: cargo test --no-run
