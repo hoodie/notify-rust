@@ -193,9 +193,6 @@ extern crate dbus;
 #[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))]
 extern crate mac_notification_sys;
 
-#[cfg(target_os = "windows")]
-extern crate winrt_notification;
-
 #[macro_use]
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 extern crate lazy_static;
@@ -234,6 +231,9 @@ pub use macos::{
     check_bundle, get_notification_settings, get_notification_settings_blocking, request_auth,
     request_auth_blocking, NotificationHandle,
 };
+
+#[cfg(target_os = "windows")]
+pub use windows::{CloseHandler, CloseReason, NotificationHandle};
 
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),

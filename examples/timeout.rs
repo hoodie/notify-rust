@@ -1,13 +1,7 @@
-#[cfg(any(target_os = "windows", target_os = "macos"))]
-fn main() {
-    println!("this is a xdg only feature")
-}
+use notify_rust::*;
+use std::time::Duration;
 
-#[cfg(all(unix, not(target_os = "macos")))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use notify_rust::*;
-    use std::time::Duration;
-
     Notification::new()
         .summary("Notification Duration timeout")
         .body("this one should stay for 2s")
@@ -28,5 +22,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .icon("timer")
         .timeout("2000".parse::<Timeout>().unwrap())
         .show()?;
+
     Ok(())
 }

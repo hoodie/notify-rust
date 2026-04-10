@@ -78,7 +78,7 @@ However this only includes a small subset of the current functionality, since [`
 
 ## Windows support
 
-Similar to macOS we support windows via the help of [winrt-notification](https://crates.io/crates/winrt-notification).
+Similar to macOS we support windows via the help of [win32_notif](https://crates.io/crates/win32_notif), a lightweight wrapper around the native Windows UWP/WinRT Toast Notification API.
 
 ## Commandline tool
 

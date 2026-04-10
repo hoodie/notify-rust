@@ -1,33 +1,24 @@
-#![allow(unused_imports, dead_code)]
-use std::{io, thread};
-
-#[cfg(all(unix, not(target_os = "macos")))]
-use notify_rust::{CloseReason, Notification};
-
-fn wait_for_keypress() {
-    println!("halted until you hit the \"ANY\" key");
-    io::stdin().read_line(&mut String::new()).unwrap();
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-fn print_reason(reason: CloseReason) {
-    println!("notification was closed ({:?})", reason);
-}
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(any(all(unix, not(target_os = "macos")), target_os = "windows"))]
 fn main() {
+    use notify_rust::{CloseReason, Notification};
+
     thread::spawn(|| {
         Notification::new()
             .summary("Time is running out")
             .body("This will go away.")
             .icon("clock")
             .show()
-            .map(|handler| handler.on_close(print_reason))
+            .map(|handler| {
+                handler.on_close(|reason: CloseReason| {
+                    println!("notification was closed ({:?})", reason);
+                })
+            })
+            .unwrap();
     });
     wait_for_keypress();
 }

@@ -1,6 +1,19 @@
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
+}
+
+#[cfg(target_os = "windows")]
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use notify_rust::Timeout;
+
+    notify_rust::Notification::new()
+        .summary("Persistent notification")
+        .body("This should not go away unless you want it to.")
+        .icon("firefox")
+        .timeout(Timeout::Never) // maps to Long duration on Windows
+        .show()?;
+    Ok(())
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]

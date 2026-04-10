@@ -181,7 +181,7 @@ impl Notification {
     /// - **Linux/BSD (XDG):** maps to the `image-path` hint in the D-Bus notification spec.
     /// - **macOS:** maps to `content_image` in `mac-notification-sys`, displayed on the right
     ///   side of the notification banner.
-    /// - **Windows:** passed directly to `winrt-notification` as the notification image.
+    /// - **Windows:** passed directly to `win32_notif` as the notification image.
     pub fn image_path(&mut self, path: &str) -> &mut Notification {
         #[cfg(all(unix, not(target_os = "macos")))]
         {
@@ -559,7 +559,7 @@ impl Notification {
     /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
     /// the notification.
     #[cfg(target_os = "windows")]
-    pub fn show(&self) -> Result<()> {
+    pub fn show(&self) -> Result<windows::NotificationHandle> {
         windows::show_notification(self)
     }
 

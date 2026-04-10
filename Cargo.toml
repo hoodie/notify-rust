@@ -38,7 +38,8 @@ mac-usernotifications = { version = "0.1.0", optional = true }
 chrono = { version = "0.4", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
-winrt-notification = { package = "tauri-winrt-notification", version = "0.7" }
+win32_notif = "0.15"
+windows = { version = "~0.62", features = ["UI_Notifications"] }
 
 [features]
 default = ["z"]

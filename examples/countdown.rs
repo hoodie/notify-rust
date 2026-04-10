@@ -2,12 +2,12 @@
 use notify_rust::Notification;
 use std::time::Duration;
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(any(all(unix, not(target_os = "macos")), target_os = "windows"))]
 fn main() {
     let mut notification = Notification::new()
         .summary("Rocket launch in ...")

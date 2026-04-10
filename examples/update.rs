@@ -2,12 +2,7 @@
 use notify_rust::Notification;
 use std::time::Duration;
 
-#[cfg(target_os = "windows")]
-fn main() {
-    println!("This is not a windows feature")
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(any(all(unix, not(target_os = "macos")), target_os = "windows"))]
 fn update_via_handle() {
     let mut notification_handle = Notification::new()
         .summary("First Notification")
@@ -48,6 +43,7 @@ fn update_via_manually_stored_id() {
         .unwrap();
 }
 
+#[cfg(all(unix, not(target_os = "macos")))]
 fn recycling_one_id() {
     for i in 1..5 {
         let id = 6666; // you should probably not do this at all
@@ -66,12 +62,17 @@ fn main() {
     println!("this is a xdg only feature")
 }
 
+#[cfg(target_os = "windows")]
+fn main() {
+    update_via_handle();
+}
+
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
     // please use the handle to update a notification
     update_via_handle();
 
-    //// If your really have to, store the if yourself
+    //// If your really have to, store the id yourself
     // update_via_manually_stored_id();
 
     //// or come up with your own don't do this:
