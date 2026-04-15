@@ -1,7 +1,7 @@
 #![allow(unused_imports, dead_code)]
 use std::{thread::sleep, time::Duration};
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 use notify_rust::Image;
 use notify_rust::{Hint, Notification, Urgency::*};
 
@@ -85,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .hint(Hint::Y(200))
         .show()?;
 
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     {
         freeze("ImageData");
         let mut image_data = vec![0; 128 * 128 * 3];

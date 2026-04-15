@@ -23,7 +23,7 @@ include = [
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1.5", optional = true }
-image = { version = "0.25", optional = true }
+image = { version = "0.25", optional = true, default-features = false }
 zbus = { version = "5", optional = true, default-features = false }
 serde = { version = "1", features = ["derive"], optional = true }
 log = "0.4"
@@ -47,7 +47,8 @@ z-with-tokio = ["zbus", "serde", "tokio"]
 async = ["zbus/async-io"]
 tokio = ["zbus/tokio"]
 debug_namespace = []
-images = ["image", "lazy_static"]
+images = ["images_no_default_features", "image/rayon", "image/default-formats"]
+images_no_default_features = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.7" # wait for MSVR 1.70 to update

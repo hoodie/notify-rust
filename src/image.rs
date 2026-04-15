@@ -77,7 +77,7 @@ impl Image {
         Image::try_from(dyn_img)
     }
 
-    #[cfg(all(feature = "images", feature = "zbus"))]
+    #[cfg(all(feature = "images_no_default_features", feature = "zbus"))]
     pub(crate) fn to_tuple(&self) -> (i32, i32, i32, bool, i32, i32, Vec<u8>) {
         (
             self.width,

@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use notify_rust::Hint;
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 use notify_rust::Image;
 use notify_rust::Notification;
 
@@ -10,13 +10,17 @@ fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(all(not(feature = "images"), unix, not(target_os = "macos")))]
+#[cfg(all(
+    not(feature = "images_no_default_features"),
+    unix,
+    not(target_os = "macos")
+))]
 fn main() {
     println!("please build with '--features=images'")
 }
 
 #[cfg(all(
-    feature = "images",
+    feature = "images_no_default_features",
     unix,
     not(target_os = "macos"),
     not(target_os = "windows")

@@ -6,10 +6,10 @@ use zbus::zvariant;
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod message;
 
-#[cfg(all(feature = "images", any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", any(feature = "dbus", feature = "zbus"), unix, not(target_os = "macos")))]
 use crate::image::Image;
 
-#[cfg(all(feature = "images", feature = "zbus", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", feature = "zbus", unix, not(target_os = "macos")))]
 use crate::image::image_spec_str;
 use crate::Urgency;
 
@@ -51,7 +51,7 @@ pub enum Hint {
     DesktopEntry(String),
 
     /// Image as raw data
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     ImageData(Image),
 
     /// Display the image at this path.
@@ -181,7 +181,7 @@ impl<'a> From<&'a Hint> for (&'a str, zvariant::Value<'a>) {
             Hint::Category(value)          => (CATEGORY       , zvariant::Value::Str(value.as_str().into())),
             Hint::DesktopEntry(value)      => (DESKTOP_ENTRY  , zvariant::Value::Str(value.as_str().into())),
 
-            #[cfg(all(feature = "zbus", feature = "images", unix, not(target_os = "macos")))]
+            #[cfg(all(feature = "zbus", feature = "images_no_default_features", unix, not(target_os = "macos")))]
             //Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION).as_str(), ImagePayload::from(*image).into()),
             Hint::ImageData(image)         => (
                 image_spec_str(*crate::SPEC_VERSION),

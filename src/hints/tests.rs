@@ -48,7 +48,7 @@ fn simple_hint_to_item() {
 }
 
 #[test]
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 fn imagedata_hint_to_item() {
     let hint = &Hint::ImageData(Image::from_rgb(1, 1, vec![0, 0, 0]).unwrap());
     let item: MessageItem = hint.into();
@@ -72,7 +72,7 @@ fn imagedata_hint_to_item() {
 }
 
 #[test]
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 fn imagedata_hint_to_item_with_spec() {
     let key = image_spec(Version::new(1, 0));
     assert_eq!(key, String::from("icon_data"));

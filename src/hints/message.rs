@@ -15,7 +15,7 @@
 use super::{Hint, constants::*};
 use crate ::Urgency;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 use crate::image::*;
 
 use std::collections::{HashMap, HashSet};
@@ -91,7 +91,7 @@ impl From<HintMessage> for (MessageItem, MessageItem) {
             Hint::ActionIcons(value)       => (ACTION_ICONS   .to_owned(), MessageItem::Bool(value)), // bool
             Hint::Category(ref value)      => (CATEGORY       .to_owned(), MessageItem::Str(value.clone())),
             Hint::DesktopEntry(ref value)  => (DESKTOP_ENTRY  .to_owned(), MessageItem::Str(value.clone())),
-            #[cfg(all(feature = "images", unix, not(target_os ="macos")))]
+            #[cfg(all(feature = "images_no_default_features", unix, not(target_os ="macos")))]
             Hint::ImageData(image)         => (image_spec(*crate::SPEC_VERSION), ImageMessage::from(image).into()),
             Hint::ImagePath(ref value)     => (IMAGE_PATH     .to_owned(), MessageItem::Str(value.clone())),
             Hint::Resident(value)          => (RESIDENT       .to_owned(), MessageItem::Bool(value)), // bool

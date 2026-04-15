@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 use crate::image::ImageError;
 use std::{fmt, num};
 /// Convenient wrapper around `std::Result`.
@@ -37,7 +37,7 @@ pub enum ErrorKind {
 
     Conversion(String),
 
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     Image(ImageError),
 
     ImplementationMissing,
@@ -58,7 +58,7 @@ impl fmt::Display for Error {
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {e}"),
             ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {e}"),
             ErrorKind::SpecVersion(ref e) | ErrorKind::Msg(ref e) => write!(f, "{e}"),
-            #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+            #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
             ErrorKind::Image(ref e) => write!(f, "{}", e),
             ErrorKind::ImplementationMissing => write!(
                 f,
@@ -105,7 +105,7 @@ impl From<mac_notification_sys::error::Error> for Error {
     }
 }
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 impl From<ImageError> for Error {
     fn from(e: ImageError) -> Error {
         Error {

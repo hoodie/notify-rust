@@ -5,7 +5,7 @@ use crate::{
     xdg,
 };
 
-#[cfg(all(unix, not(target_os = "macos"), feature = "images"))]
+#[cfg(all(unix, not(target_os = "macos"), feature = "images_no_default_features"))]
 use crate::image::Image;
 
 #[cfg(all(unix, target_os = "macos"))]
@@ -151,7 +151,7 @@ impl Notification {
     }
 
     /// Manual wrapper for `Hint::ImageData`
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     pub fn image_data(&mut self, image: Image) -> &mut Notification {
         self.hint(Hint::ImageData(image));
         self
@@ -187,7 +187,7 @@ impl Notification {
     }
 
     /// Wrapper for `Hint::ImageData`
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     pub fn image<T: AsRef<std::path::Path> + Sized>(
         &mut self,
         path: T,

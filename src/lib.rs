@@ -158,7 +158,7 @@ extern crate mac_notification_sys;
 extern crate winrt_notification;
 
 #[macro_use]
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
 pub mod error;
@@ -177,7 +177,7 @@ mod windows;
 #[cfg(all(unix, not(target_os = "macos")))]
 mod xdg;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 mod image;
 
 #[cfg(target_os = "macos")]
@@ -201,7 +201,7 @@ pub use crate::xdg::{
 
 pub use crate::hints::Hint;
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 pub use crate::image::{Image, ImageError};
 
 #[cfg_attr(
@@ -212,7 +212,7 @@ pub use crate::urgency::Urgency;
 
 pub use crate::{notification::Notification, timeout::Timeout};
 
-#[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+#[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 lazy_static! {
     /// Read once at runtime. Needed for Images
     pub static ref SPEC_VERSION: miniver::Version =

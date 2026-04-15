@@ -6,7 +6,7 @@ mod realworld {
 
     use std::time::Duration;
 
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     use notify_rust::Image;
     use notify_rust::*;
 
@@ -176,7 +176,7 @@ mod realworld {
     }
 
     #[test]
-    #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
+    #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     fn imagedata() {
         let mut data: Vec<u8> = vec![0 as u8; 64 * 64 * 3];
         for x in 0..64 {
