@@ -98,7 +98,7 @@ impl ZbusNotificationHandle {
         let _ = self.close_fallible().await;
     }
 
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(&self, closure: F)
     where
         F: FnOnce(CloseReason),
     {

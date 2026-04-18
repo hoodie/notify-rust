@@ -177,6 +177,9 @@ mod windows;
 #[cfg(all(unix, not(target_os = "macos")))]
 mod xdg;
 
+#[cfg(feature = "noops")]
+mod noops;
+
 #[cfg(all(feature = "images", unix, not(target_os = "macos")))]
 mod image;
 
@@ -194,6 +197,11 @@ pub use macos::NotificationHandle;
 pub use crate::xdg::{
     dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
     CloseHandler, CloseReason, DbusStack, NotificationHandle,
+};
+
+#[cfg(all(feature = "noops", any(target_os = "macos", target_os = "windows")))]
+pub use crate::noops::{
+    get_capabilities, get_server_information, CloseHandler, CloseReason, ServerInformation,
 };
 
 // #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
@@ -221,6 +229,7 @@ lazy_static! {
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
 /// Return value of `get_server_information()`.
+#[cfg(all(unix, not(target_os = "macos")))]
 #[derive(Debug)]
 pub struct ServerInformation {
     /// The product name of the server.
