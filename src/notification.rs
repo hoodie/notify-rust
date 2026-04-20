@@ -91,6 +91,10 @@ pub struct Notification {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(crate) path_to_image: Option<String>,
 
+    /// Large banner image shown across the top of the toast (Windows only).
+    #[cfg(target_os = "windows")]
+    pub(crate) hero_image: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
 
@@ -181,7 +185,8 @@ impl Notification {
     /// - **Linux/BSD (XDG):** maps to the `image-path` hint in the D-Bus notification spec.
     /// - **macOS:** maps to `content_image` in `mac-notification-sys`, displayed on the right
     ///   side of the notification banner.
-    /// - **Windows:** passed directly to `win32_notif` as the notification image.
+    /// - **Windows:** shown as the app-logo override (small square image in the corner of the
+    ///   toast). For a large banner image use [`hero_image`](Notification::hero_image).
     pub fn image_path(&mut self, path: &str) -> &mut Notification {
         #[cfg(all(unix, not(target_os = "macos")))]
         {
@@ -191,6 +196,29 @@ impl Notification {
         {
             self.path_to_image = Some(path.to_string());
         }
+        self
+    }
+
+    /// Sets a large "hero" image displayed as a wide banner across the top of the toast.
+    ///
+    /// The path may be an absolute filesystem path (`C:\…` or `/…`), a `file:///` URI,
+    /// or an `http://` / `https://` URL. Relative paths are not supported.
+    ///
+    /// **Windows only.** Gate calls with `#[cfg(target_os = "windows")]` when writing
+    /// cross-platform code.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use notify_rust::Notification;
+    /// Notification::new()
+    ///     .summary("Download complete")
+    ///     .hero_image("C:\\Users\\user\\Pictures\\banner.png")
+    ///     .show()
+    ///     .unwrap();
+    /// ```
+    #[cfg(target_os = "windows")]
+    pub fn hero_image(&mut self, path: &str) -> &mut Notification {
+        self.hero_image = Some(path.to_string());
         self
     }
 
@@ -375,9 +403,12 @@ impl Notification {
     /// intended to not timeout automatically.
     ///
     /// ## Windows
-    /// Urgency is mapped to toast scenarios:
+    /// Urgency is mapped to toast scenarios and priorities:
     /// - `Low` and `Normal` → Default scenario (standard toast behavior)
-    /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
+    /// - `Critical` → Urgent scenario + High delivery priority. On Windows 11 22H2 and later
+    ///   this bypasses Focus Assist / Do Not Disturb. On earlier Windows versions it falls
+    ///   back to default toast behavior (the notification will still appear, but won't
+    ///   override system-wide quiet modes).
     ///
     /// ## macOS
     /// Mapped to [`InterruptionLevel`]: `Low` → `Passive`, `Normal` → `Active`,
@@ -396,9 +427,12 @@ impl Notification {
     /// # Platform support
     ///
     /// ## Windows
-    /// Urgency is mapped to toast scenarios:
+    /// Urgency is mapped to toast scenarios and priorities:
     /// - `Low` and `Normal` → Default scenario (standard toast behavior)
-    /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
+    /// - `Critical` → Urgent scenario + High delivery priority. On Windows 11 22H2 and later
+    ///   this bypasses Focus Assist / Do Not Disturb. On earlier Windows versions it falls
+    ///   back to default toast behavior (the notification will still appear, but won't
+    ///   override system-wide quiet modes).
     ///
     /// ## Linux/BSD (XDG)
     /// See the Unix implementation documentation.
@@ -628,6 +662,7 @@ impl Default for Notification {
             sound_name: Default::default(),
             id: None,
             path_to_image: None,
+            hero_image: None,
             app_id: None,
             urgency: None,
         }

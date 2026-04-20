@@ -14,7 +14,8 @@ use win32_notif::{
         visual::{Image, Placement, Text},
         Scenario, ToastDuration,
     },
-    NotificationBuilder, NotificationDataSet, NotificationDismissedEventHandler, ToastsNotifier,
+    ManageNotification, NotificationBuilder, NotificationDataSet,
+    NotificationDismissedEventHandler, NotificationPriority, ToastsNotifier,
 };
 use windows::UI::Notifications::ToastNotification as RawToast;
 
@@ -78,10 +79,13 @@ pub struct NotificationHandle {
     close_tx: mpsc::Sender<CloseReason>,
     /// Receives exactly one value when the toast is dismissed or expires.
     close_rx: mpsc::Receiver<CloseReason>,
-    /// Snapshot of `notification.path_to_image` as it was when the toast was
-    /// last structurally built.  Used by `update()` to decide whether a cheap
+    /// Snapshots of the image paths as they were when the toast was last
+    /// structurally built.  Used by `update()` to decide whether a cheap
     /// data-binding patch is sufficient or a full rebuild is needed.
+    /// Images are not data-bindable in WinRT toast XML, so any change to
+    /// either field forces a hide + rebuild cycle.
     last_shown_image: Option<String>,
+    last_shown_hero_image: Option<String>,
 }
 
 impl NotificationHandle {
@@ -126,8 +130,9 @@ impl NotificationHandle {
     pub fn update(&mut self) {
         // ── Detect whether a structural rebuild is required ───────────────────
         // Images are not data-bindable in WinRT toast XML, so any change to
-        // path_to_image requires a full hide + rebuild cycle.
-        let image_changed = self.notification.path_to_image != self.last_shown_image;
+        // either image field requires a full hide + rebuild cycle.
+        let image_changed = self.notification.path_to_image != self.last_shown_image
+            || self.notification.hero_image != self.last_shown_hero_image;
 
         if !image_changed {
             // ── Fast path: data-binding update ────────────────────────────────
@@ -168,6 +173,7 @@ impl NotificationHandle {
         ) {
             self.raw_toast = new_toast;
             self.last_shown_image = self.notification.path_to_image.clone();
+            self.last_shown_hero_image = self.notification.hero_image.clone();
         }
     }
 }
@@ -233,7 +239,7 @@ fn map_sound_name(name: &str) -> Option<Src> {
     )
 }
 
-/// Convert a filesystem path to the `file:///` URI scheme expected by win32_notif.
+/// Convert a filesystem path to the `file:///` URI scheme expected by `win32_notif`.
 /// HTTP/HTTPS URLs and already-formed `file:///` URIs are passed through unchanged.
 fn path_to_file_uri(path: &str) -> String {
     if path.starts_with("http://") || path.starts_with("https://") || path.starts_with("file:///") {
@@ -289,10 +295,14 @@ fn build_and_show(
     };
 
     // --- Scenario (urgency mapping) ----------------------------------------------
-    // Critical urgency → Reminder scenario keeps the toast on screen until the
-    // user explicitly dismisses it, matching the XDG "critical" intent.
+    // Critical urgency → Urgent scenario.  On Windows 11 22H2+ this bypasses
+    // Focus Assist / Do Not Disturb, matching the XDG "critical" intent of
+    // demanding the user's immediate attention.  On earlier Windows versions
+    // the runtime treats the unknown scenario value as Default (auto-dismisses),
+    // so callers that need guaranteed on-screen persistence on older systems
+    // should also set Timeout::Never.
     let scenario = match notification.urgency {
-        Some(Urgency::Critical) => Scenario::Reminder,
+        Some(Urgency::Critical) => Scenario::Urgent,
         _ => Scenario::Default,
     };
 
@@ -326,10 +336,16 @@ fn build_and_show(
         .visual(Text::create_binded(2, "body"))
         .value("body", &notification.body);
 
-    // ── App-logo / hero image ─────────────────────────────────────────────────
+    // ── App-logo image (replaces the small square app icon) ───────────────────
     if let Some(image_path) = &notification.path_to_image {
         let uri = path_to_file_uri(image_path);
         builder = builder.visual(Image::create(0, &uri).with_placement(Placement::AppLogoOverride));
+    }
+
+    // ── Hero image (large banner displayed across the top of the toast) ───────
+    if let Some(hero_path) = &notification.hero_image {
+        let uri = path_to_file_uri(hero_path);
+        builder = builder.visual(Image::create(1, &uri).with_placement(Placement::Hero));
     }
 
     // ── Sound ─────────────────────────────────────────────────────────────────
@@ -368,6 +384,12 @@ fn build_and_show(
         .build(0, notifier, tag, tag)
         .map_err(|e| Error::from(ErrorKind::Msg(format!("{e:?}"))))?;
 
+    // Elevate delivery priority for critical notifications so Windows gives
+    // this toast precedence in its internal notification queue.
+    if notification.urgency == Some(Urgency::Critical) {
+        let _ = notif.set_priority(NotificationPriority::High);
+    }
+
     // Clone the COM reference before show() so we can call Hide() later.
     // SAFETY: as_raw() returns a valid pointer to the inner ToastNotification
     // for the lifetime of `notif`; clone() bumps the COM refcount so the
@@ -399,8 +421,9 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
 
     let (close_tx, close_rx) = mpsc::channel();
 
-    // Snapshot the image path so `update()` can later detect structural changes.
+    // Snapshot the image paths so `update()` can later detect structural changes.
     let last_shown_image = notification.path_to_image.clone();
+    let last_shown_hero_image = notification.hero_image.clone();
 
     let raw_toast = build_and_show(notification, &notifier, &tag, Some(close_tx.clone()))?;
 
@@ -412,5 +435,6 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
         close_tx,
         close_rx,
         last_shown_image,
+        last_shown_hero_image,
     })
 }
