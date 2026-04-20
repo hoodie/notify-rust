@@ -10,11 +10,12 @@ use std::{
 
 use win32_notif::{
     notification::{
+        actions::ActionButton,
         audio::{Audio, Src},
         visual::{Image, Placement, Text},
         Scenario, ToastDuration,
     },
-    ManageNotification, NotificationBuilder, NotificationDataSet,
+    ManageNotification, NotificationActivatedEventHandler, NotificationBuilder, NotificationDataSet,
     NotificationDismissedEventHandler, NotificationPriority, ToastsNotifier,
 };
 use windows::UI::Notifications::ToastNotification as RawToast;
@@ -57,6 +58,32 @@ impl<F: FnOnce()> CloseHandler<()> for F {
     }
 }
 
+/// Lets [`NotificationHandle::on_action`] accept closures with or without the action ID.
+pub trait ActionHandler<A> {
+    /// Invoke the handler with the action ID (`None` = body/toast click).
+    fn call(self, action_id: Option<String>);
+}
+
+impl<F: FnOnce(Option<String>)> ActionHandler<Option<String>> for F {
+    fn call(self, action_id: Option<String>) {
+        self(action_id);
+    }
+}
+
+impl<F: FnOnce(String)> ActionHandler<String> for F {
+    fn call(self, action_id: Option<String>) {
+        if let Some(id) = action_id {
+            self(id);
+        }
+    }
+}
+
+impl<F: FnOnce()> ActionHandler<()> for F {
+    fn call(self, _action_id: Option<String>) {
+        self();
+    }
+}
+
 /// Handle to a shown Windows toast. Derefs to [`Notification`] for in-place mutation.
 pub struct NotificationHandle {
     notification: Notification,
@@ -74,6 +101,10 @@ pub struct NotificationHandle {
     /// Any change forces a hide + rebuild in `update()` (images aren't data-bindable).
     last_shown_image: Option<String>,
     last_shown_hero_image: Option<String>,
+    /// Sender for the action channel; cloned on each `update()` rebuild.
+    action_tx: mpsc::Sender<Option<String>>,
+    /// Yields the action ID (or `None` for body click) when activated.
+    action_rx: mpsc::Receiver<Option<String>>,
 }
 
 impl NotificationHandle {
@@ -89,6 +120,28 @@ impl NotificationHandle {
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         let reason = self.close_rx.recv().unwrap_or(CloseReason::Other);
         handler.call(reason);
+    }
+
+    /// Block until the toast is activated (action button or body click), then call `handler`.
+    ///
+    /// The value passed to the handler is:
+    /// - `Some(id)` — the action button with that ID was clicked,
+    /// - `None` — the toast body (or no specific action button) was activated.
+    pub fn on_action<A>(self, handler: impl ActionHandler<A>) {
+        let id = self.action_rx.recv().unwrap_or(None);
+        handler.call(id);
+    }
+
+    /// Waits for the user to act on a notification and then calls
+    /// `invocation_closure` with the name of the corresponding action.
+    ///
+    /// The string passed to the closure is the action ID set via
+    /// [`.action(id, label)`](Notification::action). An empty string (`""`)
+    /// is passed when the toast body is clicked without activating a named button.
+    pub fn wait_for_action(self, invocation_closure: impl FnOnce(&str)) {
+        self.on_action(|id: Option<String>| {
+            invocation_closure(id.as_deref().unwrap_or(""));
+        });
     }
 
     /// Replace the visible toast with the current notification state.
@@ -136,6 +189,7 @@ impl NotificationHandle {
             &self.notifier,
             &self.tag,
             Some(self.close_tx.clone()),
+            Some(self.action_tx.clone()),
         ) {
             self.raw_toast = new_toast;
             self.last_shown_image = self.notification.path_to_image.clone();
@@ -272,6 +326,7 @@ fn build_and_show(
     notifier: &ToastsNotifier,
     tag: &str,
     dismissed_tx: Option<mpsc::Sender<CloseReason>>,
+    activated_tx: Option<mpsc::Sender<Option<String>>>,
 ) -> Result<RawToast> {
     let duration = match notification.timeout {
         Timeout::Default => ToastDuration::Short,
@@ -330,6 +385,22 @@ fn build_and_show(
         },
     }
 
+    // Wire up action buttons (actions is stored as [id, label, id, label, ...]).
+    for chunk in notification.actions.chunks(2) {
+        if let [id, label] = chunk {
+            builder = builder.action(ActionButton::create(label).with_id(id));
+        }
+    }
+
+    // Register activated handler (covers both button clicks and body clicks).
+    if let Some(tx) = activated_tx {
+        builder = builder.on_activated(NotificationActivatedEventHandler::new(move |_, args| {
+            let button_id = args.and_then(|a| a.button_id);
+            let _ = tx.send(button_id);
+            Ok(())
+        }));
+    }
+
     // The closure must be `Fn`; cloning the sender on each call is a no-op after the first send.
     if let Some(tx) = dismissed_tx {
         builder = builder.on_dismissed(NotificationDismissedEventHandler::new(move |_, reason| {
@@ -382,7 +453,9 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     let last_shown_image = notification.path_to_image.clone();
     let last_shown_hero_image = notification.hero_image.clone();
 
-    let raw_toast = build_and_show(notification, &notifier, &tag, Some(close_tx.clone()))?;
+    let (action_tx, action_rx) = mpsc::channel();
+
+    let raw_toast = build_and_show(notification, &notifier, &tag, Some(close_tx.clone()), Some(action_tx.clone()))?;
 
     Ok(NotificationHandle {
         notification: notification.clone(),
@@ -393,5 +466,7 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
         close_rx,
         last_shown_image,
         last_shown_hero_image,
+        action_tx,
+        action_rx,
     })
 }

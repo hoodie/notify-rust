@@ -484,8 +484,6 @@ impl Notification {
     /// Add an action.
     ///
     /// This adds a single action to the internal list of actions.
-    ///
-    /// (xdg only)
     pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());

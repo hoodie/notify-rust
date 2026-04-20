@@ -93,7 +93,7 @@
 //! |  `fn hint(...)`     |  ✔︎    | ❌    | ❌    |
 //! |  `fn timeout(...)`  |  ✔︎    |       |  ✔︎    |
 //! |  `fn urgency(...)`  |  ✔︎    | ❌    |  ✔︎    |
-//! |  `fn action(...)`   |  ✔︎    |       |        |
+//! |  `fn action(...)`   |  ✔︎    |       |  ✔︎    |
 //! |  `fn id(...)`       |  ✔︎    |       |        |
 //! |  `fn finalize(...)` |  ✔︎    | ✔︎     |  ✔︎    |
 //! |  `fn show(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
@@ -102,10 +102,11 @@
 //!
 //! | method                   | XDG | macOS | windows |
 //! |--------------------------|-----|-------|---------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ❌   |
-//! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
-//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ❌   |
-//! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
+//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ✔︎   |
+//! | `fn on_action(...)`      |  ❌  |  ❌  |   ✔︎   |
+//! | `fn close(...)`          |  ✔︎  |  ❌  |   ✔︎   |
+//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ✔︎   |
+//! | `fn update(...)`         |  ✔︎  |  ❌  |   ✔︎   |
 //! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
 //!
 //! ## Functions
@@ -233,7 +234,7 @@ pub use macos::{
 };
 
 #[cfg(target_os = "windows")]
-pub use windows::{CloseHandler, CloseReason, NotificationHandle};
+pub use windows::{ActionHandler, CloseHandler, CloseReason, NotificationHandle};
 
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),
