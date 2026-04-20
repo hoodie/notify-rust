@@ -21,9 +21,7 @@ use windows::UI::Notifications::ToastNotification as RawToast;
 
 pub use crate::{error::*, notification::Notification, timeout::Timeout, urgency::Urgency};
 
-/// Monotonically increasing counter used to give every notification a unique tag,
-/// preventing `SQLITE_CONSTRAINT_UNIQUE` errors when multiple toasts are shown in
-/// rapid succession with the same group.
+/// Unique tag counter — prevents `SQLITE_CONSTRAINT_UNIQUE` on rapid successive shows.
 static NOTIF_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 // ── CloseReason ──────────────────────────────────────────────────────────────
@@ -31,18 +29,17 @@ static NOTIF_COUNTER: AtomicU64 = AtomicU64::new(0);
 /// Why a Windows toast notification was dismissed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CloseReason {
-    /// The toast expired (timed out automatically).
+    /// The toast timed out.
     Expired,
-    /// The user explicitly dismissed the toast (swiped away or clicked X).
+    /// The user swiped away or clicked X.
     Dismissed,
-    /// The application or OS hid the toast programmatically.
+    /// Hidden programmatically by the app or OS.
     CloseAction,
-    /// Unknown or unrecognised reason.
+    /// Unknown reason.
     Other,
 }
 
-/// Allows [`NotificationHandle::on_close`] to accept both
-/// `|reason: CloseReason| { … }` and `|| { … }` closures.
+/// Lets [`NotificationHandle::on_close`] accept `|reason: CloseReason| {}` and `|| {}`.
 pub trait CloseHandler<A> {
     /// Invoke the handler with the dismiss reason.
     fn call(self, reason: CloseReason);
@@ -60,66 +57,47 @@ impl<F: FnOnce()> CloseHandler<()> for F {
     }
 }
 
-/// A handle to a Windows toast notification that has been shown.
-///
-/// Implements [`Deref`] / [`DerefMut`] targeting the underlying [`Notification`],
-/// so you can update fields and call [`update`](NotificationHandle::update) to
-/// replace the visible toast in-place.
+/// Handle to a shown Windows toast. Derefs to [`Notification`] for in-place mutation.
 pub struct NotificationHandle {
-    /// The notify-rust `Notification` that was shown; mutated by `update()`.
     notification: Notification,
-    /// The WinRT notifier; kept alive so `close()` and `update()` work.
+    /// Kept alive so `close()` and `update()` work.
     notifier: ToastsNotifier,
-    /// Cloned COM reference to the shown toast; required to call `Hide()`.
+    /// COM ref to the live toast; needed for `Hide()`.
     raw_toast: RawToast,
-    /// Unique tag used to identify this toast in the Windows notification store.
+    /// Identifies this toast in the Windows notification store.
     tag: String,
-    /// Cloned into each dismissed handler registration so `update()` can
-    /// re-register the handler without losing the receive end.
+    /// Shared with dismissed handlers; cloned on each `update()` rebuild.
     close_tx: mpsc::Sender<CloseReason>,
-    /// Receives exactly one value when the toast is dismissed or expires.
+    /// Yields the dismiss reason once.
     close_rx: mpsc::Receiver<CloseReason>,
-    /// Snapshots of the image paths as they were when the toast was last
-    /// structurally built.  Used by `update()` to decide whether a cheap
-    /// data-binding patch is sufficient or a full rebuild is needed.
-    /// Images are not data-bindable in WinRT toast XML, so any change to
-    /// either field forces a hide + rebuild cycle.
+    /// Image paths as of the last structural build.
+    /// Any change forces a hide + rebuild in `update()` (images aren't data-bindable).
     last_shown_image: Option<String>,
     last_shown_hero_image: Option<String>,
 }
 
 impl NotificationHandle {
-    /// Programmatically dismiss the visible toast popup and remove it from the Action Center.
+    /// Hide the toast popup and remove it from the Action Center.
     pub fn close(self) {
-        // Hide the currently visible popup.
         let _ = unsafe { self.notifier.as_raw().Hide(&self.raw_toast) };
-        // Also remove any lingering entry from the Action Center history.
         if let Ok(mgr) = self.notifier.manager() {
             let _ = mgr.remove_notification_with_tag(&self.tag);
         }
     }
 
-    /// Block the current thread until the notification is dismissed, then call `handler`.
-    ///
-    /// Accepts either `|reason: CloseReason| { … }` or `|| { … }`.
+    /// Block until the notification is dismissed, then call `handler`.
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         let reason = self.close_rx.recv().unwrap_or(CloseReason::Other);
         handler.call(reason);
     }
 
-    /// Replace the visible toast with the current state of the notification.
+    /// Replace the visible toast with the current notification state.
     ///
-    /// **Fast path — data-binding update (no flicker):** when only text fields
-    /// (`summary`, `subtitle`, `body`) have changed, the live toast is patched
-    /// in-place via [`NotificationDataSet`].  The popup is never hidden, so
-    /// there is no visual flicker.
+    /// **Fast path:** if only text fields changed, patches the live toast via
+    /// [`NotificationDataSet`] with no flicker.
     ///
-    /// **Slow path — structural rebuild:** if the image has changed since the
-    /// last show, or if the data-binding update fails (e.g. the toast was
-    /// already dismissed), the old toast is hidden and a fresh one is shown.
-    ///
-    /// Mutate the handle first (it [`Deref`]s to [`Notification`]), then call
-    /// this method:
+    /// **Slow path:** if an image changed, or the data-binding update fails,
+    /// hides the old toast and shows a fresh one.
     ///
     /// ```no_run
     /// # use notify_rust::Notification;
@@ -128,18 +106,10 @@ impl NotificationHandle {
     /// handle.update();
     /// ```
     pub fn update(&mut self) {
-        // ── Detect whether a structural rebuild is required ───────────────────
-        // Images are not data-bindable in WinRT toast XML, so any change to
-        // either image field requires a full hide + rebuild cycle.
         let image_changed = self.notification.path_to_image != self.last_shown_image
             || self.notification.hero_image != self.last_shown_hero_image;
 
         if !image_changed {
-            // ── Fast path: data-binding update ────────────────────────────────
-            // Text slots were created with `create_binded` keys "summary",
-            // "subtitle", and "body" in `build_and_show`.  We simply push new
-            // values for those keys; the Windows notification runtime patches
-            // the live toast without removing it from the screen.
             if let Ok(data) = NotificationDataSet::new() {
                 let _ = data.insert("summary", &self.notification.summary);
 
@@ -154,15 +124,11 @@ impl NotificationHandle {
                 let _ = data.insert("body", &self.notification.body);
 
                 if self.notifier.update(&data, &self.tag, &self.tag).is_ok() {
-                    // Patched successfully — nothing else to do.
                     return;
                 }
             }
-            // Data-binding update failed (toast may have already been dismissed).
-            // Fall through to the structural rebuild below.
         }
 
-        // ── Slow path: hide the old toast and show a rebuilt one ──────────────
         let _ = unsafe { self.notifier.as_raw().Hide(&self.raw_toast) };
 
         if let Ok(new_toast) = build_and_show(
@@ -193,9 +159,10 @@ impl DerefMut for NotificationHandle {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// Map a winrt-style sound-event name (or any freeform string) to a `win32_notif`
-/// [`Src`] variant.  Returns `None` to indicate that a *silent* audio element
-/// should be used instead.
+type SoundEntry = (&'static str, fn() -> Src);
+
+/// Maps a `WinRT` sound-event name to a [`Src`] variant.
+/// Returns `None` to request a silent audio element instead.
 fn map_sound_name(name: &str) -> Option<Src> {
     let lower = name.to_ascii_lowercase();
 
@@ -203,32 +170,32 @@ fn map_sound_name(name: &str) -> Option<Src> {
         return None;
     }
 
-    // Ordered longest-suffix-first so e.g. "alarm10" is matched before "alarm1".
-    const LOOKUP: &[(&str, fn() -> Src)] = &[
+    // Longest-match first so "alarm10" beats "alarm1".
+    const LOOKUP: &[SoundEntry] = &[
         ("looping.alarm10", || Src::Alarm10),
-        ("looping.alarm9", || Src::Alarm9),
-        ("looping.alarm8", || Src::Alarm8),
-        ("looping.alarm7", || Src::Alarm7),
-        ("looping.alarm6", || Src::Alarm6),
-        ("looping.alarm5", || Src::Alarm5),
-        ("looping.alarm4", || Src::Alarm4),
-        ("looping.alarm3", || Src::Alarm3),
-        ("looping.alarm2", || Src::Alarm2),
-        ("looping.alarm", || Src::Alarm),
-        ("looping.call10", || Src::Call10),
-        ("looping.call9", || Src::Call9),
-        ("looping.call8", || Src::Call8),
-        ("looping.call7", || Src::Call7),
-        ("looping.call6", || Src::Call6),
-        ("looping.call5", || Src::Call5),
-        ("looping.call4", || Src::Call4),
-        ("looping.call3", || Src::Call3),
-        ("looping.call2", || Src::Call2),
-        ("looping.call", || Src::Call),
-        ("notification.im", || Src::IM),
-        ("notification.mail", || Src::Mail),
+        ("looping.alarm9",  || Src::Alarm9),
+        ("looping.alarm8",  || Src::Alarm8),
+        ("looping.alarm7",  || Src::Alarm7),
+        ("looping.alarm6",  || Src::Alarm6),
+        ("looping.alarm5",  || Src::Alarm5),
+        ("looping.alarm4",  || Src::Alarm4),
+        ("looping.alarm3",  || Src::Alarm3),
+        ("looping.alarm2",  || Src::Alarm2),
+        ("looping.alarm",   || Src::Alarm),
+        ("looping.call10",  || Src::Call10),
+        ("looping.call9",   || Src::Call9),
+        ("looping.call8",   || Src::Call8),
+        ("looping.call7",   || Src::Call7),
+        ("looping.call6",   || Src::Call6),
+        ("looping.call5",   || Src::Call5),
+        ("looping.call4",   || Src::Call4),
+        ("looping.call3",   || Src::Call3),
+        ("looping.call2",   || Src::Call2),
+        ("looping.call",    || Src::Call),
+        ("notification.im",       || Src::IM),
+        ("notification.mail",     || Src::Mail),
         ("notification.reminder", || Src::Reminder),
-        ("notification.sms", || Src::Sms),
+        ("notification.sms",      || Src::Sms),
     ];
 
     Some(
@@ -239,89 +206,97 @@ fn map_sound_name(name: &str) -> Option<Src> {
     )
 }
 
-/// Convert a filesystem path to the `file:///` URI scheme expected by `win32_notif`.
-/// HTTP/HTTPS URLs and already-formed `file:///` URIs are passed through unchanged.
+/// Returns an error if `path` is a local filesystem path that does not exist.
+/// HTTP(S) URLs and `file:///` URIs are passed through without checking.
+fn check_local_image(path: &str, field: &str) -> Result<()> {
+    if path.starts_with("http://")
+        || path.starts_with("https://")
+        || path.starts_with("file:///")
+    {
+        return Ok(());
+    }
+    if !std::path::Path::new(path).exists() {
+        return Err(Error::from(ErrorKind::Msg(format!(
+            "{field}: local image file not found: \"{path}\""
+        ))));
+    }
+    Ok(())
+}
+
+/// Converts a filesystem path to a `file:///` URI.
+///
+/// Relative paths are resolved via [`std::fs::canonicalize`]. The `\\?\` prefix
+/// that canonicalize adds on Windows is stripped, and characters invalid in URIs
+/// (space, `#`, `?`, `%`) are percent-encoded. HTTP(S) and `file:///` inputs pass
+/// through unchanged.
 fn path_to_file_uri(path: &str) -> String {
     if path.starts_with("http://") || path.starts_with("https://") || path.starts_with("file:///") {
         return path.to_owned();
     }
 
-    // Normalise Windows back-slashes to forward slashes.
-    let forward = path.replace('\\', "/");
+    let absolute = std::fs::canonicalize(path)
+        .unwrap_or_else(|_| std::env::current_dir().unwrap_or_default().join(path));
 
-    // Absolute paths like "C:/…" carry a drive letter → three slashes.
-    // Paths beginning with "/" (UNC-style) only need two.
-    if forward.starts_with('/') {
-        format!("file://{forward}")
+    let raw = absolute.to_string_lossy();
+
+    // Strip the extended-length prefix \\?\ (regular) or \\?\UNC\ (network).
+    let stripped = raw
+        .strip_prefix(r"\\?\UNC\")
+        .map_or_else(
+            || raw.strip_prefix(r"\\?\").unwrap_or(&raw).to_owned(),
+            |s| format!("//{s}"),
+        );
+
+    let forward = stripped.replace('\\', "/");
+
+    // `%` first to avoid double-encoding.
+    let encoded = forward
+        .replace('%', "%25")
+        .replace(' ', "%20")
+        .replace('#', "%23")
+        .replace('?', "%3F");
+
+    if encoded.starts_with('/') {
+        format!("file://{encoded}")
     } else {
-        format!("file:///{forward}")
+        format!("file:///{encoded}")
     }
 }
 
-/// Populate a [`NotificationBuilder`] from a notify-rust [`Notification`],
-/// show the toast, and return a cloned `RawToast` COM reference.
+/// Builds a toast from `notification`, shows it, and returns a cloned COM reference.
 ///
-/// ## Data binding
-///
-/// The three text slots are always present and use **data-binding keys**:
-///
-/// | slot | binding key  | content           |
-/// |------|-------------|-------------------|
-/// | 0    | `"summary"` | title / summary   |
-/// | 1    | `"subtitle"`| subtitle (may be empty) |
-/// | 2    | `"body"`    | body text (may be empty) |
-///
-/// This means [`NotificationHandle::update`] can push new values for those
-/// keys via [`NotificationDataSet`] without hiding and reshowing the toast.
-/// Windows silently ignores text slots whose bound value is an empty string,
-/// so the slots are safe to include unconditionally.
+/// Text slots 0–2 (`"summary"`, `"subtitle"`, `"body"`) use data-binding keys so
+/// [`NotificationHandle::update`] can patch them in-place without a rebuild.
 fn build_and_show(
     notification: &Notification,
     notifier: &ToastsNotifier,
     tag: &str,
     dismissed_tx: Option<mpsc::Sender<CloseReason>>,
 ) -> Result<RawToast> {
-    // --- Duration ----------------------------------------------------------------
     let duration = match notification.timeout {
         Timeout::Default => ToastDuration::Short,
         Timeout::Never => ToastDuration::Long,
         Timeout::Milliseconds(ms) => {
-            if ms >= 25_000 {
-                ToastDuration::Long
-            } else {
-                ToastDuration::Short
-            }
+            if ms >= 25_000 { ToastDuration::Long } else { ToastDuration::Short }
         }
     };
 
-    // --- Scenario (urgency mapping) ----------------------------------------------
-    // Critical urgency → Urgent scenario.  On Windows 11 22H2+ this bypasses
-    // Focus Assist / Do Not Disturb, matching the XDG "critical" intent of
-    // demanding the user's immediate attention.  On earlier Windows versions
-    // the runtime treats the unknown scenario value as Default (auto-dismisses),
-    // so callers that need guaranteed on-screen persistence on older systems
-    // should also set Timeout::Never.
+    // Critical → Urgent bypasses Focus Assist / DND on Windows 11 22H2+.
+    // On older Windows the unknown value degrades to Default (auto-dismisses);
+    // pair with Timeout::Never for guaranteed persistence on older systems.
     let scenario = match notification.urgency {
         Some(Urgency::Critical) => Scenario::Urgent,
         _ => Scenario::Default,
     };
 
-    // --- Builder -----------------------------------------------------------------
     let mut builder = NotificationBuilder::new()
         .with_duration(duration)
         .with_scenario(scenario);
 
-    // ── Text slots (data-bound) ───────────────────────────────────────────────
-    //
-    // `create_binded` requires binding keys that are purely alphabetic.
-    // "summary", "subtitle", and "body" all satisfy that constraint.
-
-    // Slot 0 — title / summary.
     builder = builder
         .visual(Text::create_binded(0, "summary"))
         .value("summary", &notification.summary);
 
-    // Slot 1 — subtitle (empty string → not rendered by Windows).
     let subtitle_val = notification
         .subtitle
         .as_deref()
@@ -331,50 +306,40 @@ fn build_and_show(
         .visual(Text::create_binded(1, "subtitle"))
         .value("subtitle", subtitle_val);
 
-    // Slot 2 — body (empty string → not rendered by Windows).
     builder = builder
         .visual(Text::create_binded(2, "body"))
         .value("body", &notification.body);
 
-    // ── App-logo image (replaces the small square app icon) ───────────────────
     if let Some(image_path) = &notification.path_to_image {
+        check_local_image(image_path, "image_path")?;
         let uri = path_to_file_uri(image_path);
         builder = builder.visual(Image::create(0, &uri).with_placement(Placement::AppLogoOverride));
     }
 
-    // ── Hero image (large banner displayed across the top of the toast) ───────
     if let Some(hero_path) = &notification.hero_image {
+        check_local_image(hero_path, "hero_image")?;
         let uri = path_to_file_uri(hero_path);
         builder = builder.visual(Image::create(1, &uri).with_placement(Placement::Hero));
     }
 
-    // ── Sound ─────────────────────────────────────────────────────────────────
     match &notification.sound_name {
         None => {}
         Some(name) => match map_sound_name(name) {
-            None => {
-                builder = builder.audio(Audio::new(Src::Default, false, true));
-            }
-            Some(src) => {
-                builder = builder.audio(Audio::new(src, false, false));
-            }
+            None      => { builder = builder.audio(Audio::new(Src::Default, false, true)); }
+            Some(src) => { builder = builder.audio(Audio::new(src, false, false)); }
         },
     }
 
-    // ── Dismissed handler ─────────────────────────────────────────────────────
-    // The closure must be `Fn` (not `FnOnce`) per the win32_notif API; cloning
-    // the sender each invocation is a no-op after the first send.
+    // The closure must be `Fn`; cloning the sender on each call is a no-op after the first send.
     if let Some(tx) = dismissed_tx {
         builder = builder.on_dismissed(NotificationDismissedEventHandler::new(move |_, reason| {
             use win32_notif::handler::ToastDismissedReason;
             let close_reason = match reason {
-                Some(ToastDismissedReason::TimedOut) => CloseReason::Expired,
-                Some(ToastDismissedReason::UserCanceled) => CloseReason::Dismissed,
-                Some(ToastDismissedReason::ApplicationHidden) => CloseReason::CloseAction,
-                _ => CloseReason::Other,
+                Some(ToastDismissedReason::TimedOut)           => CloseReason::Expired,
+                Some(ToastDismissedReason::UserCanceled)       => CloseReason::Dismissed,
+                Some(ToastDismissedReason::ApplicationHidden)  => CloseReason::CloseAction,
+                _                                              => CloseReason::Other,
             };
-            // Ignore send errors: the receiver may have already been dropped
-            // (e.g. the caller never called on_close).
             let _ = tx.send(close_reason);
             Ok(())
         }));
@@ -384,16 +349,12 @@ fn build_and_show(
         .build(0, notifier, tag, tag)
         .map_err(|e| Error::from(ErrorKind::Msg(format!("{e:?}"))))?;
 
-    // Elevate delivery priority for critical notifications so Windows gives
-    // this toast precedence in its internal notification queue.
     if notification.urgency == Some(Urgency::Critical) {
         let _ = notif.set_priority(NotificationPriority::High);
     }
 
-    // Clone the COM reference before show() so we can call Hide() later.
-    // SAFETY: as_raw() returns a valid pointer to the inner ToastNotification
-    // for the lifetime of `notif`; clone() bumps the COM refcount so the
-    // returned value is valid independently.
+    // SAFETY: `as_raw()` is valid for the lifetime of `notif`; `clone()` bumps
+    // the COM refcount so the returned value is independently owned.
     let raw_toast = unsafe { notif.as_raw() }.clone();
 
     notif
@@ -405,8 +366,7 @@ fn build_and_show(
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
-/// "Microsoft.Windows.Explorer" is always registered on Windows and provides a
-/// reliable AUMID for unpackaged applications that haven't registered their own.
+/// Fallback AUMID — always registered, works for unpackaged apps without their own ID.
 const FALLBACK_APP_ID: &str = "Microsoft.Windows.Explorer";
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
@@ -415,13 +375,10 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     let notifier = ToastsNotifier::new(Some(app_id))
         .map_err(|e| Error::from(ErrorKind::Msg(format!("{e:?}"))))?;
 
-    // Give every notification a unique tag so that rapid successive calls don't
-    // collide in the Windows notification database (SQLITE_CONSTRAINT_UNIQUE).
     let tag = NOTIF_COUNTER.fetch_add(1, Ordering::Relaxed).to_string();
 
     let (close_tx, close_rx) = mpsc::channel();
 
-    // Snapshot the image paths so `update()` can later detect structural changes.
     let last_shown_image = notification.path_to_image.clone();
     let last_shown_hero_image = notification.hero_image.clone();
 
