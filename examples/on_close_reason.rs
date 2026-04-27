@@ -27,7 +27,8 @@ fn main() {
             .body("This will go away.")
             .icon("clock")
             .show()
-            .map(|handler| handler.on_close(print_reason))
+            .unwrap()
+            .on_close(print_reason);
     });
     wait_for_keypress();
 }
