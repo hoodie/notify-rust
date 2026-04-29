@@ -17,7 +17,8 @@ fn main() {
             .unwrap()
             .on_close(|reason: CloseReason| {
                 println!("the notification was closed reason: {reason:?}")
-            });
+            })
+            .unwrap();
 
         Notification::new()
             .summary("Pick an option")
@@ -30,6 +31,7 @@ fn main() {
             .wait_for_action_async(|action| {
                 println!("action invoked: {action:?}");
             })
-            .await;
+            .await
+            .unwrap();
     })
 }

@@ -94,7 +94,7 @@ impl DbusNotificationHandle {
     pub fn close(self) {
         let mut message = build_message("CloseNotification", Default::default());
         message.append_items(&[self.id.into()]);
-        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
+        self.connection.send(message); // If closing fails there's nothing we could do anyway
     }
 
     pub fn on_close<F>(self, closure: F) -> Result<()>
