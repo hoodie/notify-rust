@@ -4,16 +4,14 @@ use dbus::{
     Message,
 };
 
-use super::{
-    bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason,
-    NOTIFICATION_INTERFACE,
-};
+use super::{bus::NotificationBus, NOTIFICATION_INTERFACE};
 
 use crate::{
     error::*,
     hints::message::HintMessage,
     notification::Notification,
     xdg::{ServerInformation, NOTIFICATION_OBJECTPATH},
+    ActionResponse, ActionResponseHandler, CloseReason,
 };
 
 pub mod bus {

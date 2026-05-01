@@ -93,7 +93,7 @@
 //! |  `fn hint(...)`     |  ✔︎    | ❌    | ❌    |
 //! |  `fn timeout(...)`  |  ✔︎    |       |  ✔︎    |
 //! |  `fn urgency(...)`  |  ✔︎    | ❌    |  ✔︎    |
-//! |  `fn action(...)`   |  ✔︎    |       |        |
+//! |  `fn action(...)`   |  ✔︎    | ✔︎    |        |
 //! |  `fn id(...)`       |  ✔︎    |       |        |
 //! |  `fn finalize(...)` |  ✔︎    | ✔︎     |  ✔︎    |
 //! |  `fn show(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
@@ -102,9 +102,9 @@
 //!
 //! | method                   | XDG | macOS | windows |
 //! |--------------------------|-----|-------|---------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ❌   |
+//! | `fn wait_for_action(...)`|  ✔︎  |  ✔︎   |   ❌   |
 //! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
-//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ❌   |
+//! | `fn on_close(...)`       |  ✔︎  |  ✔︎   |   ❌   |
 //! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
 //! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
 //!
@@ -129,6 +129,18 @@
 //! ```
 //! </details>
 //!
+//! # macOS specifics
+//!
+//! On macOS, `wait_for_action` and `on_close` are powered by the underlying
+//! `mac-notification-sys` crate, which delivers the notification synchronously
+//! and blocks until the user interacts with it. As a result, calling `show()`
+//! on a notification that has any `action(...)` configured will return a
+//! [`NotificationHandle`] without yet displaying the notification — the
+//! notification is shown when `wait_for_action` (or `on_close`) is invoked,
+//! which is when the response can actually be observed.
+//!
+//! When no action is configured, `show()` behaves as before and delivers a
+//! fire-and-forget notification immediately.
 
 #![deny(
     missing_copy_implementations,
@@ -161,6 +173,7 @@ extern crate winrt_notification;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
+mod action;
 pub mod error;
 mod hints;
 mod miniver;
@@ -180,6 +193,8 @@ mod xdg;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 mod image;
 
+pub use crate::action::{ActionResponse, ActionResponseHandler, CloseHandler, CloseReason};
+
 #[cfg(target_os = "macos")]
 pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
@@ -192,8 +207,8 @@ pub use macos::NotificationHandle;
     not(target_os = "macos")
 ))]
 pub use crate::xdg::{
-    dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
-    CloseHandler, CloseReason, DbusStack, NotificationHandle,
+    dbus_stack, get_capabilities, get_server_information, handle_action, DbusStack,
+    NotificationHandle,
 };
 
 // #[cfg(all(feature = "server", unix, not(target_os = "macos")))]

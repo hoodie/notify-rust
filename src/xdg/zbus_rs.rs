@@ -1,8 +1,10 @@
-use crate::{error::*, notification::Notification, xdg};
+use crate::{
+    error::*, notification::Notification, xdg, ActionResponse, ActionResponseHandler, CloseReason,
+};
 use futures_lite::stream::StreamExt;
 use zbus::MatchRule;
 
-use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
+use super::bus::NotificationBus;
 
 pub mod bus {
 
