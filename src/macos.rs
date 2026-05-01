@@ -78,12 +78,10 @@ impl NotificationHandle {
         let identifier: String = match response {
             Ok(NotificationResponse::ActionButton(label)) => self
                 .identifier_for_label(&label)
-                .map(str::to_owned)
-                .unwrap_or_default(),
+                .map_or_else(String::new, str::to_owned),
             Ok(NotificationResponse::Click) => self
                 .first_identifier()
-                .map(str::to_owned)
-                .unwrap_or_else(|| "__closed".to_owned()),
+                .map_or_else(|| "__closed".to_owned(), str::to_owned),
             Ok(NotificationResponse::Reply(text)) => text,
             Ok(NotificationResponse::CloseButton(_)) | Ok(NotificationResponse::None) => {
                 "__closed".to_owned()
