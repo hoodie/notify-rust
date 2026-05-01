@@ -76,9 +76,12 @@ impl NotificationHandle {
 
         let response = self.show_blocking();
         let identifier: String = match response {
-            Ok(NotificationResponse::ActionButton(label)) => self
-                .identifier_for_label(&label)
-                .map_or_else(String::new, str::to_owned),
+            Ok(NotificationResponse::ActionButton(label)) => {
+                match self.identifier_for_label(&label) {
+                    Some(id) => id.to_owned(),
+                    None => label,
+                }
+            }
             Ok(NotificationResponse::Click) => self
                 .first_identifier()
                 .map_or_else(|| "__closed".to_owned(), str::to_owned),
