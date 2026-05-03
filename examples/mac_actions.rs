@@ -8,6 +8,10 @@ fn main() {
 
 #[cfg(target_os = "macos")]
 fn main() {
+    use notify_rust::{get_bundle_identifier_or_default, set_application};
+
+    set_application(&get_bundle_identifier_or_default("safari")).unwrap();
+
     // A single action: rendered as a single button on the notification.
     Notification::new()
         .summary("click me")
