@@ -1,3 +1,4 @@
+#[allow(unused_imports)] // ActionResponse used in rustdoc link only
 use crate::{error::*, notification::Notification, ActionResponse, CloseHandler, CloseReason};
 
 pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
@@ -161,11 +162,6 @@ impl NotificationHandle {
         self.notification.actions.first().map(String::as_str)
     }
 }
-
-/// Mirror of the XDG handle, used so that `ActionResponse` is part of the
-/// public macOS API surface even though it is not constructed directly here.
-#[allow(dead_code)]
-fn _action_response_is_used(_response: &ActionResponse) {}
 
 impl Deref for NotificationHandle {
     type Target = Notification;
