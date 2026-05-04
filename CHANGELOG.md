@@ -1,5 +1,12 @@
 # Changelog
 
+## [v4.17.0](https://github.com/hoodie/notify-rust/compare/v4.16.1...v4.17.0) (2026-05-05)
+
+### Features
+
+* return Result from update() instead of panicking on D-Bus errors
+([10d049b](https://github.com/hoodie/notify-rust/commit/10d049b4dfd3ea168379c01055922af815049e59))
+
 ### [v4.16.1](https://github.com/hoodie/notify-rust/compare/v4.16.0...v4.16.1) (2026-04-29)
 
 #### Fixes
@@ -37,7 +44,7 @@ to manually specify `image` sub-features.
 * update maintenance state and formatting in README
 ([efafd19](https://github.com/hoodie/notify-rust/commit/efafd19371f4628a3b5a4232061562c24630b702))
 
-## [v4.13.0](https://github.com/hoodie/notify-rust/compare/v4.12.0...v4.13.0) (2026-04-03)
+## [v4.13.0](https://github.com/hoodie/notify-rust/compare/v4.12.0...v4.13.0) (2026-04-04)
 
 ### Features
 
@@ -91,7 +98,7 @@ closes [#236](https://github.com/hoodie/notify-rust/issues/236)
 * **deps:** update rust crate zbus to v5
 ([0834adc](https://github.com/hoodie/notify-rust/commit/0834adc4635c72420ab52cb58ef573004693cab8))
 
-### [v4.11.3](https://github.com/hoodie/notify-rust/compare/v4.11.2...v4.11.3) (2024-09-10)
+### [v4.11.3](https://github.com/hoodie/notify-rust/compare/v4.11.2...v4.11.3) (2024-09-11)
 
 #### Fixes
 
@@ -118,7 +125,7 @@ closes [#236](https://github.com/hoodie/notify-rust/issues/236)
 * update maintenance badge
 ([789fe44](https://github.com/hoodie/notify-rust/commit/789fe44140416837812889c5cdc0b64ac81f26b7))
 
-## [v4.11.0](https://github.com/hoodie/notify-rust/compare/v4.10.0...v4.11.0) (2024-04-04)
+## [v4.11.0](https://github.com/hoodie/notify-rust/compare/v4.10.0...v4.11.0) (2024-04-05)
 
 ### Features
 
@@ -310,7 +317,7 @@ closes [#104](https://github.com/hoodie/notify-rust/issues/104)
 * make zbus backend the default
 ([582b87e](https://github.com/hoodie/notify-rust/commit/582b87ec85647e66058f1857bc0a169411ebeb3b))
 
-### [v4.2.2](https://github.com/hoodie/notify-rust/compare/v4.2.1...v4.2.2) (2021-01-08)
+### [v4.2.2](https://github.com/hoodie/notify-rust/compare/v4.2.1...v4.2.2) (2021-01-09)
 
 #### Fixes
 
@@ -448,9 +455,9 @@ closes [#69](https://github.com/hoodie/notify-rust/issues/69)
 
 ### [v1.0.1](https://github.com/hoodie/notify-rust/compare/v1.0.0...v1.0.1) (2015-07-19)
 
-## [v1.0.0](https://github.com/hoodie/notify-rust/compare/v0.9.0...v1.0.0) (2015-07-12)
+## [v1.0.0](https://github.com/hoodie/notify-rust/compare/v0.9.0...v1.0.0) (2015-07-13)
 
-## [v0.9.0](https://github.com/hoodie/notify-rust/compare/v0.8.0...v0.9.0) (2015-06-30)
+## [v0.9.0](https://github.com/hoodie/notify-rust/compare/v0.8.0...v0.9.0) (2015-07-01)
 
 ## [v0.8.0](https://github.com/hoodie/notify-rust/compare/v0.0.8...v0.8.0) (2015-06-19)
 
