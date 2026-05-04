@@ -108,9 +108,9 @@ impl DbusNotificationHandle {
         })
     }
 
-    pub fn update(&mut self) {
-        self.id = send_notification_via_connection(&self.notification, self.id, &self.connection)
-            .unwrap();
+    pub fn update(&mut self) -> Result<()> {
+        self.id = send_notification_via_connection(&self.notification, self.id, &self.connection)?;
+        Ok(())
     }
 }
 
