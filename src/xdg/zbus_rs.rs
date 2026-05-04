@@ -118,8 +118,8 @@ impl ZbusNotificationHandle {
         Ok(())
     }
 
-    pub fn update(&mut self) {
-        self.update_fallible().unwrap();
+    pub fn update(&mut self) -> Result<()> {
+        self.update_fallible()
     }
 }
 

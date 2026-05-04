@@ -271,13 +271,13 @@ impl NotificationHandle {
     /// notification.summary("Latest News (Correction)")
     ///             .body("Bayern Dortmund 3:3");
     ///
-    /// notification.update();
+    /// notification.update().unwrap();
     /// ```
     /// Watch out for different implementations of the
     /// notification server! On plasma5 for instance, you should also change the appname, so the old
     /// message is really replaced and not just amended. Xfce behaves well, all others have not
     /// been tested by the developer.
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> Result<()> {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(ref mut inner) => inner.update(),
