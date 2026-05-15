@@ -161,6 +161,7 @@ extern crate winrt_notification;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 extern crate lazy_static;
 
+mod action;
 pub mod error;
 mod hints;
 mod miniver;
@@ -180,6 +181,8 @@ mod xdg;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 mod image;
 
+pub use crate::action::{ActionResponse, ActionResponseHandler, CloseHandler, CloseReason};
+
 #[cfg(target_os = "macos")]
 pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
@@ -192,8 +195,8 @@ pub use macos::NotificationHandle;
     not(target_os = "macos")
 ))]
 pub use crate::xdg::{
-    dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
-    CloseHandler, CloseReason, DbusStack, NotificationHandle,
+    dbus_stack, get_capabilities, get_server_information, handle_action, DbusStack,
+    NotificationHandle,
 };
 
 // #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
