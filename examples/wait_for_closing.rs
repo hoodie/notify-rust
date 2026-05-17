@@ -4,7 +4,6 @@ fn main() {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-
 fn main() {
     use notify_rust::CloseReason;
 
@@ -14,5 +13,6 @@ fn main() {
         .body("I'll be gone soon enough.\nSorry for the inconvenience.")
         .show()
         .unwrap()
-        .on_close(|reason: CloseReason| println!("the notification was closed reason: {reason:?}"));
+        .on_close(|reason: CloseReason| println!("the notification was closed reason: {reason:?}"))
+        .unwrap();
 }

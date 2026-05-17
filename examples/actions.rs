@@ -20,7 +20,8 @@ fn main() {
             // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
             "__closed" => println!("the notification was closed"),
             _ => (),
-        });
+        })
+        .unwrap();
 
     Notification::new()
         .summary("click me")
@@ -39,5 +40,6 @@ fn main() {
             // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
             "__closed" => println!("the notification was closed"),
             _ => (),
-        });
+        })
+        .unwrap();
 }

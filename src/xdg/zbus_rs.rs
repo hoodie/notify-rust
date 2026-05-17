@@ -77,8 +77,11 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub async fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
-        wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
+    pub async fn wait_for_action(
+        &self,
+        invocation_closure: impl ActionResponseHandler,
+    ) -> Result<()> {
+        wait_for_action_signal(&self.connection, self.id, invocation_closure).await
     }
 
     pub async fn close_fallible(&self) -> Result<()> {
@@ -98,7 +101,7 @@ impl ZbusNotificationHandle {
         let _ = self.close_fallible().await;
     }
 
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(self, closure: F) -> Result<()>
     where
         F: FnOnce(CloseReason),
     {
@@ -106,7 +109,7 @@ impl ZbusNotificationHandle {
             if let ActionResponse::Closed(reason) = action {
                 closure(*reason);
             }
-        }));
+        }))
     }
 
     pub fn update_fallible(&mut self) -> Result<()> {
@@ -227,22 +230,22 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
+pub async fn handle_action(id: u32, func: impl ActionResponseHandler) -> Result<()> {
     let connection = zbus::Connection::session().await.unwrap();
-    wait_for_action_signal(&connection, id, func).await;
+    wait_for_action_signal(&connection, id, func).await?;
+    Ok(())
 }
 
 async fn wait_for_action_signal(
     connection: &zbus::Connection,
     id: u32,
     handler: impl ActionResponseHandler,
-) {
+) -> Result<()> {
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
-        .member("ActionInvoked")
-        .unwrap()
+        .member("ActionInvoked")?
         .build();
 
     let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
@@ -252,8 +255,7 @@ async fn wait_for_action_signal(
         .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
         .unwrap()
-        .member("NotificationClosed")
-        .unwrap()
+        .member("NotificationClosed")?
         .build();
     proxy.add_match_rule(close_signal_rule).await.unwrap();
 
@@ -283,4 +285,5 @@ async fn wait_for_action_signal(
             }
         }
     }
+    Ok(())
 }

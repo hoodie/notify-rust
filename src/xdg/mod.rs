@@ -93,17 +93,17 @@ impl NotificationHandle {
 
     /// Waits for the user to act on a notification and then calls
     /// `invocation_closure` with the name of the corresponding action.
-    pub fn wait_for_action<F>(self, invocation_closure: F)
+    pub fn wait_for_action<F>(self, invocation_closure: F) -> Result<()>
     where
         F: FnOnce(&str),
     {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
-                let _ = inner.wait_for_action(|action: &ActionResponse| match action {
+                inner.wait_for_action(|action: &ActionResponse| match action {
                     ActionResponse::Custom(action) => invocation_closure(action),
                     ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
-                });
+                })
             }
 
             #[cfg(feature = "zbus")]
@@ -113,9 +113,9 @@ impl NotificationHandle {
                         ActionResponse::Custom(action) => invocation_closure(action),
                         ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
                     }),
-                );
+                )
             }
-        };
+        }
     }
 
     /// Returns a future that waits for the user to act on a notification and then calls
@@ -154,7 +154,7 @@ impl NotificationHandle {
     /// # }
     /// ```
     #[cfg(feature = "zbus")]
-    pub async fn wait_for_action_async<F>(&self, invocation_closure: F)
+    pub async fn wait_for_action_async<F>(&self, invocation_closure: F) -> Result<()>
     where
         F: FnOnce(&ActionResponse),
     {
@@ -164,8 +164,11 @@ impl NotificationHandle {
                 unimplemented!("async methods are not supported with the `dbus` backend");
             }
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(inner) => inner.wait_for_action(invocation_closure).await,
+            NotificationHandleInner::Zbus(inner) => {
+                inner.wait_for_action(invocation_closure).await?;
+            }
         }
+        Ok(())
     }
 
     /// Manually close the notification
@@ -236,11 +239,11 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|reason| println!("closed: {:?}", reason));
     /// ```
-    pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
+    pub fn on_close<A>(self, handler: impl CloseHandler<A>) -> Result<()> {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
-                let _ = inner.wait_for_action(|action: &ActionResponse| {
+                inner.wait_for_action(|action: &ActionResponse| {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
@@ -252,9 +255,10 @@ impl NotificationHandle {
                     if let ActionResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
-                }));
+                }))
             }
         };
+        Ok(())
     }
 
     /// Replace the original notification with an updated version
