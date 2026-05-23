@@ -479,19 +479,17 @@ impl Notification {
 
     /// Sends Notification to `NSUserNotificationCenter`.
     ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Returns a handle that can wait for notification clicks and action button responses.
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<macos::NotificationHandle> {
         macos::show_notification(self)
     }
 
-    /// Sends Notification to `NSUserNotificationCenter`.
+    /// Sends Notification as a Windows toast.
     ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Returns a handle that can wait for notification clicks and action button responses.
     #[cfg(target_os = "windows")]
-    pub fn show(&self) -> Result<()> {
+    pub fn show(&self) -> Result<windows::NotificationHandle> {
         windows::show_notification(self)
     }
 
@@ -509,6 +507,13 @@ impl Notification {
         );
         self.show()
     }
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
+pub(crate) fn action_pairs(actions: &[String]) -> impl Iterator<Item = (&str, &str)> {
+    actions
+        .chunks_exact(2)
+        .map(|chunk| (chunk[0].as_str(), chunk[1].as_str()))
 }
 
 impl Default for Notification {
@@ -561,5 +566,24 @@ impl Default for Notification {
             app_id: None,
             urgency: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::action_pairs;
+
+    #[test]
+    fn action_pairs_ignores_incomplete_trailing_action() {
+        let actions = vec![
+            "default".to_owned(),
+            "Open".to_owned(),
+            "reply".to_owned(),
+            "Reply".to_owned(),
+            "dangling".to_owned(),
+        ];
+        let pairs = action_pairs(&actions).collect::<Vec<_>>();
+
+        assert_eq!(pairs, vec![("default", "Open"), ("reply", "Reply")]);
     }
 }

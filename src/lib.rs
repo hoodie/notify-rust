@@ -93,7 +93,7 @@
 //! |  `fn hint(...)`     |  ✔︎    | ❌    | ❌    |
 //! |  `fn timeout(...)`  |  ✔︎    |       |  ✔︎    |
 //! |  `fn urgency(...)`  |  ✔︎    | ❌    |  ✔︎    |
-//! |  `fn action(...)`   |  ✔︎    |       |        |
+//! |  `fn action(...)`   |  ✔︎    | ✔︎     |  ✔︎    |
 //! |  `fn id(...)`       |  ✔︎    |       |        |
 //! |  `fn finalize(...)` |  ✔︎    | ✔︎     |  ✔︎    |
 //! |  `fn show(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
@@ -102,7 +102,7 @@
 //!
 //! | method                   | XDG | macOS | windows |
 //! |--------------------------|-----|-------|---------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ❌   |
+//! | `fn wait_for_action(...)`|  ✔︎  |  ✔︎  |   ✔︎   |
 //! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
 //! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ❌   |
 //! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
@@ -185,6 +185,9 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 
 #[cfg(target_os = "macos")]
 pub use macos::NotificationHandle;
+
+#[cfg(target_os = "windows")]
+pub use windows::NotificationHandle;
 
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),

@@ -5,12 +5,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bundle_id = get_bundle_identifier_or_default("zed");
     set_application(&bundle_id).unwrap();
 
-    Notification::new()
+    let handle = Notification::new()
         .summary("Safari Crashed")
         .body("Just kidding, this is just the notify_rust example.")
         .appname("Toastify")
         .icon("Toastify")
+        .action("open", "Open")
         .show()?;
+
+    handle.wait_for_action(|action| {
+        println!("action: {action}");
+    });
 
     Notification::new()
         .summary(".image_path()")
