@@ -8,9 +8,11 @@ use mac_notification_sys::{MainButton, NotificationResponse};
 pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
 
 use std::ops::{Deref, DerefMut};
-use std::sync::mpsc::{self, Receiver};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+const STARTUP_ERROR_TIMEOUT: Duration = Duration::from_millis(100);
 
 /// A handle to a shown notification.
 ///
@@ -71,15 +73,22 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
     let notification = notification.clone();
     let handle_notification = notification.clone();
     let (sender, receiver) = mpsc::channel();
+    let (startup_sender, startup_receiver) = mpsc::channel();
 
     thread::spawn(move || {
         let response = send_waiting_notification(&notification, None);
-        let _ = sender.send(
-            response
-                .ok()
-                .and_then(|response| response_to_action(&response, &notification.actions)),
-        );
+        match response {
+            Ok(response) => {
+                let _ = sender.send(response_to_action(&response, &notification.actions));
+            }
+            Err(error) => {
+                let _ = startup_sender.send(error);
+                let _ = sender.send(None);
+            }
+        }
     });
+
+    return_startup_error(startup_receiver)?;
 
     Ok(NotificationHandle::new(handle_notification, receiver))
 }
@@ -93,15 +102,22 @@ pub(crate) fn schedule_notification(
     let notification = notification.clone();
     let handle_notification = notification.clone();
     let (sender, receiver) = mpsc::channel();
+    let (startup_sender, startup_receiver) = mpsc::channel();
 
     thread::spawn(move || {
         let response = send_waiting_notification(&notification, Some(delivery_date));
-        let _ = sender.send(
-            response
-                .ok()
-                .and_then(|response| response_to_action(&response, &notification.actions)),
-        );
+        match response {
+            Ok(response) => {
+                let _ = sender.send(response_to_action(&response, &notification.actions));
+            }
+            Err(error) => {
+                let _ = startup_sender.send(error);
+                let _ = sender.send(None);
+            }
+        }
     });
+
+    return_startup_error(startup_receiver)?;
 
     Ok(NotificationHandle::new(handle_notification, receiver))
 }
@@ -152,6 +168,13 @@ fn validate_delivery_date(delivery_date: f64) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn return_startup_error(receiver: Receiver<MacOsError>) -> Result<()> {
+    match receiver.recv_timeout(STARTUP_ERROR_TIMEOUT) {
+        Ok(error) => Err(error.into()),
+        Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => Ok(()),
+    }
 }
 
 fn response_to_action(response: &NotificationResponse, actions: &[String]) -> Option<String> {
