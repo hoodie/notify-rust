@@ -516,6 +516,11 @@ pub(crate) fn action_pairs(actions: &[String]) -> impl Iterator<Item = (&str, &s
         .map(|chunk| (chunk[0].as_str(), chunk[1].as_str()))
 }
 
+#[cfg(any(target_os = "macos", test))]
+pub(crate) fn delivery_date_is_in_past(delivery_date: f64, now_unix_seconds: f64) -> bool {
+    delivery_date < now_unix_seconds
+}
+
 impl Default for Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     fn default() -> Notification {
@@ -571,7 +576,7 @@ impl Default for Notification {
 
 #[cfg(test)]
 mod tests {
-    use super::action_pairs;
+    use super::{action_pairs, delivery_date_is_in_past};
 
     #[test]
     fn action_pairs_ignores_incomplete_trailing_action() {
@@ -585,5 +590,12 @@ mod tests {
         let pairs = action_pairs(&actions).collect::<Vec<_>>();
 
         assert_eq!(pairs, vec![("default", "Open"), ("reply", "Reply")]);
+    }
+
+    #[test]
+    fn delivery_date_past_validation_matches_backend_boundary() {
+        assert!(delivery_date_is_in_past(9.0, 10.0));
+        assert!(!delivery_date_is_in_past(10.0, 10.0));
+        assert!(!delivery_date_is_in_past(11.0, 10.0));
     }
 }

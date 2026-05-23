@@ -1,4 +1,7 @@
-use crate::{error::*, notification::action_pairs, notification::Notification};
+use crate::{
+    error::*,
+    notification::{action_pairs, delivery_date_is_in_past, Notification},
+};
 
 use mac_notification_sys::{MainButton, NotificationResponse};
 
@@ -7,6 +10,7 @@ pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, Not
 use std::ops::{Deref, DerefMut};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// A handle to a shown notification.
 ///
@@ -84,6 +88,8 @@ pub(crate) fn schedule_notification(
     notification: &Notification,
     delivery_date: f64,
 ) -> Result<NotificationHandle> {
+    validate_delivery_date(delivery_date)?;
+
     let notification = notification.clone();
     let handle_notification = notification.clone();
     let (sender, receiver) = mpsc::channel();
@@ -133,6 +139,19 @@ fn send_waiting_notification(
     }
 
     n.send()
+}
+
+fn validate_delivery_date(delivery_date: f64) -> Result<()> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs_f64())
+        .unwrap_or(0.0);
+
+    if delivery_date_is_in_past(delivery_date, now) {
+        return Err(NotificationError::ScheduleInThePast.into());
+    }
+
+    Ok(())
 }
 
 fn response_to_action(response: &NotificationResponse, actions: &[String]) -> Option<String> {
