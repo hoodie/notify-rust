@@ -70,11 +70,16 @@ This is functionally identical to the default feature set.
 
 ## macOS support
 
-This library shines on linux and bsd, which is its original target platform.
-Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
-However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features.
+While notify-rust implements the linux and bsd support by itself, for other platforms we rely on other libraries.
+On macOS this is [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
 
-**call for participation:** You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
+### Bundling requirement
+
+Originally mac-notification-sys only exposed the
+[`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification) api, which works in any kind of binay,
+but only includes a small subset of the current functionality.
+For more features like actions, replys and async sending we make use of the ['UNUserNotificationCenter'](https://developer.apple.com/reference/usernotifications/unusernotificationcenter) api.
+However `UNUserNotificationCenter` requires your application to be bundled.
 
 ## Windows support
 

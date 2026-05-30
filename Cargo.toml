@@ -7,17 +7,17 @@ repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
 edition = "2021"
 rust-version = "1.63.0"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
 include = [
-  "README.md",
-  "History.md",
-  "CHANGELOG.md",
-  "LICENSE-*",
-  "Cargo.toml",
-  "src/**/*.rs",
-  "tests/*.rs"
+    "README.md",
+    "History.md",
+    "CHANGELOG.md",
+    "LICENSE-*",
+    "Cargo.toml",
+    "src/**/*.rs",
+    "tests/*.rs",
 ]
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
@@ -27,19 +27,22 @@ image = { version = "0.25", optional = true, default-features = false }
 zbus = { version = "5", optional = true, default-features = false }
 serde = { version = "1", features = ["derive"], optional = true }
 log = "0.4"
-env_logger ={ version ="0.11", optional = true }
-futures-lite = { version = "2.6.0"}
+futures-lite = { version = "2.6.1" }
 
 [target.'cfg(target_os="macos")'.dependencies]
-mac-notification-sys = "0.6"
-chrono = { version = "0.4", optional = true}
+chrono = { version = "0.4", optional = true }
+mac-notification-sys = { version = "0.6.12", optional = true }
+mac-usernotifications = { path = "../mac-usernotifications" }
 
 [target.'cfg(target_os="windows")'.dependencies]
 winrt-notification = { package = "tauri-winrt-notification", version = "0.7" }
 
 [features]
-default = ["z"]
-# server = []
+default = [
+    "z",
+    # "macos_legacy",
+]
+server = []
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
 z = ["zbus", "serde", "async"]
@@ -50,14 +53,32 @@ debug_namespace = []
 images = ["images_no_default_features", "image/rayon", "image/default-formats"]
 images_no_default_features = ["image", "lazy_static"]
 
+# Gate the legacy NSUserNotificationCenter path; UNUserNotificationCenter is the default on macOS in 5.0.
+macos_legacy = ["mac-notification-sys"]
+# Kept as a no-op alias for crates that had `features = ["preview_macos_un"]` — they
+# compile without changes and automatically get the now-default UN path.
+preview_macos_un = []
+
 [dev-dependencies]
-color-backtrace = "0.7" # wait for MSVR 1.70 to update
+color-backtrace = "0.7"
 ctor = "0.12"
+env_logger = "0.11"
 maplit = "1.0"
+log = "0.4"
+libc = "0.2.183"
 
 [dev-dependencies.async-std]
 version = "1.12.0"
 features = ["attributes"]
+
+[target.'cfg(target_os="macos")'.dev-dependencies]
+oslog = "0.2"
+
+[package.metadata.bundle]
+name = "notify-rust-example"
+identifier = "de.hoodie.notify-rust.example"
+version = "0.1.0"
+short_description = "notify-rust example"
 
 [[example]]
 name = "images"
@@ -79,5 +100,17 @@ name = "simple_async"
 path = "examples/simple_async.rs"
 required-features = ["async"]
 
+[[example]]
+name = "mac_usernotifications"
+path = "examples/mac_usernotifications.rs"
+
+[[example]]
+name = "mac_usernotifications_async"
+path = "examples/mac_usernotifications_async.rs"
+
+[[example]]
+name = "on_close"
+path = "examples/on_close.rs"
+
 [dependencies]
-futures-lite = "2.6.0"
+futures-lite = "2.6.1"

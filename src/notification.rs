@@ -1,3 +1,8 @@
+#[cfg(target_os = "macos")]
+use crate::{InterruptionLevel, NotificationHandle};
+
+#[cfg(all(unix, target_os = "macos"))]
+use crate::Hint;
 #[cfg(all(unix, not(target_os = "macos")))]
 use crate::{
     hints::{CustomHintType, Hint},
@@ -13,7 +18,7 @@ use crate::macos;
 #[cfg(target_os = "windows")]
 use crate::{windows, Urgency};
 
-use crate::{error::*, timeout::Timeout};
+use crate::{action::Action, error::*, timeout::Timeout};
 
 #[cfg(all(unix, not(target_os = "macos")))]
 use std::collections::{HashMap, HashSet};
@@ -74,7 +79,7 @@ pub struct Notification {
     pub(crate) hints_unique: HashMap<(String, CustomHintType), Hint>,
 
     /// See `Notification::actions()` and `Notification::action()`
-    pub actions: Vec<String>,
+    pub actions: Vec<Action>,
 
     #[cfg(target_os = "macos")]
     pub(crate) sound_name: Option<String>,
@@ -91,14 +96,26 @@ pub struct Notification {
     #[cfg(target_os = "windows")]
     pub(crate) urgency: Option<Urgency>,
 
+    #[cfg(target_os = "macos")]
+    pub(crate) interruption_level: Option<InterruptionLevel>,
+
+    /// Groups related notifications in Notification Center (macOS only).
+    ///
+    /// Notifications sharing the same `thread_id` are collapsed together.
+    #[cfg(target_os = "macos")]
+    pub(crate) thread_id: Option<String>,
+
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) bus: xdg::NotificationBus,
 
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
-    /// Only to be used on the receive end. Use Notification hand for updating.
-    pub(crate) id: Option<u32>,
+    /// Notification identifier.
+    ///
+    /// On XDG holds a `u32` assigned by the notification server.
+    /// On macOS holds a caller-supplied `String` used for in-place replacement.
+    pub(crate) id: Option<crate::NotificationId>,
 }
 
 impl Notification {
@@ -150,6 +167,32 @@ impl Notification {
         self
     }
 
+    /// Set the `interruption_level` for macOS notifications.
+    ///
+    /// Controls whether the notification breaks through `Focus` modes (macOS 12+).
+    /// This is only available on macOS with `UserNotifications`; it has no effect on other platforms.
+    ///
+    /// # Platform support
+    /// - **macOS (UserNotifications):** Supported
+    /// - **Other platforms:** No effect
+    #[cfg(target_os = "macos")]
+    pub fn interruption_level(&mut self, level: InterruptionLevel) -> &mut Notification {
+        self.interruption_level = Some(level);
+        self
+    }
+
+    /// Group this notification with others that share the same thread identifier.
+    ///
+    /// macOS collapses grouped notifications in Notification Center.
+    /// Use a stable, per-conversation or per-topic string, e.g. `"chat.alice"`.
+    ///
+    /// (macOS only)
+    #[cfg(target_os = "macos")]
+    pub fn thread_id(&mut self, id: impl Into<String>) -> &mut Notification {
+        self.thread_id = Some(id.into());
+        self
+    }
+
     /// Manual wrapper for `Hint::ImageData`
     #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     pub fn image_data(&mut self, image: Image) -> &mut Notification {
@@ -159,8 +202,7 @@ impl Notification {
 
     /// Sets the image path for the notification˝.
     ///
-    /// The path is passed to the platform's native notification API directly — no additional
-    /// dependencies or crate features are required.
+    /// The path is passed to the platform's native notification API directly.
     ///
     /// Platform behaviour:
     /// - **Linux/BSD (XDG):** maps to the `image-path` hint in the D-Bus notification spec.
@@ -289,6 +331,11 @@ impl Notification {
         }
         self
     }
+    /// This is a dummy on macos and has no function
+    #[cfg(all(unix, target_os = "macos"))]
+    pub fn hint(&mut self, _: Hint) -> &mut Notification {
+        self
+    }
 
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) fn get_hints(&self) -> impl Iterator<Item = &Hint> {
@@ -394,18 +441,32 @@ impl Notification {
     /// (xdg only)
     #[deprecated(note = "please use .action() only")]
     pub fn actions(&mut self, actions: Vec<String>) -> &mut Notification {
-        self.actions = actions;
+        self.actions = actions
+            .chunks(2)
+            .filter_map(|chunk| match chunk {
+                [id, label] => Some(Action::button(id.as_str(), label.as_str())),
+                _ => None,
+            })
+            .collect();
         self
     }
 
     /// Add an action.
     ///
-    /// This adds a single action to the internal list of actions.
+    /// Adds a button (or reply input on macOS) to the notification. Use
+    /// [`Action::button`] for a plain button or [`Action::reply`] for an
+    /// inline-reply action. Chain [`.requires_authentication()`](Action::requires_authentication)
+    /// to gate it behind Touch ID on macOS.
     ///
-    /// (xdg only)
-    pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
-        self.actions.push(identifier.to_owned());
-        self.actions.push(label.to_owned());
+    /// ```no_run
+    /// # use notify_rust::{Notification, Action};
+    /// Notification::new()
+    ///     .action(Action::button("open", "Open"))
+    ///     .action(Action::reply("reply", "Reply"))  // inline reply on macOS
+    ///     .show();
+    /// ```
+    pub fn action(&mut self, action: impl Into<Action>) -> &mut Notification {
+        self.actions.push(action.into());
         self
     }
 
@@ -415,10 +476,29 @@ impl Notification {
     /// Though if you want to update a notification, it is easier to use the `update()` method of
     /// the `NotificationHandle` object that `show()` returns.
     ///
-    /// (xdg only)
-    pub fn id(&mut self, id: u32) -> &mut Notification {
-        self.id = Some(id);
+    /// Set an identifier to allow updating or replacing an existing notification.
+    ///
+    /// Pass a `u32` on XDG (Linux/BSD) or a `&str` / `String` on macOS.
+    /// Both convert into [`NotificationId`](crate::NotificationId) automatically.
+    ///
+    /// On XDG, re-using an id replaces the matching notification on the server.
+    /// On macOS, re-posting with the same string id replaces the notification
+    /// in Notification Center in-place.
+    pub fn id(&mut self, id: impl Into<crate::NotificationId>) -> &mut Notification {
+        self.id = Some(id.into());
         self
+    }
+
+    /// Flatten actions to a `[id, label, id, label, …]` string list for the XDG D-Bus call.
+    ///
+    /// `Reply` actions are treated as plain buttons on XDG (the platform has no
+    /// text-input action type).
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub(crate) fn actions_xdg_strings(&self) -> Vec<String> {
+        self.actions
+            .iter()
+            .flat_map(|action| [action.id.clone(), action.label.clone()])
+            .collect()
     }
 
     /// Finalizes a Notification.
@@ -445,8 +525,9 @@ impl Notification {
     /// This is a raw `f64`, if that is a bit too raw for you please activate the feature `"chrono"`,
     /// then you can use `Notification::schedule()` instead, which accepts a `chrono::DateTime<T>`.
     #[cfg(target_os = "macos")]
-    pub fn schedule_raw(&self, timestamp: f64) -> Result<macos::NotificationHandle> {
-        macos::schedule_notification(self, timestamp)
+    pub fn schedule_raw(&self, timestamp: f64) -> Result<NotificationHandle> {
+        let handle = macos::schedule_notification(self, timestamp);
+        handle
     }
 
     /// Sends Notification to D-Bus.
@@ -477,13 +558,29 @@ impl Notification {
         xdg::show_notification_async_at_bus(self, bus).await
     }
 
-    /// Sends Notification to `NSUserNotificationCenter`.
+    /// Send a notification via `UNUserNotificationCenter`.
     ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Returns a [`NotificationHandle`] once macOS has accepted the request.
+    /// Use [`show_async`](Self::show_async) to await delivery on a background
+    /// thread, or [`NotificationHandle::response`] / [`NotificationHandle::response_blocking`]
+    /// to wait for the user's interaction.
+    ///
+    /// On macOS with the `macos_legacy` feature the legacy
+    /// `NSUserNotificationCenter` path is used instead.
     #[cfg(target_os = "macos")]
-    pub fn show(&self) -> Result<macos::NotificationHandle> {
-        macos::show_notification(self)
+    pub fn show(&self) -> Result<NotificationHandle> {
+        let handle = macos::show_notification(self);
+        handle
+    }
+
+    /// Send a notification asynchronously via `UNUserNotificationCenter`.
+    ///
+    /// The main thread must be pumping `NSRunLoop` while this future is awaited.
+    /// Use [`mac_usernotifications::block_on_main`] for CLI tools.
+    #[cfg(target_os = "macos")]
+    #[cfg(not(feature = "macos_legacy"))]
+    pub async fn show_async(&self) -> Result<NotificationHandle> {
+        macos::show_notification_async(self).await
     }
 
     /// Sends Notification to `NSUserNotificationCenter`.
@@ -495,20 +592,6 @@ impl Notification {
         windows::show_notification(self)
     }
 
-    /// Wraps [`Notification::show()`] but prints notification to stdout.
-    #[cfg(all(unix, not(target_os = "macos")))]
-    #[deprecated = "this was never meant to be public API"]
-    pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {
-        println!(
-            "Notification:\n{appname}: ({icon}) {summary:?} {body:?}\nhints: [{hints:?}]\n",
-            appname = self.appname,
-            summary = self.summary,
-            body = self.body,
-            hints = self.hints,
-            icon = self.icon,
-        );
-        self.show()
-    }
 }
 
 impl Default for Notification {
@@ -542,6 +625,8 @@ impl Default for Notification {
             sound_name: Default::default(),
             path_to_image: None,
             id: None,
+            interruption_level: None,
+            thread_id: None,
         }
     }
 

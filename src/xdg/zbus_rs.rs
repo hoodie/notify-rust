@@ -1,5 +1,6 @@
 use crate::{
-    error::*, notification::Notification, xdg, ActionResponse, ActionResponseHandler, CloseReason,
+    action::UserResponse, error::*, notification::Notification, xdg, ActionResponse,
+    ActionResponseHandler, CloseReason,
 };
 use futures_lite::stream::StreamExt;
 use zbus::MatchRule;
@@ -83,6 +84,11 @@ impl ZbusNotificationHandle {
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
     }
 
+    /// Returns a future that resolves to the user's [`UserResponse`].
+    pub async fn response(&self) -> UserResponse {
+        response_signal(&self.connection, self.id).await
+    }
+
     pub async fn close_fallible(&self) -> Result<()> {
         self.connection
             .call_method(
@@ -151,7 +157,7 @@ async fn send_notification_via_connection_at_bus(
                 &notification.icon,
                 &notification.summary,
                 &notification.body,
-                &notification.actions,
+                &notification.actions_xdg_strings(),
                 crate::hints::hints_to_map(notification),
                 i32::from(notification.timeout),
             ),
@@ -174,7 +180,14 @@ pub(crate) async fn connect_and_send_notification_at_bus(
     bus: NotificationBus,
 ) -> Result<ZbusNotificationHandle> {
     let connection = zbus::Connection::session().await?;
-    let inner_id = notification.id.unwrap_or(0);
+    let inner_id = notification
+        .id
+        .as_ref()
+        .and_then(|nid| match nid {
+            crate::NotificationId::Xdg(num) => Some(*num),
+            _ => None,
+        })
+        .unwrap_or(0);
     let id =
         send_notification_via_connection_at_bus(notification, inner_id, &connection, bus).await?;
 
@@ -234,6 +247,57 @@ pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
     wait_for_action_signal(&connection, id, func).await;
 }
 
+async fn response_signal(connection: &zbus::Connection, id: u32) -> UserResponse {
+    let action_signal_rule = MatchRule::builder()
+        .msg_type(zbus::message::Type::Signal)
+        .interface(xdg::NOTIFICATION_INTERFACE)
+        .unwrap()
+        .member("ActionInvoked")
+        .unwrap()
+        .build();
+
+    let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
+    proxy.add_match_rule(action_signal_rule).await.unwrap();
+
+    let close_signal_rule = MatchRule::builder()
+        .msg_type(zbus::message::Type::Signal)
+        .interface(xdg::NOTIFICATION_INTERFACE)
+        .unwrap()
+        .member("NotificationClosed")
+        .unwrap()
+        .build();
+    proxy.add_match_rule(close_signal_rule).await.unwrap();
+
+    while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
+        let header = msg.header();
+        if let zbus::message::Type::Signal = header.message_type() {
+            match header.member() {
+                Some(name) if name == "ActionInvoked" => {
+                    match msg.body().deserialize::<(u32, String)>() {
+                        Ok((nid, action)) if nid == id => {
+                            return UserResponse::Action(action);
+                        }
+                        _ => {}
+                    }
+                }
+                Some(name) if name == "NotificationClosed" => {
+                    match msg.body().deserialize::<(u32, u32)>() {
+                        Ok((nid, reason)) if nid == id => {
+                            if !matches!(reason, 1..=3) {
+                                log::debug!("unrecognized XDG close reason code: {reason}");
+                            }
+                            return UserResponse::Closed(reason.into());
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    UserResponse::Closed(CloseReason::Dismissed)
+}
+
 async fn wait_for_action_signal(
     connection: &zbus::Connection,
     id: u32,
@@ -266,7 +330,7 @@ async fn wait_for_action_signal(
                 Some(name) if name == "ActionInvoked" => {
                     match msg.body().deserialize::<(u32, String)>() {
                         Ok((nid, action)) if nid == id => {
-                            handler.call(&ActionResponse::Custom(&action));
+                            handler.call(&ActionResponse::Action(action));
                             break;
                         }
                         _ => {}
@@ -275,6 +339,9 @@ async fn wait_for_action_signal(
                 Some(name) if name == "NotificationClosed" => {
                     match msg.body().deserialize::<(u32, u32)>() {
                         Ok((nid, reason)) if nid == id => {
+                            if !matches!(reason, 1..=3) {
+                                log::debug!("unrecognized XDG close reason code: {reason}");
+                            }
                             handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }

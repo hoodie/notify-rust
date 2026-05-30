@@ -1,0 +1,12 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "run example \"$ZED_STEM\" bundled",
+    "command": "./run_bundled_example.sh $ZED_STEM",
+    "use_new_terminal": true,
+    "reveal": "always",
+    "tags": ["bash-script"],
+  },
+]

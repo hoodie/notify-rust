@@ -7,7 +7,10 @@ use dbus::ffidisp::Connection as DbusConnection;
 #[cfg(feature = "zbus")]
 use zbus::{block_on, zvariant};
 
-use crate::{error::*, notification::Notification, ActionResponse, CloseHandler};
+use crate::{
+    action::UserResponse, error::*, notification::Notification, ActionResponse, CloseHandler,
+    CloseReason,
+};
 
 use std::ops::{Deref, DerefMut};
 
@@ -93,6 +96,18 @@ impl NotificationHandle {
 
     /// Waits for the user to act on a notification and then calls
     /// `invocation_closure` with the name of the corresponding action.
+    ///
+    /// # Deprecated
+    ///
+    /// This `&str`-based overload uses `"__closed"` as a magic sentinel for
+    /// close events. It exists only for backwards compatibility and will be
+    /// removed in a future major release. Prefer
+    /// [`wait_for_action_async`](Self::wait_for_action_async) or the
+    /// `ActionResponse`-based API instead.
+    #[deprecated(
+        since = "4.1.0",
+        note = "use wait_for_action_response instead; \"__closed\" sentinel will be removed in 5.0"
+    )]
     pub fn wait_for_action<F>(self, invocation_closure: F)
     where
         F: FnOnce(&str),
@@ -101,8 +116,9 @@ impl NotificationHandle {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
                 let _ = inner.wait_for_action(|action: &ActionResponse| match action {
-                    ActionResponse::Custom(action) => invocation_closure(action),
-                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                    ActionResponse::Action(key) => invocation_closure(key),
+                    ActionResponse::Reply(text) => invocation_closure(text),
+                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // kept for back-compat
                 });
             }
 
@@ -110,12 +126,108 @@ impl NotificationHandle {
             NotificationHandleInner::Zbus(inner) => {
                 block_on(
                     inner.wait_for_action(|action: &ActionResponse| match action {
-                        ActionResponse::Custom(action) => invocation_closure(action),
-                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                        ActionResponse::Action(key) => invocation_closure(key),
+                        ActionResponse::Reply(text) => invocation_closure(text),
+                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // kept for back-compat
                     }),
                 );
             }
         };
+    }
+
+    /// Waits for the user to act on a notification and calls `invocation_closure`
+    /// with a typed [`ActionResponse`].
+    ///
+    /// # Deprecated
+    ///
+    /// Prefer [`response`](Self::response) which returns a future resolving to
+    /// `Option<UserResponse>` — cleaner and composable with `select!` etc.
+    #[deprecated(since = "4.1.18", note = "use handle.response().await instead")]
+    pub fn wait_for_action_response<F>(self, invocation_closure: F)
+    where
+        F: FnOnce(&ActionResponse),
+    {
+        match self.inner {
+            #[cfg(feature = "dbus")]
+            NotificationHandleInner::Dbus(inner) => {
+                let _ = inner.wait_for_action(invocation_closure);
+            }
+
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::Zbus(inner) => {
+                block_on(inner.wait_for_action(invocation_closure));
+            }
+        };
+    }
+
+    /// Returns a future that resolves to the user's response once the
+    /// notification is interacted with, or `None` if it was closed or
+    /// dismissed without any action.
+    ///
+    /// The future can be awaited directly, raced against a timeout with
+    /// `select!`, or combined with other futures however you like.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use notify_rust::{Notification, UserResponse};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let handle = Notification::new()
+    ///     .summary("Do the thing?")
+    ///     .action("yes", "Yes")
+    ///     .action("no", "No")
+    ///     .show_async()
+    ///     .await?;
+    ///
+    /// match handle.response().await {
+    ///     UserResponse::Action(key) if key == "yes" => println!("confirmed"),
+    ///     UserResponse::Action(key) if key == "no"  => println!("declined"),
+    ///     UserResponse::Action(key) => println!("unknown action: {key}"),
+    ///     UserResponse::Reply(text) => println!("replied: {text}"),
+    ///     UserResponse::Closed(reason) => println!("dismissed: {reason:?}"),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// On the `dbus` (non-async) backend this will block the current thread.
+    /// Prefer the `zbus` backend for truly async behaviour.
+    #[cfg(feature = "zbus")]
+    pub async fn response(&self) -> UserResponse {
+        match &self.inner {
+            #[cfg(feature = "dbus")]
+            NotificationHandleInner::Dbus(_) => {
+                unimplemented!("async response() is not supported with the `dbus` backend");
+            }
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::Zbus(inner) => inner.response().await,
+        }
+    }
+
+    /// Blocking version of [`response`](Self::response).
+    ///
+    /// Blocks the current thread until the notification receives any response.
+    ///
+    /// Prefer `response().await` when inside an async context.
+    pub fn response_blocking(&self) -> UserResponse {
+        match &self.inner {
+            #[cfg(feature = "dbus")]
+            NotificationHandleInner::Dbus(inner) => {
+                let mut result = UserResponse::Closed(CloseReason::Dismissed);
+                let _ = inner.wait_for_action(|action: &ActionResponse| {
+                    result = match action {
+                        ActionResponse::Action(key) => UserResponse::Action(key.clone()),
+                        ActionResponse::Reply(text) => UserResponse::Reply(text.clone()),
+                        ActionResponse::Closed(reason) => UserResponse::Closed(*reason),
+                    };
+                });
+                result
+            }
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::Zbus(inner) => block_on(inner.response()),
+        }
     }
 
     /// Returns a future that waits for the user to act on a notification and then calls
@@ -286,13 +398,13 @@ impl NotificationHandle {
         }
     }
 
-    /// Returns the Handle's id.
-    pub fn id(&self) -> u32 {
+    /// Returns the handle's id.
+    pub fn id(&self) -> crate::NotificationId {
         match self.inner {
             #[cfg(feature = "dbus")]
-            NotificationHandleInner::Dbus(ref inner) => inner.id,
+            NotificationHandleInner::Dbus(ref inner) => crate::NotificationId::Xdg(inner.id),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::Zbus(ref inner) => inner.id,
+            NotificationHandleInner::Zbus(ref inner) => crate::NotificationId::Xdg(inner.id),
         }
     }
 }

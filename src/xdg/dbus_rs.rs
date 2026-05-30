@@ -159,7 +159,14 @@ pub fn connect_and_send_notification_at_bus(
     bus: NotificationBus,
 ) -> Result<DbusNotificationHandle> {
     let connection = Connection::get_private(BusType::Session)?;
-    let inner_id = notification.id.unwrap_or(0);
+    let inner_id = notification
+        .id
+        .as_ref()
+        .and_then(|nid| match nid {
+            crate::NotificationId::Xdg(num) => Some(*num),
+            _ => None,
+        })
+        .unwrap_or(0);
     let id = send_notification_via_connection_at_bus(notification, inner_id, &connection, bus)?;
 
     Ok(DbusNotificationHandle::new(
@@ -198,12 +205,10 @@ pub fn pack_hints(notification: &Notification) -> Result<MessageItem> {
 }
 
 pub fn pack_actions(notification: &Notification) -> MessageItem {
-    if !notification.actions.is_empty() {
-        let mut actions = vec![];
-        for action in &notification.actions {
-            actions.push(action.to_owned().into());
-        }
-        if let Ok(array) = MessageItem::new_array(actions) {
+    let strings = notification.actions_xdg_strings();
+    if !strings.is_empty() {
+        let items: Vec<MessageItem> = strings.into_iter().map(Into::into).collect();
+        if let Ok(array) = MessageItem::new_array(items) {
             return array;
         }
     }
@@ -300,7 +305,7 @@ fn wait_for_action_signal(
                         (&items[0], &items[1])
                     {
                         if nid == id {
-                            handler.call(&ActionResponse::Custom(action));
+                            handler.call(&ActionResponse::Action(action.to_owned()));
                             break;
                         }
                     }
@@ -314,6 +319,9 @@ fn wait_for_action_signal(
                         (&items[0], &items[1])
                     {
                         if nid == id {
+                            if !matches!(reason, 1..=3) {
+                                log::debug!("unrecognized XDG close reason code: {reason}");
+                            }
                             handler.call(&ActionResponse::Closed(reason.into()));
                             break;
                         }

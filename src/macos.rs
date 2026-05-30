@@ -1,71 +1,52 @@
-use crate::{error::*, notification::Notification};
+#![allow(missing_docs)]
+//! macOS notification back-ends.
+//!
+//! Two implementations are available, selected at compile time.
+//! The `UNUserNotificationCenter` path is the default; enable `macos_legacy` to use
+//! the old `NSUserNotificationCenter` path instead.
+//!
+//! | Feature | `macos_legacy` (`NSUserNotificationCenter`) | default (`UNUserNotificationCenter`) |
+//! |---|---|---|
+//! | Crate | `mac-notification-sys` | `mac-usernotifications` |
+//! | macOS requirement | Any supported macOS | macOS 10.14+ |
+//! | Bundle ID required | No | Yes (ad-hoc signature is enough) |
+//! | `show()` resolves | Immediately | Once delivered |
+//! | `response().await` | No | Yes — suspends until interaction |
+//! | `response_blocking()` | No | Yes |
+//! | `update()` | No | Yes (re-sends by UUID) |
+//! | `update_async()` | No | Yes |
+//! | `close()` | No | No (not yet) |
+//! | `id()` on handle | No | No (not yet) |
+//! | Reply actions | No | Yes |
+//! | Action buttons | No | Yes (multiple) |
+//! | Timeout support | No | Yes |
+//! | Authorization request | No | Yes (`request_auth`) |
 
-pub use mac_notification_sys::error::{ApplicationError, Error as MacOsError, NotificationError};
-
-use std::ops::{Deref, DerefMut};
-
-/// A handle to a shown notification.
+/// Items that belong exclusively to the legacy `NSUserNotificationCenter` path.
 ///
-/// This keeps a connection alive to ensure actions work on certain desktops.
-#[derive(Debug)]
-pub struct NotificationHandle {
-    notification: Notification,
-}
+/// Enable the `macos_legacy` feature to activate this module.
+#[cfg(feature = "macos_legacy")]
+mod nsusernotification;
 
-impl NotificationHandle {
-    #[allow(missing_docs)]
-    pub fn new(notification: Notification) -> NotificationHandle {
-        NotificationHandle { notification }
-    }
-}
+#[cfg(feature = "macos_legacy")]
+pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
-impl Deref for NotificationHandle {
-    type Target = Notification;
+#[cfg(feature = "macos_legacy")]
+pub(crate) use nsusernotification::{schedule_notification, show_notification};
 
-    fn deref(&self) -> &Notification {
-        &self.notification
-    }
-}
+#[cfg(feature = "macos_legacy")]
+pub use nsusernotification::{ApplicationError, MacOsError, NotificationError, NotificationHandle};
 
-/// Allow to easily modify notification properties
-impl DerefMut for NotificationHandle {
-    fn deref_mut(&mut self) -> &mut Notification {
-        &mut self.notification
-    }
-}
+#[cfg(not(feature = "macos_legacy"))]
+mod usernotifications;
 
-pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
-    let mut n = mac_notification_sys::Notification::default();
-    n.title(notification.summary.as_str())
-        .message(&notification.body)
-        .maybe_subtitle(notification.subtitle.as_deref())
-        .maybe_sound(notification.sound_name.as_deref());
+#[cfg(not(feature = "macos_legacy"))]
+pub(crate) use usernotifications::{
+    schedule_notification, show_notification, show_notification_async,
+};
 
-    if let Some(ref image_path) = notification.path_to_image {
-        n.content_image(image_path);
-    }
+#[cfg(not(feature = "macos_legacy"))]
+pub use usernotifications::{MacOsError, NotificationHandle};
 
-    n.send()?;
-
-    Ok(NotificationHandle::new(notification.clone()))
-}
-
-pub(crate) fn schedule_notification(
-    notification: &Notification,
-    delivery_date: f64,
-) -> Result<NotificationHandle> {
-    let mut n = mac_notification_sys::Notification::default();
-    n.title(notification.summary.as_str())
-        .message(&notification.body)
-        .maybe_subtitle(notification.subtitle.as_deref())
-        .maybe_sound(notification.sound_name.as_deref())
-        .delivery_date(delivery_date);
-
-    if let Some(ref image_path) = notification.path_to_image {
-        n.content_image(image_path);
-    }
-
-    n.send()?;
-
-    Ok(NotificationHandle::new(notification.clone()))
-}
+#[cfg(not(feature = "macos_legacy"))]
+pub use mac_usernotifications::{check_bundle, request_auth, request_auth_blocking};

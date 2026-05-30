@@ -5,7 +5,7 @@ fn main() {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn main() {
-    use notify_rust::{CloseReason, Notification};
+    use notify_rust::{Action, CloseReason, Notification};
 
     zbus::block_on(async {
         Notification::new()
@@ -22,8 +22,8 @@ fn main() {
         Notification::new()
             .summary("Pick an option")
             .body("Click one of the action buttons below.")
-            .action("option-a", "Option A")
-            .action("option-b", "Option B")
+            .action(Action::button("option-a", "Option A"))
+            .action(Action::button("option-b", "Option B"))
             .show_async()
             .await
             .unwrap()
