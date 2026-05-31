@@ -4,10 +4,8 @@ use dbus::{
     Message,
 };
 
-use super::{
-    bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason,
-    NOTIFICATION_INTERFACE,
-};
+use super::{bus::NotificationBus, NOTIFICATION_INTERFACE};
+use crate::response::{CloseReason, NotificationResponse, ResponseHandler};
 
 use crate::{
     error::*,
@@ -87,7 +85,7 @@ impl DbusNotificationHandle {
         }
     }
 
-    pub fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) -> Result<()> {
+    pub fn wait_for_action(self, invocation_closure: impl ResponseHandler) -> Result<()> {
         wait_for_action_signal(&self.connection, self.id, invocation_closure)
     }
 
@@ -101,8 +99,8 @@ impl DbusNotificationHandle {
     where
         F: FnOnce(CloseReason),
     {
-        self.wait_for_action(|action: &ActionResponse| {
-            if let ActionResponse::Closed(reason) = action {
+        self.wait_for_action(|action: &NotificationResponse| {
+            if let NotificationResponse::Closed(reason) = action {
                 closure(*reason);
             }
         })
@@ -257,7 +255,7 @@ pub fn get_server_information() -> Result<ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub fn handle_action(id: u32, func: impl ActionResponseHandler) -> Result<()> {
+pub fn handle_action(id: u32, func: impl ResponseHandler) -> Result<()> {
     let connection = Connection::get_private(BusType::Session)?;
     wait_for_action_signal(&connection, id, func)
 }
@@ -266,7 +264,7 @@ pub fn handle_action(id: u32, func: impl ActionResponseHandler) -> Result<()> {
 fn wait_for_action_signal(
     connection: &Connection,
     id: u32,
-    handler: impl ActionResponseHandler,
+    handler: impl ResponseHandler,
 ) -> Result<()> {
     connection.add_match(&format!(
         "interface='{}',member='ActionInvoked'",
@@ -302,7 +300,7 @@ fn wait_for_action_signal(
                         (&items[0], &items[1])
                     {
                         if nid == id {
-                            handler.call(&ActionResponse::Custom(action));
+                            handler.call(&NotificationResponse::Action(action.to_string()));
                             break;
                         }
                     }
@@ -316,7 +314,7 @@ fn wait_for_action_signal(
                         (&items[0], &items[1])
                     {
                         if nid == id {
-                            handler.call(&ActionResponse::Closed(reason.into()));
+                            handler.call(&NotificationResponse::Closed(reason.into()));
                             break;
                         }
                     }
