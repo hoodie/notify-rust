@@ -17,17 +17,20 @@
 /// **Windows:** `UserCanceled` → [`Dismissed`](CloseReason::Dismissed),
 /// `TimedOut` → [`Expired`](CloseReason::Expired),
 /// `ApplicationHidden` → [`CloseAction`](CloseReason::CloseAction).
-#[non_exhaustive]
+// #[non_exhaustive] // TODO: mark in 5.0
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum CloseReason {
     /// The notification expired (timed out).
     Expired,
+
     /// The notification was dismissed by the user.
     Dismissed,
+
     /// The notification was closed programmatically.
     CloseAction,
+
     /// An unrecognised or reserved reason was reported by the platform.
-    Other,
+    Other(u32),
 }
 
 impl From<u32> for CloseReason {
@@ -36,7 +39,7 @@ impl From<u32> for CloseReason {
             1 => CloseReason::Expired,
             2 => CloseReason::Dismissed,
             3 => CloseReason::CloseAction,
-            _other => CloseReason::Other,
+            other => CloseReason::Other(other),
         }
     }
 }
@@ -67,6 +70,9 @@ pub enum NotificationResponse {
     Action(String),
 
     /// The user submitted an inline text reply.
+    ///
+    /// Only produced by the `preview-macos-un` backend (macOS `UNUserNotificationCenter`
+    /// with an inline reply action). On all other backends this variant is never emitted.
     Reply(String),
 
     /// The notification was closed without any action being taken.
@@ -93,12 +99,25 @@ impl From<&str> for NotificationResponse {
     }
 }
 
-/// Deprecated alias for [`NotificationResponse`].
+/// Response to an action — backward-compatible facade.
 ///
-/// This name suggested the type only covered deliberate user actions, but it
-/// also carries close/expiry events. Use [`NotificationResponse`] instead.
-#[deprecated(since = "4.18.0", note = "Use `NotificationResponse` instead")]
-pub type ActionResponse = NotificationResponse;
+/// This type is preserved for source compatibility with existing match arms and type signatures.
+/// Prefer [`NotificationResponse`] for new code — it owns its data and covers more cases.
+///
+/// **Deprecated since 4.18.0** — use [`NotificationResponse`] instead.
+#[derive(Clone, Debug)]
+pub enum ActionResponse<'a> {
+    /// The user clicked a named action button (or the notification body, key `"default"`).
+    Custom(&'a str),
+    /// The notification was closed without any action being taken.
+    Closed(CloseReason),
+}
+
+impl<'a> From<&'a str> for ActionResponse<'a> {
+    fn from(raw: &'a str) -> Self {
+        Self::Custom(raw)
+    }
+}
 
 /// Helper trait implemented by closures used with [`NotificationHandle::wait_for_response`](crate::NotificationHandle::wait_for_response).
 ///
