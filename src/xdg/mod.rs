@@ -179,6 +179,7 @@ impl NotificationHandle {
     /// # Ok(())
     /// # }
     /// ```
+    // TODO: make this consume `self` in 5.0
     #[cfg(feature = "zbus")]
     pub async fn wait_for_action_async<F>(&self, invocation_closure: F)
     where

@@ -1,4 +1,3 @@
-#[cfg(target_os = "macos")]
 fn main() -> Result<(), String> {
     use notify_rust::{
         error::MacOsError, get_bundle_identifier_or_default, set_application, Notification,
@@ -22,6 +21,11 @@ fn main() -> Result<(), String> {
         .map_err(|f| format!("{f}"))?;
 
     Ok(())
+}
+
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+fn main() {
+    println!("macos app-id is a feature that no longer applies to the un-usernotifications api")
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]

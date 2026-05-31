@@ -6,8 +6,11 @@ use std::{fmt, num};
 /// Convenient wrapper around `std::Result`.
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))]
 pub use crate::macos::{ApplicationError, MacOsError, NotificationError};
+
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+pub use crate::macos::MacOsError;
 
 /// The Error type.
 #[derive(Debug)]
@@ -30,6 +33,9 @@ pub enum ErrorKind {
 
     #[cfg(target_os = "macos")]
     MacNotificationSys(mac_notification_sys::error::Error),
+
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    MacUserNotifications(mac_usernotifications::Error),
 
     Parse(num::ParseIntError),
 
@@ -54,6 +60,9 @@ impl fmt::Display for Error {
 
             #[cfg(target_os = "macos")]
             ErrorKind::MacNotificationSys(ref e) => write!(f, "{e}"),
+
+            #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+            ErrorKind::MacUserNotifications(ref e) => write!(f, "{e}"),
 
             ErrorKind::Parse(ref e) => write!(f, "Parsing Error: {e}"),
             ErrorKind::Conversion(ref e) => write!(f, "Conversion Error: {e}"),
@@ -110,6 +119,15 @@ impl From<ImageError> for Error {
     fn from(e: ImageError) -> Error {
         Error {
             kind: ErrorKind::Image(e),
+        }
+    }
+}
+
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+impl From<mac_usernotifications::Error> for Error {
+    fn from(e: mac_usernotifications::Error) -> Error {
+        Error {
+            kind: ErrorKind::MacUserNotifications(e),
         }
     }
 }
