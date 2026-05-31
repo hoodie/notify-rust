@@ -87,6 +87,9 @@ jobs:
           - stable
           - beta
           - stable minus 5 releases
+        features:
+          - ""
+          - --features preview-macos-un
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
@@ -95,11 +98,11 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
 
-      - name: check (default features)
-        run: cargo check
+      - name: check
+        run: cargo check ${{ matrix.features }}
 
-      - name: test (default features)
-        run: cargo test --no-run
+      - name: test
+        run: cargo test --no-run ${{ matrix.features }}
 
-      - name: clippy (default features)
-        run: cargo clippy -- -D warnings
+      - name: clippy
+        run: cargo clippy ${{ matrix.features }} -- -D warnings
