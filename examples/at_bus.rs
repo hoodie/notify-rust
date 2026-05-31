@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     color_backtrace::install();
     #[cfg(feature = "env_logger")]
-    env_logger::init();
+    let _ = env_logger::builder().is_test(true).try_init();
 
     #[allow(deprecated)]
     Notification::at_bus("example")

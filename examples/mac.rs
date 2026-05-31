@@ -1,9 +1,16 @@
 #[cfg(target_os = "macos")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use notify_rust::{get_bundle_identifier_or_default, set_application, Notification};
+    use notify_rust::Notification;
 
-    let bundle_id = get_bundle_identifier_or_default("zed");
-    set_application(&bundle_id).unwrap();
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "preview-macos-un")] {
+            notify_rust::check_bundle().unwrap();
+            notify_rust::request_auth_blocking().unwrap();
+        } else {
+            let bundle_id = notify_rust::get_bundle_identifier_or_default("safari");
+            notify_rust::set_application(&bundle_id).unwrap();
+        }
+    }
 
     Notification::new()
         .summary("Safari Crashed")

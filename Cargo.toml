@@ -34,13 +34,15 @@ futures-lite = { version = "2.6.1" }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
-chrono = { version = "0.4", optional = true}
+mac-usernotifications = { version = "0.1.0", optional = true }
+chrono = { version = "0.4", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
 winrt-notification = { package = "tauri-winrt-notification", version = "0.7" }
 
 [features]
 default = ["z"]
+preview-macos-un = ["dep:mac-usernotifications"]
 # server = []
 d = ["dbus"]
 d_vendored = ["dbus/vendored"]
@@ -61,6 +63,30 @@ cfg-if = "1.0"
 [dev-dependencies.async-std]
 version = "1.13.2"
 features = ["attributes"]
+
+[target.'cfg(target_os="macos")'.dev-dependencies]
+oslog = "0.2"
+
+[package.metadata.bundle]
+name = "notify-rust-example"
+identifier = "de.hoodie.notify-rust.example"
+version = "4"
+
+short_description = "notify-rust example"
+[[example]]
+name = "mac_usernotifications"
+path = "examples/mac_usernotifications.rs"
+required-features = ["preview-macos-un"]
+
+[[example]]
+name = "mac_usernotifications_async"
+path = "examples/mac_usernotifications_async.rs"
+required-features = ["preview-macos-un"]
+
+[[example]]
+name = "interruption_level"
+path = "examples/interruption_level.rs"
+required-features = ["preview-macos-un"]
 
 [[example]]
 name = "images"

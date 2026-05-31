@@ -129,6 +129,45 @@
 //! ```
 //! </details>
 //!
+//! ## Preview Backends
+//!
+//! ### `preview-macos-un` — `UNUserNotificationCenter` (macOS)
+//!
+//! Opt in to the modern `UNUserNotificationCenter` backend by enabling the feature:
+//!
+//! ```toml
+//! notify-rust = { version = "4", features = ["preview-macos-un"] }
+//! ```
+//!
+//! The binary must have a valid `CFBundleIdentifier` and be code-signed
+//! (an ad-hoc signature is sufficient).
+//!
+//! With this feature, `show()` returns a [`NotificationHandle`] with richer capabilities:
+//!
+//! ```no_run
+//! # #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! use notify_rust::{Notification, NotificationResponse};
+//!
+//! let handle = Notification::new()
+//!     .summary("Pick one")
+//!     .action("yes", "Yes")
+//!     .action("no", "No")
+//!     .timeout(notify_rust::Timeout::Milliseconds(30_000))
+//!     .show()?;
+//!
+//! match handle.response_blocking() {
+//!     NotificationResponse::Action(ref key) if key == "yes" => println!("confirmed"),
+//!     NotificationResponse::Action(ref key) if key == "no"  => println!("declined"),
+//!     NotificationResponse::Closed(reason) => println!("dismissed: {reason:?}"),
+//!     other => println!("{other:?}"),
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! An async version is also available via [`Notification::show_async`] and [`NotificationHandle::response`].
+//!
 
 #![deny(
     missing_copy_implementations,
@@ -151,7 +190,7 @@
 #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
 extern crate dbus;
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))]
 extern crate mac_notification_sys;
 
 #[cfg(target_os = "windows")]
@@ -165,12 +204,16 @@ pub mod error;
 mod hints;
 mod miniver;
 mod notification;
+mod notification_id;
 mod response;
 mod timeout;
 pub(crate) mod urgency;
 
 #[cfg(target_os = "macos")]
 mod macos;
+
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+pub use mac_usernotifications::InterruptionLevel;
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -181,11 +224,16 @@ mod xdg;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 mod image;
 
-#[cfg(target_os = "macos")]
-pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
+/// macOS legacy path: get the bundle identifier or a default.
+#[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))]
+pub use macos::{get_bundle_identifier_or_default, set_application, NotificationHandle};
 
-#[cfg(target_os = "macos")]
-pub use macos::NotificationHandle;
+/// macOS `UNUserNotificationCenter` preview path (requires `preview-macos-un` feature).
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+pub use macos::{
+    check_bundle, get_notification_settings, get_notification_settings_blocking, request_auth,
+    request_auth_blocking, NotificationHandle,
+};
 
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),
@@ -200,7 +248,10 @@ pub use crate::xdg::{
 // Cross-platform response types (available on all platforms).
 #[allow(deprecated)]
 pub use crate::response::ActionResponse;
-pub use crate::response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler};
+pub use crate::{
+    notification_id::NotificationId,
+    response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler},
+};
 
 pub use crate::hints::Hint;
 
