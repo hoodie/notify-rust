@@ -9,7 +9,6 @@ use zbus::{block_on, zvariant};
 
 use crate::{error::*, notification::Notification};
 
-#[allow(deprecated)]
 pub use crate::response::ActionResponse;
 pub use crate::response::{CloseHandler, NotificationResponse, ResponseHandler};
 
@@ -104,24 +103,20 @@ impl NotificationHandle {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
-                let _ = inner.wait_for_action(|action: &ActionResponse| match action {
-                    ActionResponse::Action(ref action) => invocation_closure(action),
-                    ActionResponse::Reply(ref text) => {
-                        unimplemented!("Reply is not supported on linux")
-                    }
-                    ActionResponse::Closed(_reason) => invocation_closure("__closed"),
+                let _ = inner.wait_for_action(|response: &NotificationResponse| match response {
+                    NotificationResponse::Action(ref action) => invocation_closure(action),
+                    NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+                    NotificationResponse::Closed(_) => invocation_closure("__closed"),
                 });
             }
 
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
                 block_on(
-                    inner.wait_for_action(|action: &ActionResponse| match action {
-                        ActionResponse::Action(ref action) => invocation_closure(action),
-                        ActionResponse::Reply(ref text) => {
-                            unimplemented!("Reply is not supported on linux")
-                        }
-                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                    inner.wait_for_action(|response: &NotificationResponse| match response {
+                        NotificationResponse::Action(ref action) => invocation_closure(action),
+                        NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+                        NotificationResponse::Closed(_) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
                     }),
                 );
             }
@@ -183,7 +178,7 @@ impl NotificationHandle {
     #[cfg(feature = "zbus")]
     pub async fn wait_for_action_async<F>(&self, invocation_closure: F)
     where
-        F: FnOnce(&ActionResponse),
+        F: FnOnce(&NotificationResponse),
     {
         match &self.inner {
             #[cfg(feature = "dbus")]
@@ -583,9 +578,9 @@ pub struct ServerInformation {
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
-    block_on(zbus_rs::handle_action(id, func));
+    block_on(zbus_rs::handle_action(id, action_response_adapter(func)));
     Ok(())
 }
 
@@ -597,9 +592,9 @@ where
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
-    dbus_rs::handle_action(id, func)
+    dbus_rs::handle_action(id, action_response_adapter(func))
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -610,12 +605,25 @@ where
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
-        dbus_rs::handle_action(id, func)
+        dbus_rs::handle_action(id, action_response_adapter(func))
     } else {
-        block_on(zbus_rs::handle_action(id, func));
+        block_on(zbus_rs::handle_action(id, action_response_adapter(func)));
         Ok(())
+    }
+}
+
+/// Wraps an old-style `FnOnce(&ActionResponse)` into a new-style `FnOnce(&NotificationResponse)`
+/// so legacy callers of [`handle_action`] keep working.
+fn action_response_adapter<F>(func: F) -> impl FnOnce(&NotificationResponse)
+where
+    F: FnOnce(&ActionResponse<'_>),
+{
+    move |response: &NotificationResponse| match response {
+        NotificationResponse::Action(ref s) => func(&ActionResponse::Custom(s.as_str())),
+        NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+        NotificationResponse::Closed(r) => func(&ActionResponse::Closed(*r)),
     }
 }

@@ -243,7 +243,6 @@ pub use crate::xdg::{
 };
 
 // Cross-platform response types (available on all platforms).
-#[allow(deprecated)]
 pub use crate::response::ActionResponse;
 pub use crate::{
     notification_id::NotificationId,
