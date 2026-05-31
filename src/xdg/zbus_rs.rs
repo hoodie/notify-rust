@@ -2,7 +2,8 @@ use crate::{error::*, notification::Notification, xdg};
 use futures_lite::stream::StreamExt;
 use zbus::MatchRule;
 
-use super::{bus::NotificationBus, ActionResponse, ActionResponseHandler, CloseReason};
+use super::bus::NotificationBus;
+use crate::response::{CloseReason, NotificationResponse, ResponseHandler};
 
 pub mod bus {
 
@@ -77,7 +78,7 @@ impl ZbusNotificationHandle {
         }
     }
 
-    pub async fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
+    pub async fn wait_for_action(&self, invocation_closure: impl ResponseHandler) {
         wait_for_action_signal(&self.connection, self.id, invocation_closure).await;
     }
 
@@ -102,8 +103,8 @@ impl ZbusNotificationHandle {
     where
         F: FnOnce(CloseReason),
     {
-        zbus::block_on(self.wait_for_action(|action: &ActionResponse| {
-            if let ActionResponse::Closed(reason) = action {
+        zbus::block_on(self.wait_for_action(|action: &NotificationResponse| {
+            if let NotificationResponse::Closed(reason) = action {
                 closure(*reason);
             }
         }));
@@ -227,7 +228,7 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
 ///
 /// No need to use this, check out `Notification::show_and_wait_for_action(FnOnce(action:&str))`
-pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
+pub async fn handle_action(id: u32, func: impl ResponseHandler) {
     let connection = zbus::Connection::session().await.unwrap();
     wait_for_action_signal(&connection, id, func).await;
 }
@@ -235,7 +236,7 @@ pub async fn handle_action(id: u32, func: impl ActionResponseHandler) {
 async fn wait_for_action_signal(
     connection: &zbus::Connection,
     id: u32,
-    handler: impl ActionResponseHandler,
+    handler: impl ResponseHandler,
 ) {
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
@@ -264,7 +265,7 @@ async fn wait_for_action_signal(
                 Some(name) if name == "ActionInvoked" => {
                     match msg.body().deserialize::<(u32, String)>() {
                         Ok((nid, action)) if nid == id => {
-                            handler.call(&ActionResponse::Custom(&action));
+                            handler.call(&NotificationResponse::Action(action.clone()));
                             break;
                         }
                         _ => {}
@@ -273,7 +274,7 @@ async fn wait_for_action_signal(
                 Some(name) if name == "NotificationClosed" => {
                     match msg.body().deserialize::<(u32, u32)>() {
                         Ok((nid, reason)) if nid == id => {
-                            handler.call(&ActionResponse::Closed(reason.into()));
+                            handler.call(&NotificationResponse::Closed(reason.into()));
                             break;
                         }
                         _ => {}

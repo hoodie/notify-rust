@@ -165,6 +165,7 @@ pub mod error;
 mod hints;
 mod miniver;
 mod notification;
+mod response;
 mod timeout;
 pub(crate) mod urgency;
 
@@ -192,12 +193,14 @@ pub use macos::NotificationHandle;
     not(target_os = "macos")
 ))]
 pub use crate::xdg::{
-    dbus_stack, get_capabilities, get_server_information, handle_action, ActionResponse,
-    CloseHandler, CloseReason, DbusStack, NotificationHandle,
+    dbus_stack, get_capabilities, get_server_information, handle_action, DbusStack,
+    NotificationHandle,
 };
 
-// #[cfg(all(feature = "server", unix, not(target_os = "macos")))]
-// pub use crate::xdg::stop_server;
+// Cross-platform response types (available on all platforms).
+#[allow(deprecated)]
+pub use crate::response::ActionResponse;
+pub use crate::response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler};
 
 pub use crate::hints::Hint;
 
