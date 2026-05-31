@@ -28,7 +28,7 @@ zbus = { version = "5", optional = true, default-features = false }
 serde = { version = "1", features = ["derive"], optional = true }
 log = "0.4"
 env_logger ={ version ="0.11", optional = true }
-futures-lite = { version = "2.6.0"}
+futures-lite = { version = "2.6"}
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
@@ -52,11 +52,10 @@ images_no_default_features = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.7" # wait for MSVR 1.70 to update
-ctor = "0.12"
 maplit = "1.0"
 
 [dev-dependencies.async-std]
-version = "1.12.0"
+version = "1.13.2"
 features = ["attributes"]
 
 [[example]]
@@ -78,6 +77,3 @@ required-features = ["async"]
 name = "simple_async"
 path = "examples/simple_async.rs"
 required-features = ["async"]
-
-[dependencies]
-futures-lite = "2.6.0"

@@ -10,12 +10,9 @@ mod realworld {
     use notify_rust::Image;
     use notify_rust::*;
 
-    use ctor::ctor;
-
-    #[ctor]
-    fn init_color_backtrace() {
+    static _INIT: std::sync::LazyLock<()> = std::sync::LazyLock::new(|| {
         color_backtrace::install();
-    }
+    });
 
     #[test]
     fn burst() {
