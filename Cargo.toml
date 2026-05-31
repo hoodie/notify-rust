@@ -2,11 +2,11 @@
 name = "notify-rust"
 version = "4.17.0"
 authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
-description = "Show desktop notifications (linux, bsd, mac). Pure Rust dbus client and server."
+description = "Show desktop notifications (linux, bsd, mac, windows). Pure Rust dbus client and server."
 repository = "https://github.com/hoodie/notify-rust"
 documentation = "https://docs.rs/notify-rust/"
-edition = "2021"
-rust-version = "1.63.0"
+edition = "2024"
+rust-version = "1.90.0"
 license = "MIT OR Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
