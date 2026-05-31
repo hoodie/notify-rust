@@ -11,14 +11,17 @@ license = "MIT/Apache-2.0"
 keywords = ["desktop", "notification", "notify", "linux", "macos"]
 readme = "README.md"
 include = [
-  "README.md",
-  "History.md",
-  "CHANGELOG.md",
-  "LICENSE-*",
-  "Cargo.toml",
-  "src/**/*.rs",
-  "tests/*.rs"
+    "README.md",
+    "History.md",
+    "CHANGELOG.md",
+    "LICENSE-*",
+    "Cargo.toml",
+    "src/**/*.rs",
+    "tests/*.rs",
 ]
+
+[dependencies]
+log = "0.4"
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = { version = "0.9", optional = true }
@@ -26,9 +29,8 @@ lazy_static = { version = "1.5", optional = true }
 image = { version = "0.25", optional = true, default-features = false }
 zbus = { version = "5", optional = true, default-features = false }
 serde = { version = "1", features = ["derive"], optional = true }
-log = "0.4"
-env_logger ={ version ="0.11", optional = true }
-futures-lite = { version = "2.6"}
+env_logger = { version = "0.11", optional = true }                      # TODO: remove from here
+futures-lite = { version = "2.6.1" }
 
 [target.'cfg(target_os="macos")'.dependencies]
 mac-notification-sys = "0.6"
@@ -52,7 +54,9 @@ images_no_default_features = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.7" # wait for MSVR 1.70 to update
+env_logger = "0.11"
 maplit = "1.0"
+cfg-if = "1.0"
 
 [dev-dependencies.async-std]
 version = "1.13.2"
