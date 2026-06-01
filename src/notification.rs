@@ -380,8 +380,8 @@ impl Notification {
     /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
     ///
     /// ## macOS
-    /// Mapped to [`InterruptionLevel`]: `Low` → `Passive`, `Normal` → `Active`,
-    /// `Critical` → `TimeSensitive`. Use [`interruption_level`](Self::interruption_level)
+    /// Mapped to [`InterruptionLevel`](`mac_usernotifications::InterruptionLevel`): `Low` → `Passive`, `Normal` → `Active`,
+    /// `Critical` → `TimeSensitive`. Use `interruption_level`
     /// directly for finer control (e.g. `Critical` level that bypasses mute).
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {

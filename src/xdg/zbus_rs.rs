@@ -265,7 +265,7 @@ async fn wait_for_action_signal(
                 Some(name) if name == "ActionInvoked" => {
                     match msg.body().deserialize::<(u32, String)>() {
                         Ok((nid, action)) if nid == id => {
-                            handler.call(&NotificationResponse::Action(action.clone()));
+                            handler.call(&NotificationResponse::Action(action));
                             break;
                         }
                         _ => {}

@@ -4,7 +4,7 @@
 /// On macOS (`preview-macos-un`) they use a caller-supplied `String`.
 ///
 /// Both variants implement `From`, so you can pass either type directly to
-/// [`Notification::id`]:
+/// [`Notification::id`](crate::Notification::id):
 ///
 /// ```no_run
 /// # use notify_rust::Notification;

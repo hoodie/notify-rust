@@ -46,8 +46,7 @@ impl From<u32> for CloseReason {
 
 /// The outcome of a shown notification.
 ///
-/// Returned by [`NotificationHandle::response`](crate::NotificationHandle::response) /
-/// [`response_blocking`](crate::NotificationHandle::response_blocking) and passed to
+/// Returned by `NotificationHandle::response` / `response_blocking` and passed to
 /// [`wait_for_response`](crate::NotificationHandle::wait_for_response).
 ///
 /// Match on this to handle every possible outcome:

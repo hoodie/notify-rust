@@ -24,3 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // add oslog dev-dep
     Ok(())
 }
+
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    println!("this is a mac only feature")
+}

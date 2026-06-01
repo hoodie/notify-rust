@@ -105,10 +105,7 @@ impl NotificationHandle {
     /// Wait for the user to interact and call `invocation_closure` with the action identifier.
     ///
     /// The special value `"__closed"` is passed when the notification is dismissed.
-    #[deprecated(
-        since = "4.18.0",
-        note = "Use `response()` / `response_blocking()` instead"
-    )]
+    // #[deprecated]
     pub fn wait_for_action<F>(self, invocation_closure: F)
     where
         F: FnOnce(&str),
@@ -118,10 +115,7 @@ impl NotificationHandle {
     }
 
     /// Executes a closure after the notification has closed.
-    #[deprecated(
-        since = "4.18.0",
-        note = "Use `response_blocking()` and match on `NotificationResponse::Closed` instead"
-    )]
+    // #[deprecated]
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         let response = self.inner.response_blocking().unwrap();
         if let Some(close_reason) = response.close_reason {

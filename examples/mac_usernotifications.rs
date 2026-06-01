@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init()
         .unwrap();
 
-    println!("⚠️  make sure you run run this using ./run_bundled_example.rs");
+    println!("⚠️  make sure you run this using ./run_bundled_example.rs");
 
     notify_rust::check_bundle()?;
     notify_rust::request_auth_blocking()?;

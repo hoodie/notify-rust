@@ -124,7 +124,7 @@ impl NotificationHandle {
     }
 
     /// Waits for the user to act on a notification and then calls `handler`
-    /// with a typed [`ActionResponse`].
+    /// with a typed [`NotificationResponse`].
     ///
     /// This is the typed, forward-compatible replacement for [`wait_for_action`](Self::wait_for_action).
     pub fn wait_for_response(self, handler: impl ResponseHandler) -> Result<()> {

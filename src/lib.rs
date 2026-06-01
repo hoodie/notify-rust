@@ -166,7 +166,7 @@
 //! # }
 //! ```
 //!
-//! An async version is also available via [`Notification::show_async`] and [`NotificationHandle::response`].
+//! An async version is also available via [`Notification::show_async`].
 //!
 
 #![deny(
@@ -257,10 +257,6 @@ pub use crate::hints::Hint;
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 pub use crate::image::{Image, ImageError};
 
-#[cfg_attr(
-    target_os = "macos",
-    deprecated(note = "Urgency is not supported on macOS")
-)]
 pub use crate::urgency::Urgency;
 
 pub use crate::{notification::Notification, timeout::Timeout};
