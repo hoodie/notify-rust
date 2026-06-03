@@ -1,3 +1,10 @@
+Unreleased
+==========
+  * add macOS notification response listeners using a background thread and
+    one-shot channel
+  * return a Windows NotificationHandle and document the current toast
+    activation callback limitation
+
 v4.0.0-alpha
 ==================
   * dbus message types are now hidden
@@ -349,5 +356,4 @@ v0.0.3 / 2015-05-24
 
 v0.0.2 / 2015-05-22
 ===================
-
 

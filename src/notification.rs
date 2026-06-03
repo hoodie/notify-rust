@@ -486,12 +486,11 @@ impl Notification {
         macos::show_notification(self)
     }
 
-    /// Sends Notification to `NSUserNotificationCenter`.
+    /// Sends Notification to the Windows toast API.
     ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Returns a handle to a notification.
     #[cfg(target_os = "windows")]
-    pub fn show(&self) -> Result<()> {
+    pub fn show(&self) -> Result<windows::NotificationHandle> {
         windows::show_notification(self)
     }
 

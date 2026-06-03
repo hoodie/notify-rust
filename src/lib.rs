@@ -102,11 +102,16 @@
 //!
 //! | method                   | XDG | macOS | windows |
 //! |--------------------------|-----|-------|---------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ❌   |
+//! | `fn wait_for_action(...)`|  ✔︎  |  ✔︎  |   stub |
 //! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
-//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ❌   |
+//! | `fn on_close(...)`       |  ✔︎  |  ✔︎  |   stub |
+//! | `fn on_response(...)`    |     |  ✔︎  |   stub |
 //! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
 //! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
+//!
+//! On Windows these listener methods exist on `NotificationHandle` so
+//! cross-platform code can compile, but the `tauri-winrt-notification` backend
+//! does not currently expose toast activation or dismissal callbacks.
 //!
 //! ## Functions
 //!
@@ -184,7 +189,10 @@ mod image;
 pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application};
 
 #[cfg(target_os = "macos")]
-pub use macos::NotificationHandle;
+pub use macos::{ActionResponse, CloseHandler, CloseReason, NotificationHandle};
+
+#[cfg(target_os = "windows")]
+pub use windows::{ActionResponse, CloseHandler, CloseReason, NotificationHandle};
 
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),

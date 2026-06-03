@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* add `NotificationHandle` listener APIs for macOS responses and a Windows
+handle placeholder documenting current backend activation limits.
+
 ## [v4.17.0](https://github.com/hoodie/notify-rust/compare/v4.16.1...v4.17.0) (2026-05-05)
 
 ### Features
