@@ -12,20 +12,20 @@ fn print() {
     println!("notification was closed, don't know why");
 }
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature")
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
 fn main() {
     thread::spawn(|| {
         Notification::new()
             .summary("Time is running out")
             .body("This will go away.")
             .icon("clock")
-            .show()
-            .map(|handler| handler.on_close(print))
+            .show_handle()
+            .map(|handler| handler.on_close(|_| print()))
     });
     wait_for_keypress();
 }

@@ -186,6 +186,9 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 #[cfg(target_os = "macos")]
 pub use macos::NotificationHandle;
 
+#[cfg(target_os = "windows")]
+pub use windows::{CloseReason, NotificationHandle};
+
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),
     unix,

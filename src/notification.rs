@@ -495,6 +495,26 @@ impl Notification {
         windows::show_notification(self)
     }
 
+    /// Sends a notification and returns a handle that can listen for activation and close events.
+    ///
+    /// On Windows, clicking the notification body is surfaced as the `"default"` action.
+    #[cfg(target_os = "windows")]
+    pub fn show_handle(&self) -> Result<windows::NotificationHandle> {
+        windows::show_notification_handle(self)
+    }
+
+    /// Alias for [`Notification::show()`], useful when generic code wants a handle explicitly.
+    #[cfg(target_os = "macos")]
+    pub fn show_handle(&self) -> Result<macos::NotificationHandle> {
+        self.show()
+    }
+
+    /// Alias for [`Notification::show()`], useful when generic code wants a handle explicitly.
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn show_handle(&self) -> Result<xdg::NotificationHandle> {
+        self.show()
+    }
+
     /// Wraps [`Notification::show()`] but prints notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[deprecated = "this was never meant to be public API"]

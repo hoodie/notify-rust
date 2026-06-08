@@ -1,36 +1,43 @@
 #![allow(unused_imports)]
 use notify_rust::{Hint, Notification, Timeout};
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature");
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
 fn main() {
-    Notification::new()
+    let mut first = Notification::new();
+    first
         .summary("click me")
         .body("This will disappear by itself")
-        .action("clicked_a", "button a") // IDENTIFIER, LABEL
-        .hint(Hint::Transient(true)) // needed to work on kde
-        .show()
+        .action("clicked_a", "button a");
+    #[cfg(all(unix, not(target_os = "macos")))]
+    first.hint(Hint::Transient(true));
+    first
+        .show_handle()
         .unwrap()
         .wait_for_action(|action| match action {
             "clicked_a" => println!("clicked a"),
+            "default" => println!("default"),
             // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
             "__closed" => println!("the notification was closed"),
             _ => (),
         });
 
-    Notification::new()
+    let mut second = Notification::new();
+    second
         .summary("click me")
         .body("This action needs to be clicked")
-        .action("default", "default") // IDENTIFIER, LABEL
-        .action("clicked_a", "button a") // IDENTIFIER, LABEL
-        .action("clicked_b", "button b") // IDENTIFIER, LABEL
-        .hint(Hint::Resident(true)) // does not work on kde
-        .timeout(Timeout::Never) // works on kde and gnome
-        .show()
+        .action("default", "default")
+        .action("clicked_a", "button a")
+        .action("clicked_b", "button b")
+        .timeout(Timeout::Never);
+    #[cfg(all(unix, not(target_os = "macos")))]
+    second.hint(Hint::Resident(true));
+    second
+        .show_handle()
         .unwrap()
         .wait_for_action(|action| match action {
             "default" => println!("default"),
