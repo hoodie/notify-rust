@@ -20,6 +20,24 @@ include = [
     "tests/*.rs",
 ]
 
+[features]
+default = [
+    "z",
+    # "preview-macos-un"
+]
+preview-macos-un = ["dep:mac-usernotifications"]
+# server = []
+d = ["dbus"]
+d_vendored = ["dbus/vendored"]
+z = ["zbus", "serde", "async"]
+z-with-tokio = ["zbus", "serde", "tokio"]
+async = ["zbus/async-io"]
+tokio = ["zbus/tokio"]
+debug_namespace = []
+images = ["images_no_default_features", "image/rayon", "image/default-formats"]
+images_no_default_features = ["image", "lazy_static"]
+
+
 [dependencies]
 log = "0.4"
 
@@ -39,20 +57,6 @@ chrono = { version = "0.4", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
 winrt-notification = { package = "tauri-winrt-notification", version = "0.7" }
-
-[features]
-default = ["z"]
-preview-macos-un = ["dep:mac-usernotifications"]
-# server = []
-d = ["dbus"]
-d_vendored = ["dbus/vendored"]
-z = ["zbus", "serde", "async"]
-z-with-tokio = ["zbus", "serde", "tokio"]
-async = ["zbus/async-io"]
-tokio = ["zbus/tokio"]
-debug_namespace = []
-images = ["images_no_default_features", "image/rayon", "image/default-formats"]
-images_no_default_features = ["image", "lazy_static"]
 
 [dev-dependencies]
 color-backtrace = "0.7" # wait for MSVR 1.70 to update
