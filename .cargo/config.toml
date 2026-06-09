@@ -9,3 +9,7 @@
 mac-check   = "check --target aarch64-apple-darwin --all-targets"
 win-check   = "check --target x86_64-pc-windows-gnu --all-targets"
 linux-check = "check --target arm-unknown-linux-gnueabihf --all-targets"
+
+mac-doc     = "doc --target aarch64-apple-darwin"
+win-doc     = "doc --target x86_64-pc-windows-gnu"
+linux-doc   = "doc --target arm-unknown-linux-gnueabihf"
