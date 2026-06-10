@@ -8,6 +8,7 @@ pub fn setup(example_file: &str) -> bool {
                 .unwrap();
         } else {
             env_logger::init();
+            log::trace!("setup env_logger");
             true
         }
     }
