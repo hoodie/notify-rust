@@ -1,9 +1,31 @@
 #![allow(unused_imports)]
+#[cfg(target_os = "windows")]
+use notify_rust::Urgency;
 use notify_rust::{Hint, Notification, Timeout};
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 fn main() {
     println!("this is a xdg only feature");
+}
+
+#[cfg(target_os = "windows")]
+fn main() {
+    Notification::new()
+        .summary("click me")
+        .body("This action needs to be clicked")
+        .action("clicked_a", "button a")
+        .action("clicked_b", "button b")
+        .timeout(Timeout::Never)
+        .urgency(Urgency::Critical)
+        .show_handle()
+        .unwrap()
+        .wait_for_action(|action| match action {
+            "default" => println!("default"),
+            "clicked_a" => println!("clicked a"),
+            "clicked_b" => println!("clicked b"),
+            "__closed" => println!("the notification was closed"),
+            _ => (),
+        });
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]

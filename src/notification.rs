@@ -391,7 +391,7 @@ impl Notification {
     /// There is nothing fancy going on here yet.
     /// **Careful! This replaces the internal list of actions!**
     ///
-    /// (xdg only)
+    /// (xdg only, or Windows via `show_handle()`)
     #[deprecated(note = "please use .action() only")]
     pub fn actions(&mut self, actions: Vec<String>) -> &mut Notification {
         self.actions = actions;
@@ -402,7 +402,7 @@ impl Notification {
     ///
     /// This adds a single action to the internal list of actions.
     ///
-    /// (xdg only)
+    /// (xdg only, or Windows via `show_handle()`)
     pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
@@ -493,6 +493,14 @@ impl Notification {
     #[cfg(target_os = "windows")]
     pub fn show(&self) -> Result<()> {
         windows::show_notification(self)
+    }
+
+    /// Sends a Windows toast notification and returns a handle for action/close callbacks.
+    ///
+    /// This is Windows-only and leaves [`Notification::show()`] unchanged for compatibility.
+    #[cfg(target_os = "windows")]
+    pub fn show_handle(&self) -> Result<windows::NotificationHandle> {
+        windows::show_notification_handle(self)
     }
 
     /// Wraps [`Notification::show()`] but prints notification to stdout.
