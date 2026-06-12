@@ -134,10 +134,13 @@ impl NotificationHandle {
     /// Executes a closure after the notification has closed.
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         match mac_usernotifications::block_on_current(self.inner.response()).flatten() {
-            Ok(response) if let Some(close_reason) = response.close_reason => {
-                handler.call(close_reason.into());
+            Ok(response) => {
+                if let Some(close_reason) = response.close_reason {
+                    handler.call(close_reason.into());
+                } else {
+                    handler.call(CloseReason::Dismissed);
+                }
             }
-            Ok(_) => handler.call(CloseReason::Dismissed),
             Err(error) => {
                 log::error!("failed to get response: {error}");
                 handler.call(CloseReason::Dismissed);
