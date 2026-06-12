@@ -7,10 +7,8 @@
 //! This library was originally conceived with the [XDG](https://en.wikipedia.org/wiki/XDG) notification specification in mind.
 //! Since version 3.3 this crate also builds on macOS, however the semantics of the [XDG](https://en.wikipedia.org/wiki/XDG) specification and macOS `NSNotifications`
 //! are quite different.
-//! Therefore only a very small subset of functions is supported on macOS.
-//! Certain methods don't have any effect there, others will explicitly fail to compile,
-//! in these cases you will have to add platform specific toggles to your code.
-//! For more see [platform differences](#platform-differences)
+//! macOS support has grown significantly; most notification methods work on both backends.
+//! Some methods are no-ops or backend-specific; see the [platform differences](#platform-differences) table.
 //!
 //! # Examples
 //!
@@ -78,49 +76,50 @@
 //! # Platform Differences
 //! <details>
 //! ✔︎ = works <br/>
-//! ❌ = will not compile
+//! - = will not compile
 //!
 //! ## `Notification`
-//! | method              | XDG   | macOS | windows |
-//! |---------------------|-------|-------|---------|
-//! |  `fn appname(...)`  |  ✔︎    |       |        |
-//! |  `fn summary(...)`  |  ✔︎    | ✔︎     |  ✔︎    |
-//! |  `fn subtitle(...)` |       | ✔︎     |  ✔︎    |
-//! |  `fn body(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
-//! |  `fn icon(...)`     |  ✔︎    |       |        |
-//! |  `fn image_path(...)`|  ✔︎   | ✔︎     |  ✔︎    |
-//! |  `fn auto_icon(...)`|  ✔︎    |       |        |
-//! |  `fn hint(...)`     |  ✔︎    | ❌    | ❌    |
-//! |  `fn timeout(...)`  |  ✔︎    |       |  ✔︎    |
-//! |  `fn urgency(...)`  |  ✔︎    | ❌    |  ✔︎    |
-//! |  `fn action(...)`   |  ✔︎    |       |  ✔︎    |
-//! |  `fn id(...)`       |  ✔︎    |       |        |
-//! |  `fn finalize(...)` |  ✔︎    | ✔︎     |  ✔︎    |
-//! |  `fn show(...)`     |  ✔︎    | ✔︎     |  ✔︎    |
+//! | method                       | XDG      | macOS (`NSUserNotifictation`) | macOS (`UNUserNotificationCenter`) | windows |
+//! |------------------------------|----------|-----------------------------  |------------------------------------|---------|
+//! | `fn appname(...)`            | ✔︎        | silent no-op                  | silent no-op                       |         |
+//! | `fn summary(...)`            | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
+//! | `fn subtitle(...)`           |          | ✔︎                             | ✔︎                                  | ✔︎       |
+//! | `fn body(...)`               | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
+//! | `fn icon(...)`               | ✔︎        | silent no-op                  | silent no-op                       |         |
+//! | `fn image_path(...)`         | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
+//! | `fn hint(...)`               | ✔︎        | -                             | -                                  | -       |
+//! | `fn timeout(...)`            | ✔︎        | ignored                       | ✔︎                                  | ✔︎       |
+//! | `fn urgency(...)`            | ✔︎        | -                             | ✔︎ (→ `InterruptionLevel`)          | ✔︎       |
+//! | `fn interruption_level(...)` |          |                               | ✔︎                                  |         |
+//! | `fn action(...)`             | ✔︎        | ⚠︎ (labels only)               | ✔︎                                  |         |
+//! | `fn id(...)`                 | ✔︎ (u32)  | ignored                       | ✔︎                                  |         |
+//! | `fn show(...)`               | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
+//! | `fn show_async(...)`         | ✔︎        |                               | ✔︎                                  |         |
+//! | `fn schedule(...)`           |          | ✔︎                             | ✔︎                                  |         |
 //!
 //! ## `NotificationHandle`
 //!
-//! | method                   | XDG | macOS | windows |
-//! |--------------------------|-----|-------|---------|
-//! | `fn wait_for_action(...)`|  ✔︎  |  ❌  |   ✔︎   |
-//! | `fn close(...)`          |  ✔︎  |  ❌  |   ❌   |
-//! | `fn on_close(...)`       |  ✔︎  |  ❌  |   ✔︎   |
-//! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
-//! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
+//! | method                    | XDG | macOS (`NSUserNotifictation`) | macOS (`UNUserNotification`) | windows |
+//! |---------------------------|-----|-------------------------------|------------------------------|---------|
+//! | `fn wait_for_action(...)` | ✔︎   | ✔︎                             | ✔︎                            | ✔︎       |
+//! | `fn on_close(...)`        | ✔︎   | ✔︎                             | ✔︎                            | ✔︎       |
+//! | `fn close(...)`           | ✔︎   |                               | ✔︎                            |         |
+//! | `fn update(...)`          | ✔︎   |                               | ✔︎                            |         |
+//! | `fn id(...)`              | ✔︎   |                               | ✔︎                            |         |
 //!
 //! ## Functions
 //!
 //! |                                            | XDG | macOS | windows |
 //! |--------------------------------------------|-----|-------|---------|
-//! | `fn get_capabilities(...)`                 | ✔︎   |   ❌ |  ❌    |
-//! | `fn get_server_information(...)`           | ✔︎   |   ❌ |  ❌    |
-//! | `fn set_application(...)`                  | ❌  |   ✔︎  |  ❌    |
-//! | `fn get_bundle_identifier_or_default(...)` | ❌  |   ✔︎  |  ❌    |
+//! | `fn get_capabilities(...)`                 | ✔︎   |   -   |  -      |
+//! | `fn get_server_information(...)`           | ✔︎   |   -   |  -      |
+//! | `fn set_application(...)`                  | -   |   ✔︎   |  -      |
+//! | `fn get_bundle_identifier_or_default(...)` | -   |   ✔︎   |  -      |
 //!
 //!
 //! ### Toggles
 //!
-//! Please use `target_os` toggles if you plan on using methods labeled with ❌.
+//! Please use `target_os` toggles if you plan on using methods labeled with -.
 //!
 //! ```ignore
 //! #[cfg(target_os = "macos")]
@@ -128,45 +127,6 @@
 //! // #### #[cfg(all(unix, not(target_os = "macos")))]
 //! ```
 //! </details>
-//!
-//! ## Preview Backends
-//!
-//! ### `preview-macos-un` — `UNUserNotificationCenter` (macOS)
-//!
-//! Opt in to the modern `UNUserNotificationCenter` backend by enabling the feature:
-//!
-//! ```toml
-//! notify-rust = { version = "4", features = ["preview-macos-un"] }
-//! ```
-//!
-//! The binary must have a valid `CFBundleIdentifier` and be code-signed
-//! (an ad-hoc signature is sufficient).
-//!
-//! With this feature, `show()` returns a [`NotificationHandle`] with richer capabilities:
-//!
-//! ```no_run
-//! # #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
-//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! use notify_rust::{Notification, NotificationResponse};
-//!
-//! let handle = Notification::new()
-//!     .summary("Pick one")
-//!     .action("yes", "Yes")
-//!     .action("no", "No")
-//!     .timeout(notify_rust::Timeout::Milliseconds(30_000))
-//!     .show()?;
-//!
-//! match handle.response_blocking() {
-//!     NotificationResponse::Action(ref key) if key == "yes" => println!("confirmed"),
-//!     NotificationResponse::Action(ref key) if key == "no"  => println!("declined"),
-//!     NotificationResponse::Closed(reason) => println!("dismissed: {reason:?}"),
-//!     other => println!("{other:?}"),
-//! }
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! An async version is also available via [`Notification::show_async`] and [`NotificationHandle::response`].
 //!
 
 #![deny(
@@ -255,8 +215,8 @@ pub use crate::hints::Hint;
 pub use crate::image::{Image, ImageError};
 
 #[cfg_attr(
-    target_os = "macos",
-    deprecated(note = "Urgency is not supported on macOS")
+    all(target_os = "macos", not(feature = "preview-macos-un")),
+    deprecated(note = "Urgency is not supported on macOS (NSUserNotificationCenter path)")
 )]
 pub use crate::urgency::Urgency;
 
@@ -270,6 +230,7 @@ lazy_static! {
         .and_then(|info| info.spec_version.parse::<miniver::Version>())
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
+
 /// Return value of `get_server_information()`.
 #[derive(Debug)]
 pub struct ServerInformation {
