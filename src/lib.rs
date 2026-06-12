@@ -203,11 +203,9 @@ pub use crate::xdg::{
 };
 
 // Cross-platform response types (available on all platforms).
+pub use crate::notification_id::NotificationId;
 pub use crate::response::ActionResponse;
-pub use crate::{
-    notification_id::NotificationId,
-    response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler},
-};
+pub use crate::response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler};
 
 pub use crate::hints::Hint;
 

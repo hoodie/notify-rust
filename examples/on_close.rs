@@ -1,39 +1,31 @@
-cfg_if::cfg_if! {
+#![allow(unused_imports)]
+mod common;
 
-if #[cfg(
-    any(
-        all(target_os = "macos", not(feature = "preview-macos-un")),
-        target_os = "windows"
-    )
-)]{
-    fn main() {
-        println!("this is a xdg only feature")
+fn main() {
+    if !common::setup(file!()) {
+        return;
     }
 
-} else if #[cfg( unix )]{
-
+    use notify_rust::{CloseReason, Hint, Notification, Timeout};
     use std::thread;
 
-    use notify_rust::{CloseReason, Notification};
-    mod common;
+    Notification::new()
+        .summary("Time is running out")
+        .body("Main Thread Notification")
+        .icon("clock")
+        .timeout(Timeout::Milliseconds(5000))
+        .show()
+        .unwrap()
+        .on_close(|reason| log::info!("❎ fg notification was closed ({reason:?})"));
 
-    fn print_reason(reason: CloseReason) {
-        println!("notification was closed ({:?})", reason);
-    }
-    fn main() {
-        if !common::setup("on_close") {
-            return;
-        }
-
-        thread::spawn(|| {
-            Notification::new()
-                .summary("Time is running out")
-                .body("This will go away.")
-                .icon("clock")
-                .show()
-                .map(|handler| handler.on_close(print_reason))
-        });
-        common::wait_for_keypress("close the notification and then press any key to exit");
-    }
-}
+    common::run_main_loop_while(thread::spawn(|| {
+        Notification::new()
+            .summary("Time is running out")
+            .body("BG Thread Notification")
+            .icon("clock")
+            .show()
+            .unwrap()
+            .on_close(|reason| log::info!("❎ bg notification was closed ({reason:?})"));
+    }))
+    .unwrap();
 }

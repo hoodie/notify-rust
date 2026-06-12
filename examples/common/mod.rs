@@ -1,51 +1,51 @@
 #![allow(unused)]
+
+use std::thread;
+
 pub fn setup(example_file: &str) -> bool {
     cfg_if::cfg_if! {
-        if #[cfg(all(target_os = "macos", feature = "preview-macos-un"))] {
+        if #[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))] {
+            env_logger::init();
+            log::trace!("setup env_logger");
+
+            // for NSUserNotifications we need to set the application bundle identifier to the default of safari
+            let bundle_id = notify_rust::get_bundle_identifier_or_default("safari");
+            notify_rust::set_application(&bundle_id).unwrap();
+            log::trace!("set_application: {bundle_id}");
+            true
+        } else if #[cfg(all(target_os = "macos", feature = "preview-macos-un"))] {
+            // for UNUserNotifications we need to log to the system log
+            // and request authorization
             oslog::OsLogger::new("notify-rust")
-                .level_filter(log::LevelFilter::Debug)
+                .level_filter(log::LevelFilter::Trace)
                 .init()
                 .unwrap();
+            log::trace!("setup oslog");
+            notify_rust::request_auth_blocking();
+
+            true
         } else {
             env_logger::init();
             log::trace!("setup env_logger");
             true
         }
     }
+}
 
-    // if we don't bundle we must log to stdout
-    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+pub fn run_main_loop_while<T>(thread: thread::JoinHandle<T>) -> thread::Result<T> {
+    #[cfg(target_os = "macos")]
     {
-        let example_name = std::path::PathBuf::from(example_file)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap()
-            .to_string();
-
-        if let Err(error) = mac_usernotifications::check_bundle() {
-            eprintln!(
-            "\x1b[1mError:\x1b[0m {error}\n \x1b[1mHelp:\x1b[0m Please run the examples via \x1b[1;35m`./run_bundled_example.sh {example_name}`\x1b[0m"
-        );
+        use objc2_foundation::{NSDate, NSDefaultRunLoopMode, NSRunLoop};
+        let run_loop = NSRunLoop::mainRunLoop();
+        while !thread.is_finished() {
+            let until = NSDate::dateWithTimeIntervalSinceNow(0.05);
+            unsafe { run_loop.runMode_beforeDate(NSDefaultRunLoopMode, &until) };
         }
-
-        match notify_rust::request_auth_blocking() {
-            Ok(true) => {
-                println!("Notification permission granted.");
-                true
-            }
-            Ok(false) => {
-                log::warn!(
-                    "Notification permission denied. \
-                 Allow it in System Settings -> Notifications."
-                );
-                false
-            }
-            Err(error) => {
-                log::error!("Authorization error: {error}");
-                false
-            }
-        }
+        thread.join()
     }
+
+    #[cfg(not(target_os = "macos"))]
+    thread.join()
 }
 
 /// Blocks until the user presses a key or timeout is reached (in bundle context).

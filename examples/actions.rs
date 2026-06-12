@@ -1,14 +1,16 @@
 mod common;
 
 fn main() {
+    if !common::setup(file!()) {
+        return;
+    }
     use notify_rust::{Notification, Timeout};
-    common::setup(file!());
 
     Notification::new()
         .summary("click me")
         .body("This will disappear by itself")
         .action("clicked_a", "action") // IDENTIFIER, LABEL
-        // .hint(notify_rust::Hint::Transient(true)) // needed to work on kde
+        // .hint(Hint::Transient(true)) // needed to work on kde
         .show()
         .unwrap()
         .wait_for_action(|action| match action {

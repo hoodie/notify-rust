@@ -70,20 +70,14 @@ features = ["attributes"]
 
 [target.'cfg(target_os="macos")'.dev-dependencies]
 oslog = "0.2"
+objc2-foundation = "0.3.2"
+
 
 [package.metadata.bundle]
 name = "notify-rust-example"
-
 identifier = "de.hoodie.notify-rust.example"
 version = "4"
 short_description = "notify-rust example"
-
-[[example]]
-name = "mac_usernotifications_async"
-
-
-path = "examples/mac_usernotifications_async.rs"
-required-features = ["preview-macos-un"]
 
 [[example]]
 name = "interruption_level"
