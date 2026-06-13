@@ -1,12 +1,14 @@
 /// `NSUserNotificationCenter` backend.
 #[cfg(not(feature = "preview-macos-un"))]
-mod nsusernotification;
+mod nsusernotifications;
 
 #[cfg(not(feature = "preview-macos-un"))]
-pub(crate) use nsusernotification::{schedule_notification, show_notification};
+pub(crate) use nsusernotifications::{schedule_notification, show_notification};
 
 #[cfg(not(feature = "preview-macos-un"))]
-pub use nsusernotification::{ApplicationError, MacOsError, NotificationError, NotificationHandle};
+pub use nsusernotifications::{
+    ApplicationError, MacOsError, NotificationError, NotificationHandle,
+};
 
 // #[cfg(not(feature = "preview-macos-un"))]
 #[cfg_attr(
@@ -17,15 +19,15 @@ pub use mac_notification_sys::{get_bundle_identifier_or_default, set_application
 
 /// `UNUserNotificationCenter` backend (opt-in via `preview-macos-un`).
 #[cfg(feature = "preview-macos-un")]
-mod usernotifications;
+mod unusernotifications;
 
 #[cfg(feature = "preview-macos-un")]
-pub(crate) use usernotifications::{
+pub(crate) use unusernotifications::{
     schedule_notification, show_notification, show_notification_async,
 };
 
 #[cfg(feature = "preview-macos-un")]
-pub use usernotifications::{MacOsError, NotificationHandle};
+pub use unusernotifications::{MacOsError, NotificationHandle};
 
 #[cfg(feature = "preview-macos-un")]
 pub use mac_usernotifications::blocking::{
