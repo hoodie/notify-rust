@@ -1,3 +1,6 @@
+#[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+use mac_usernotifications::InterruptionLevel;
+
 #[cfg(all(unix, not(target_os = "macos")))]
 use crate::{
     hints::{CustomHintType, Hint},
@@ -97,8 +100,17 @@ pub struct Notification {
     /// Lifetime of the Notification in ms. Often not respected by server, sorry.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
-    /// Only to be used on the receive end. Use Notification hand for updating.
+    /// Interruption level (macOS only; has effect with the `preview-macos-un` feature).
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub(crate) interruption_level: Option<InterruptionLevel>,
+
+    /// Only to be used on the receive end. Use Notification handle for updating.
+    #[cfg(not(all(target_os = "macos", feature = "preview-macos-un")))]
     pub(crate) id: Option<u32>,
+
+    /// Notification identifier for the macOS UN backend.
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub(crate) id: Option<crate::notification_id::NotificationId>,
 }
 
 impl Notification {
@@ -208,6 +220,20 @@ impl Notification {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
+        self
+    }
+
+    /// Set the interruption level (macOS only; has effect with the `preview-macos-un` feature).
+    ///
+    /// Controls whether the notification breaks through Focus modes on macOS 12+.
+    ///
+    /// # Platform support
+    ///
+    /// This method is only available on macOS when the `preview-macos-un` feature is enabled.
+    /// For a more cross-platform alternative, use `.urgency()`, which is automatically converted to the appropriate `InterruptionLevel` on macOS.
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub fn interruption_level(&mut self, level: InterruptionLevel) -> &mut Notification {
+        self.interruption_level = Some(level);
         self
     }
 
@@ -329,6 +355,8 @@ impl Notification {
     ///
     /// # Platform support
     /// This only works on XDG Desktops, macOS does not support manually setting the timeout.
+    ///
+    /// TODO: this will become available in 5.0 using `mac-usernotifications` using the new `.response()` api
     pub fn timeout<T: Into<Timeout>>(&mut self, timeout: T) -> &mut Notification {
         self.timeout = timeout.into();
         self
@@ -351,7 +379,9 @@ impl Notification {
     /// - `Critical` → Reminder scenario (stays on screen until user dismisses)
     ///
     /// ## macOS
-    /// Not currently supported.
+    /// Mapped to [`InterruptionLevel`](`mac_usernotifications::InterruptionLevel`): `Low` → `Passive`, `Normal` → `Active`,
+    /// `Critical` → `TimeSensitive`. Use `interruption_level`
+    /// directly for finer control (e.g. `Critical` level that bypasses mute).
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
         self.hint(Hint::Urgency(urgency)); // TODO impl as T where T: Into<Urgency>
@@ -373,10 +403,28 @@ impl Notification {
     /// See the Unix implementation documentation.
     ///
     /// ## macOS
-    /// Not currently supported.
+    /// Mapped to [`InterruptionLevel`]: `Low` → `Passive`, `Normal` → `Active`,
+    /// `Critical` → `TimeSensitive`. Use [`interruption_level`](Self::interruption_level)
+    /// directly for finer control (e.g. `Critical` level that bypasses mute).
     #[cfg(target_os = "windows")]
     pub fn urgency(&mut self, urgency: Urgency) -> &mut Notification {
         self.urgency = Some(urgency);
+        self
+    }
+
+    /// Set the `urgency` (macOS).
+    ///
+    /// Maps `Urgency` to the platform-native [`InterruptionLevel`]:
+    /// - `Low` → [`Passive`](InterruptionLevel::Passive)
+    /// - `Normal` → [`Active`](InterruptionLevel::Active)
+    /// - `Critical` → [`TimeSensitive`](InterruptionLevel::TimeSensitive)
+    ///
+    /// For finer control (e.g. the `Critical` interruption level that bypasses
+    /// mute and Do Not Disturb) use [`interruption_level`](Self::interruption_level)
+    /// directly.
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub fn urgency(&mut self, urgency: impl Into<InterruptionLevel>) -> &mut Notification {
+        self.interruption_level.replace(urgency.into());
         self
     }
 
@@ -411,9 +459,22 @@ impl Notification {
     /// Though if you want to update a notification, it is easier to use the `update()` method of
     /// the `NotificationHandle` object that `show()` returns.
     ///
-    /// (xdg only)
+    /// (XDG, Windows, and legacy macOS)
+    #[cfg(not(all(target_os = "macos", feature = "preview-macos-un")))]
     pub fn id(&mut self, id: u32) -> &mut Notification {
         self.id = Some(id);
+        self
+    }
+
+    /// Set a notification identifier (macOS `preview-macos-un` path).
+    ///
+    /// Re-posting with the same identifier replaces the existing notification.
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub fn id(
+        &mut self,
+        id: impl Into<crate::notification_id::NotificationId>,
+    ) -> &mut Notification {
+        self.id = Some(id.into());
         self
     }
 
@@ -473,13 +534,19 @@ impl Notification {
         xdg::show_notification_async_at_bus(self, bus).await
     }
 
-    /// Sends Notification to `NSUserNotificationCenter`.
-    ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Sends Notification to `NSUserNotificationCenter` (default) or
+    /// `UNUserNotificationCenter` (with `preview-macos-un` feature).
     #[cfg(target_os = "macos")]
     pub fn show(&self) -> Result<macos::NotificationHandle> {
         macos::show_notification(self)
+    }
+
+    /// Sends notification asynchronously via `UNUserNotificationCenter`.
+    ///
+    /// Only available with the `preview-macos-un` feature.
+    #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+    pub async fn show_async(&self) -> Result<macos::NotificationHandle> {
+        macos::show_notification_async(self).await
     }
 
     /// Sends Notification as a toast notification.
@@ -534,6 +601,8 @@ impl Default for Notification {
             timeout: Timeout::Default,
             sound_name: Default::default(),
             path_to_image: None,
+            #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
+            interruption_level: None,
             id: None,
         }
     }

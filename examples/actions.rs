@@ -1,46 +1,22 @@
-#![allow(unused_imports)]
-#[cfg(target_os = "windows")]
-use notify_rust::Urgency;
-use notify_rust::{Hint, Notification, Timeout};
+mod common;
 
-#[cfg(target_os = "macos")]
 fn main() {
-    println!("this is a xdg only feature");
-}
+    if !common::setup(file!()) {
+        return;
+    }
+    use notify_rust::{Notification, Timeout};
 
-#[cfg(target_os = "windows")]
-fn main() {
-    Notification::new()
-        .summary("click me")
-        .body("This action needs to be clicked")
-        .action("clicked_a", "button a")
-        .action("clicked_b", "button b")
-        .timeout(Timeout::Never)
-        .urgency(Urgency::Critical)
-        .show()
-        .unwrap()
-        .wait_for_action(|action| match action {
-            "default" => println!("default"),
-            "clicked_a" => println!("clicked a"),
-            "clicked_b" => println!("clicked b"),
-            "__closed" => println!("the notification was closed"),
-            _ => (),
-        });
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-fn main() {
     Notification::new()
         .summary("click me")
         .body("This will disappear by itself")
-        .action("clicked_a", "button a") // IDENTIFIER, LABEL
-        .hint(Hint::Transient(true)) // needed to work on kde
+        .action("clicked_a", "action") // IDENTIFIER, LABEL
+        // .hint(Hint::Transient(true)) // needed to work on kde
         .show()
         .unwrap()
         .wait_for_action(|action| match action {
-            "clicked_a" => println!("clicked a"),
+            "clicked_a" => log::info!("clicked a"),
             // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
-            "__closed" => println!("the notification was closed"),
+            "__closed" => log::info!("the notification was closed"),
             _ => (),
         });
 
@@ -50,16 +26,15 @@ fn main() {
         .action("default", "default") // IDENTIFIER, LABEL
         .action("clicked_a", "button a") // IDENTIFIER, LABEL
         .action("clicked_b", "button b") // IDENTIFIER, LABEL
-        .hint(Hint::Resident(true)) // does not work on kde
         .timeout(Timeout::Never) // works on kde and gnome
         .show()
         .unwrap()
         .wait_for_action(|action| match action {
-            "default" => println!("default"),
-            "clicked_a" => println!("clicked a"),
-            "clicked_b" => println!("clicked b"),
+            "default" => log::info!("default"),
+            "clicked_a" => log::info!("clicked a"),
+            "clicked_b" => log::info!("clicked b"),
             // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
-            "__closed" => println!("the notification was closed"),
+            "__closed" => log::info!("the notification was closed"),
             _ => (),
         });
 }

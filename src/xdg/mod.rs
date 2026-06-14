@@ -9,6 +9,9 @@ use zbus::{block_on, zvariant};
 
 use crate::{error::*, notification::Notification};
 
+pub use crate::response::ActionResponse;
+pub use crate::response::{CloseHandler, NotificationResponse, ResponseHandler};
+
 use std::ops::{Deref, DerefMut};
 
 #[cfg(feature = "dbus")]
@@ -100,22 +103,40 @@ impl NotificationHandle {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
-                let _ = inner.wait_for_action(|action: &ActionResponse| match action {
-                    ActionResponse::Custom(action) => invocation_closure(action),
-                    ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                let _ = inner.wait_for_action(|response: &NotificationResponse| match response {
+                    NotificationResponse::Action(ref action) => invocation_closure(action),
+                    NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+                    NotificationResponse::Closed(_) => invocation_closure("__closed"),
                 });
             }
 
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
                 block_on(
-                    inner.wait_for_action(|action: &ActionResponse| match action {
-                        ActionResponse::Custom(action) => invocation_closure(action),
-                        ActionResponse::Closed(_reason) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
+                    inner.wait_for_action(|response: &NotificationResponse| match response {
+                        NotificationResponse::Action(ref action) => invocation_closure(action),
+                        NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+                        NotificationResponse::Closed(_) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
                     }),
                 );
             }
         };
+    }
+
+    /// Waits for the user to act on a notification and then calls `handler`
+    /// with a typed [`NotificationResponse`].
+    ///
+    /// This is the typed, forward-compatible replacement for [`wait_for_action`](Self::wait_for_action).
+    pub fn wait_for_response(self, handler: impl ResponseHandler) -> Result<()> {
+        match self.inner {
+            #[cfg(feature = "dbus")]
+            NotificationHandleInner::Dbus(inner) => inner.wait_for_action(handler),
+            #[cfg(feature = "zbus")]
+            NotificationHandleInner::Zbus(inner) => {
+                block_on(inner.wait_for_action(handler));
+                Ok(())
+            }
+        }
     }
 
     /// Returns a future that waits for the user to act on a notification and then calls
@@ -153,10 +174,11 @@ impl NotificationHandle {
     /// # Ok(())
     /// # }
     /// ```
+    // TODO: make this consume `self` in 5.0
     #[cfg(feature = "zbus")]
     pub async fn wait_for_action_async<F>(&self, invocation_closure: F)
     where
-        F: FnOnce(&ActionResponse),
+        F: FnOnce(&NotificationResponse),
     {
         match &self.inner {
             #[cfg(feature = "dbus")]
@@ -236,20 +258,24 @@ impl NotificationHandle {
     ///                    .unwrap()
     ///                    .on_close(|reason| println!("closed: {:?}", reason));
     /// ```
+    // #[deprecated(
+    //     since = "4.18.0",
+    //     note = "Use `wait_for_response()` and match on `ActionResponse::Closed` instead"
+    // )]
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         match self.inner {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
-                let _ = inner.wait_for_action(|action: &ActionResponse| {
-                    if let ActionResponse::Closed(reason) = action {
+                let _ = inner.wait_for_action(|action: &NotificationResponse| {
+                    if let NotificationResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
                 });
             }
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(inner) => {
-                block_on(inner.wait_for_action(|action: &ActionResponse| {
-                    if let ActionResponse::Closed(reason) = action {
+                block_on(inner.wait_for_action(|action: &NotificationResponse| {
+                    if let NotificationResponse::Closed(reason) = action {
                         handler.call(*reason);
                     }
                 }));
@@ -552,9 +578,9 @@ pub struct ServerInformation {
 // #[deprecated(note="please use [`NotificationHandle::wait_for_action`]")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
-    block_on(zbus_rs::handle_action(id, func));
+    block_on(zbus_rs::handle_action(id, action_response_adapter(func)));
     Ok(())
 }
 
@@ -566,9 +592,9 @@ where
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
-    dbus_rs::handle_action(id, func)
+    dbus_rs::handle_action(id, action_response_adapter(func))
 }
 
 /// Listens for the `ActionInvoked(UInt32, String)` Signal.
@@ -579,97 +605,25 @@ where
 // #[deprecated(note="please use `NotificationHandle::wait_for_action`")]
 pub fn handle_action<F>(id: u32, func: F) -> Result<()>
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
     if std::env::var(DBUS_SWITCH_VAR).is_ok() {
-        dbus_rs::handle_action(id, func)
+        dbus_rs::handle_action(id, action_response_adapter(func))
     } else {
-        block_on(zbus_rs::handle_action(id, func));
+        block_on(zbus_rs::handle_action(id, action_response_adapter(func)));
         Ok(())
     }
 }
 
-/// Reason passed to `NotificationClosed` Signal
-///
-/// ## Specification
-/// As listed under [Table 8. `NotificationClosed` Parameters](https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html#idm46350804042704)
-#[derive(Copy, Clone, Debug)]
-pub enum CloseReason {
-    /// The notification expired
-    Expired,
-    /// The notification was dismissed by the user
-    Dismissed,
-    /// The notification was closed by a call to `CloseNotification`
-    CloseAction,
-    /// Undefined/Reserved reason
-    Other(u32),
-}
-
-impl From<u32> for CloseReason {
-    fn from(raw_reason: u32) -> Self {
-        match raw_reason {
-            1 => CloseReason::Expired,
-            2 => CloseReason::Dismissed,
-            3 => CloseReason::CloseAction,
-            other => CloseReason::Other(other),
-        }
-    }
-}
-
-/// Helper Trait implemented by `Fn()`
-pub trait ActionResponseHandler {
-    fn call(self, response: &ActionResponse);
-}
-
-// impl<F: Send + Sync + 'static> ActionResponseHandler for F
-impl<F> ActionResponseHandler for F
+/// Wraps an old-style `FnOnce(&ActionResponse)` into a new-style `FnOnce(&NotificationResponse)`
+/// so legacy callers of [`handle_action`] keep working.
+fn action_response_adapter<F>(func: F) -> impl FnOnce(&NotificationResponse)
 where
-    F: FnOnce(&ActionResponse),
+    F: FnOnce(&ActionResponse<'_>),
 {
-    fn call(self, res: &ActionResponse) {
-        (self)(res);
-    }
-}
-
-/// Response to an action
-#[derive(Clone, Debug)]
-pub enum ActionResponse<'a> {
-    /// Custom Action configured by the Notification.
-    Custom(&'a str),
-
-    /// The Notification was closed.
-    Closed(CloseReason),
-}
-
-impl<'a> From<&'a str> for ActionResponse<'a> {
-    fn from(raw: &'a str) -> Self {
-        Self::Custom(raw)
-    }
-}
-
-/// Your handy callback for the `Close` signal of your Notification.
-///
-/// This is implemented by `Fn()` and `Fn(CloseReason)`, so there is probably no good reason for you to manually implement this trait.
-/// Should you find one anyway, please notify me and I'll gladly remove this obviously redundant comment.
-pub trait CloseHandler<T> {
-    /// This is called with the [`CloseReason`].
-    fn call(&self, reason: CloseReason);
-}
-
-impl<F> CloseHandler<CloseReason> for F
-where
-    F: Fn(CloseReason),
-{
-    fn call(&self, reason: CloseReason) {
-        self(reason);
-    }
-}
-
-impl<F> CloseHandler<()> for F
-where
-    F: Fn(),
-{
-    fn call(&self, _: CloseReason) {
-        self();
+    move |response: &NotificationResponse| match response {
+        NotificationResponse::Action(ref s) => func(&ActionResponse::Custom(s.as_str())),
+        NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
+        NotificationResponse::Closed(r) => func(&ActionResponse::Closed(*r)),
     }
 }

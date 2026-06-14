@@ -1,31 +1,31 @@
-#![allow(unused_imports, dead_code)]
-use std::{io, thread};
+#![allow(unused_imports)]
+mod common;
 
-use notify_rust::Notification;
-
-fn wait_for_keypress() {
-    println!("halted until you hit the \"ANY\" key");
-    io::stdin().read_line(&mut String::new()).unwrap();
-}
-
-fn print() {
-    println!("notification was closed, don't know why");
-}
-
-#[cfg(target_os = "macos")]
 fn main() {
-    println!("this is a xdg only feature")
-}
+    if !common::setup(file!()) {
+        return;
+    }
 
-#[cfg(any(all(unix, not(target_os = "macos")), target_os = "windows"))]
-fn main() {
-    thread::spawn(|| {
+    use notify_rust::{CloseReason, Hint, Notification, Timeout};
+    use std::thread;
+
+    Notification::new()
+        .summary("Time is running out")
+        .body("Main Thread Notification")
+        .icon("clock")
+        .timeout(Timeout::Milliseconds(5000))
+        .show()
+        .unwrap()
+        .on_close(|reason| log::info!("❎ fg notification was closed ({reason:?})"));
+
+    common::run_main_loop_while(thread::spawn(|| {
         Notification::new()
             .summary("Time is running out")
-            .body("This will go away.")
+            .body("BG Thread Notification")
             .icon("clock")
             .show()
-            .map(|handler| handler.on_close(print))
-    });
-    wait_for_keypress();
+            .unwrap()
+            .on_close(|reason| log::info!("❎ bg notification was closed ({reason:?})"));
+    }))
+    .unwrap();
 }
