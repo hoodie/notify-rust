@@ -390,8 +390,6 @@ impl Notification {
     ///
     /// There is nothing fancy going on here yet.
     /// **Careful! This replaces the internal list of actions!**
-    ///
-    /// (xdg only)
     #[deprecated(note = "please use .action() only")]
     pub fn actions(&mut self, actions: Vec<String>) -> &mut Notification {
         self.actions = actions;
@@ -401,8 +399,6 @@ impl Notification {
     /// Add an action.
     ///
     /// This adds a single action to the internal list of actions.
-    ///
-    /// (xdg only)
     pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
@@ -486,12 +482,9 @@ impl Notification {
         macos::show_notification(self)
     }
 
-    /// Sends Notification to `NSUserNotificationCenter`.
-    ///
-    /// Returns an `Ok` no matter what, since there is currently no way of telling the success of
-    /// the notification.
+    /// Sends Notification as a toast notification.
     #[cfg(target_os = "windows")]
-    pub fn show(&self) -> Result<()> {
+    pub fn show(&self) -> Result<windows::NotificationHandle> {
         windows::show_notification(self)
     }
 
