@@ -108,8 +108,6 @@
 //! | `fn update(...)`         |  ✔︎  |  ❌  |   ❌   |
 //! | `fn id(...)`             |  ✔︎  |  ❌  |   ❌   |
 //!
-//! Windows action and close callbacks are available through [`Notification::show_handle()`].
-//!
 //! ## Functions
 //!
 //! |                                            | XDG | macOS | windows |

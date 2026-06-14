@@ -17,7 +17,7 @@ fn main() {
         .action("clicked_b", "button b")
         .timeout(Timeout::Never)
         .urgency(Urgency::Critical)
-        .show_handle()
+        .show()
         .unwrap()
         .wait_for_action(|action| match action {
             "default" => println!("default"),

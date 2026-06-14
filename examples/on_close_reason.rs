@@ -25,7 +25,7 @@ fn main() {
         Notification::new()
             .summary("Time is running out")
             .body("This will go away.")
-            .show_handle()
+            .show()
             .map(|handler| handler.on_close(print_reason))
     });
     wait_for_keypress();

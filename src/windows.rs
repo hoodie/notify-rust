@@ -14,13 +14,7 @@ enum HandleEvent {
     Closed(CloseReason),
 }
 
-pub(crate) fn show_notification(notification: &Notification) -> Result<()> {
-    build_toast(notification)
-        .show()
-        .map_err(|error| Error::from(ErrorKind::Msg(format!("{error:?}"))))
-}
-
-pub(crate) fn show_notification_handle(notification: &Notification) -> Result<NotificationHandle> {
+pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     let (sender, receiver) = channel();
     let activated_sender = sender.clone();
 
@@ -83,6 +77,7 @@ fn build_toast(notification: &Notification) -> Toast {
         .app_id
         .as_deref()
         .unwrap_or(Toast::POWERSHELL_APP_ID);
+
     let mut toast = Toast::new(app_id)
         .title(&notification.summary)
         .text1(notification.subtitle.as_ref().map_or("", AsRef::as_ref)) // subtitle
