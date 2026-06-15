@@ -24,17 +24,17 @@ use super::{Hint, Notification, Timeout};
 use crate::xdg::{NOTIFICATION_NAMESPACE, NOTIFICATION_OBJECTPATH};
 
 static DBUS_ERROR_FAILED: &str = "org.freedesktop.DBus.Error.Failed";
-/// Version of the crate equals the version server.
+/// Version of the crate, exposed as the server version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// An **experimental** notification server.
-/// See [the module level documentation](index.html) for more.
+/// See [the module level documentation](index.html) for more details.
 #[derive(Debug, Default)]
 pub struct NotificationServer {
-    /// Counter for generating notification ids
+    /// Counter for generating notification ids.
     counter: Mutex<Cell<u32>>,
 
-    /// A flag that stops the server
+    /// A flag that stops the server.
     stopped: Mutex<Cell<bool>>,
 }
 
@@ -59,7 +59,7 @@ impl NotificationServer {
         }
     }
 
-    /// Create a new `NotificationServer` instance.
+    /// Creates a new `NotificationServer` instance.
     pub fn create() -> Arc<NotificationServer> {
         Arc::new(NotificationServer::default())
     }
@@ -70,7 +70,7 @@ impl NotificationServer {
 
     // fn handle_notification
 
-    /// Start listening for incoming notifications
+    /// Starts listening for incoming notifications.
     pub fn start<F: 'static>(me: &Arc<Self>, closure: F)
     where
         F: Fn(&Notification),

@@ -222,14 +222,14 @@ pub use crate::{notification::Notification, timeout::Timeout};
 
 #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
 lazy_static! {
-    /// Read once at runtime. Needed for Images
+    /// Read once at runtime. Needed for images.
     pub static ref SPEC_VERSION: miniver::Version =
         get_server_information()
         .and_then(|info| info.spec_version.parse::<miniver::Version>())
         .unwrap_or_else(|_| miniver::Version::new(1,1));
 }
 
-/// Return value of `get_server_information()`.
+/// Return value of [`get_server_information()`](crate::get_server_information).
 #[derive(Debug)]
 pub struct ServerInformation {
     /// The product name of the server.

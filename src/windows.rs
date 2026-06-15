@@ -107,8 +107,7 @@ pub struct NotificationHandle {
 }
 
 impl NotificationHandle {
-    /// Waits for the user to act on the notification and calls `invocation_closure` with the
-    /// corresponding action identifier.
+    /// Waits for the user to act on the notification and calls `invocation_closure` with the corresponding action identifier.
     pub fn wait_for_action<F>(self, invocation_closure: F)
     where
         F: FnOnce(&str),
@@ -120,11 +119,7 @@ impl NotificationHandle {
         }
     }
 
-    /// Waits for the user to act on the notification and then calls `handler`
-    /// with a typed [`NotificationResponse`](crate::NotificationResponse).
-    ///
-    /// This is the typed, forward-compatible replacement for
-    /// [`wait_for_action`](Self::wait_for_action).
+    /// Waits for the user to act on the notification and calls `handler` with the full action response.
     pub fn wait_for_response(self, handler: impl crate::response::ResponseHandler) -> Result<()> {
         match self.events.recv() {
             Ok(response) => {
@@ -175,7 +170,7 @@ impl From<Option<ToastDismissalReason>> for CloseReason {
 
 /// Callback for the close event of a Windows notification.
 pub trait CloseHandler<T> {
-    /// This is called with the [`CloseReason`].
+    /// Called with the [`CloseReason`].
     fn call(&self, reason: CloseReason);
 }
 
