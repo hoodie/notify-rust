@@ -23,7 +23,7 @@ fn update_via_handle() {
         .icon("dialog-ok")
         .body("<b>This</b> has been changed through the notification_handle");
 
-    notification_handle.update();
+    notification_handle.update().unwrap();
 }
 
 #[allow(dead_code)]

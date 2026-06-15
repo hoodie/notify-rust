@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .body(&format!("progress {}%", value))
             .hint(notify_rust::Hint::CustomInt("value".to_string(), value));
         std::thread::sleep(std::time::Duration::from_secs(1));
-        notification.update();
+        notification.update().unwrap();
     }
     Ok(())
 }
