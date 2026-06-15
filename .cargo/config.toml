@@ -13,3 +13,11 @@ linux-check = "check --target arm-unknown-linux-gnueabihf --all-targets"
 mac-doc     = "doc --target aarch64-apple-darwin"
 win-doc     = "doc --target x86_64-pc-windows-gnu"
 linux-doc   = "doc --target arm-unknown-linux-gnueabihf"
+
+mac-clippy     = "clippy --target aarch64-apple-darwin"
+win-clippy     = "clippy --target x86_64-pc-windows-gnu"
+linux-clippy   = "clippy --target arm-unknown-linux-gnueabihf"
+
+semver-mac     = "semver-checks --target aarch64-apple-darwin"
+semver-win     = "semver-checks --target x86_64-pc-windows-gnu"
+semver-linux   = "semver-checks --target arm-unknown-linux-gnueabihf"

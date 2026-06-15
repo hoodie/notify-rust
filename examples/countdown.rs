@@ -22,10 +22,9 @@ fn main() {
         notification
             .body(&format!("T-minus {}", 10 - i))
             .appname(&format!("countdown_{}", 10 - i));
-        notification.update();
+        notification.update().unwrap();
         println!("{}", 10 - i);
     }
-
     notification
         .body("TAKE OFF")
         .appname("countdown_takeoff")

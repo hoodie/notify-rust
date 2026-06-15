@@ -61,6 +61,50 @@ impl NotificationHandle {
         }
     }
 
+    /// Waits for the user to act on the notification and then calls `handler`
+    /// with a typed [`NotificationResponse`](crate::NotificationResponse).
+    ///
+    /// This is the typed, forward-compatible replacement for
+    /// [`wait_for_action`](Self::wait_for_action).
+    ///
+    /// **Requires the main run loop to be running.** `NSUserNotificationCenter`
+    /// delivers delegate callbacks on the main thread; if nothing is pumping the
+    /// main run loop this call will block indefinitely.
+    pub fn wait_for_response(
+        mut self,
+        handler: impl crate::response::ResponseHandler,
+    ) -> Result<()> {
+        use crate::response::{CloseReason, NotificationResponse};
+
+        log::trace!("wait_for_response");
+        let Some(notification) = self.notification.take() else {
+            return Ok(());
+        };
+
+        let response = send_mac_notification(
+            &notification,
+            Options {
+                asynchronous: false,
+                force_close_button: false,
+                delivery_date: None,
+            },
+        )?;
+
+        use mac_notification_sys::NotificationResponse as MacResponse;
+        use NotificationResponse::*;
+
+        let response = match response {
+            MacResponse::ActionButton(label) => Action(label),
+            MacResponse::Click => Default,
+            MacResponse::Reply(text) => Reply(text),
+            MacResponse::CloseButton(_) => Closed(CloseReason::Dismissed),
+            MacResponse::None => Closed(CloseReason::Expired),
+        };
+
+        handler.call(&response);
+        Ok(())
+    }
+
     /// Executes a closure after the notification has closed.
     ///
     /// **Requires the main run loop to be running.** `NSUserNotificationCenter`

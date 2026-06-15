@@ -54,7 +54,7 @@ impl From<u32> for CloseReason {
 /// # use notify_rust::{NotificationResponse, CloseReason};
 /// # let response = NotificationResponse::Closed(CloseReason::Dismissed);
 /// match response {
-///     NotificationResponse::Action(ref key) if key == "default" => println!("body clicked"),
+///     NotificationResponse::Default => println!("body clicked"),
 ///     NotificationResponse::Action(ref key) => println!("button '{key}' clicked"),
 ///     NotificationResponse::Reply(ref text) => println!("user replied: {text}"),
 ///     NotificationResponse::Closed(reason) => println!("closed: {reason:?}"),
@@ -62,9 +62,14 @@ impl From<u32> for CloseReason {
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum NotificationResponse {
-    /// The user clicked the notification body or a labelled action button.
+    /// The default action was invoked — the user activated the notification without
+    /// choosing a specific button (e.g. clicked the body, tapped the banner).
     ///
-    /// The conventional key `"default"` means the notification body was clicked.
+    /// Corresponds to the D-Bus `"default"` action key,
+    /// Apple's `UNNotificationDefaultActionIdentifier`, and a body-click on Windows.
+    Default,
+
+    /// The user invoked a named action button.
     Action(String),
 
     /// The user submitted an inline text reply.
@@ -78,10 +83,9 @@ pub enum NotificationResponse {
 }
 
 impl NotificationResponse {
-    /// Returns `true` if this is an [`Action`](NotificationResponse::Action) with the
-    /// key `"default"`, which conventionally means the notification body was clicked.
+    /// Returns `true` if this response is the [`Default`](NotificationResponse::Default) variant.
     pub fn is_default_action(&self) -> bool {
-        matches!(self, NotificationResponse::Action(key) if key == "default")
+        matches!(self, NotificationResponse::Default)
     }
 }
 

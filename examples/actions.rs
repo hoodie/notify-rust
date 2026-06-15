@@ -14,8 +14,8 @@ fn main() {
         .show()
         .unwrap()
         .wait_for_action(|action| match action {
-            "clicked_a" => log::info!("clicked a"),
-            // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
+            "clicked_a" => log::info!("clicked \"action\""),
+            // you don't have to match for this string if you use `wait_for_response` instead
             "__closed" => log::info!("the notification was closed"),
             _ => (),
         });
@@ -33,7 +33,6 @@ fn main() {
             "default" => log::info!("default"),
             "clicked_a" => log::info!("clicked a"),
             "clicked_b" => log::info!("clicked b"),
-            // FIXME: here "__closed" is a hardcoded keyword, it will be deprecated!!
             "__closed" => log::info!("the notification was closed"),
             _ => (),
         });
