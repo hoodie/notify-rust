@@ -16,7 +16,7 @@ mod constants {
     pub const IMAGE_DATA_1_0: &str = "icon_data";
 }
 
-/// Image representation for images. Send via `Notification::image_data()`
+/// Image data for inline notifications. Send via [`Notification::image_data()`](crate::Notification::image_data).
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub struct Image {
     width: i32,
@@ -71,7 +71,7 @@ impl Image {
         Self::from_raw_data(width, height, data, channels, bits_per_sample, true)
     }
 
-    ///  Attempts to open the given path as image
+    /// Attempts to open the given path as an image.
     pub fn open<T: AsRef<Path> + Sized>(path: T) -> Result<Self, ImageError> {
         let dyn_img = image::open(&path).map_err(ImageError::CantOpen)?;
         Image::try_from(dyn_img)

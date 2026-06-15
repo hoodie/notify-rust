@@ -49,26 +49,26 @@ fn exe_name() -> String {
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Notification {
-    /// Filled by default with executable name.
+    /// Filled by default with the executable name.
     pub appname: String,
 
     /// Single line to summarize the content.
     pub summary: String,
 
-    /// Subtitle for macOS
+    /// Subtitle for macOS.
     pub subtitle: Option<String>,
 
-    /// Multiple lines possible, may support simple markup,
-    /// check out `get_capabilities()` -> `body-markup` and `body-hyperlinks`.
+    /// Multiple lines possible, may support simple markup.
+    /// Check out [`get_capabilities()`](crate::get_capabilities) -> `body-markup` and `body-hyperlinks`.
     pub body: String,
 
-    /// Use a file:// URI or a name in an icon theme, must be compliant freedesktop.org.
+    /// Use a `file://` URI or a name in an icon theme, must be compliant with freedesktop.org.
     pub icon: String,
 
-    /// Check out `Hint`
+    /// Check out [`Hint`].
     ///
-    /// # warning
-    /// this does not hold all hints, [`Hint::Custom`] and [`Hint::CustomInt`] are held elsewhere,
+    /// # Warning
+    /// This does not hold all hints. [`Hint::Custom`] and [`Hint::CustomInt`] are held elsewhere.
     // /// please access hints via [`Notification::get_hints`].
     #[cfg(all(unix, not(target_os = "macos")))]
     pub hints: HashSet<Hint>,
@@ -76,7 +76,7 @@ pub struct Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) hints_unique: HashMap<(String, CustomHintType), Hint>,
 
-    /// See `Notification::actions()` and `Notification::action()`
+    /// See [`Notification::actions()`] and [`Notification::action()`].
     pub actions: Vec<String>,
 
     #[cfg(target_os = "macos")]
@@ -97,14 +97,14 @@ pub struct Notification {
     #[cfg(all(unix, not(target_os = "macos")))]
     pub(crate) bus: xdg::NotificationBus,
 
-    /// Lifetime of the Notification in ms. Often not respected by server, sorry.
+    /// Lifetime of the notification in ms. Often not respected by the server.
     pub timeout: Timeout, // both gnome and galago want allow for -1
 
     /// Interruption level (macOS only; has effect with the `preview-macos-un` feature).
     #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
     pub(crate) interruption_level: Option<InterruptionLevel>,
 
-    /// Only to be used on the receive end. Use Notification handle for updating.
+    /// Only to be used on the receive end. Use [`NotificationHandle`](crate::NotificationHandle) for updating.
     #[cfg(not(all(target_os = "macos", feature = "preview-macos-un")))]
     pub(crate) id: Option<u32>,
 
@@ -118,7 +118,8 @@ impl Notification {
     ///
     /// Most fields are empty by default, only `appname` is initialized with the name of the current
     /// executable.
-    /// The appname is used by some desktop environments to group notifications.
+    ///
+    /// The `appname` is used by some desktop environments to group notifications.
     pub fn new() -> Notification {
         Notification::default()
     }
@@ -137,10 +138,10 @@ impl Notification {
         }
     }
 
-    /// Overwrite the appname field used for Notification.
+    /// Overwrite the `appname` field used for the notification.
     ///
     /// # Platform Support
-    /// Please note that this method has no effect on macOS. Here you can only set the application via [`set_application()`](fn.set_application.html)
+    /// This method has no effect on macOS. There you can only set the application via [`set_application()`](fn.set_application.html).
     pub fn appname(&mut self, appname: &str) -> &mut Notification {
         appname.clone_into(&mut self.appname);
         self
@@ -148,7 +149,7 @@ impl Notification {
 
     /// Set the `summary`.
     ///
-    /// Often acts as title of the notification. For more elaborate content use the `body` field.
+    /// Often acts as the title of the notification. For more elaborate content use the `body` field.
     pub fn summary(&mut self, summary: &str) -> &mut Notification {
         summary.clone_into(&mut self.summary);
         self
@@ -156,20 +157,20 @@ impl Notification {
 
     /// Set the `subtitle`.
     ///
-    /// This is only useful on macOS, it's not part of the XDG specification and will therefore be eaten by gremlins under your CPU 😈🤘.
+    /// Only useful on macOS. Not part of the XDG specification.
     pub fn subtitle(&mut self, subtitle: &str) -> &mut Notification {
         self.subtitle = Some(subtitle.to_owned());
         self
     }
 
-    /// Manual wrapper for `Hint::ImageData`
+    /// Manual wrapper for [`Hint::ImageData`].
     #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     pub fn image_data(&mut self, image: Image) -> &mut Notification {
         self.hint(Hint::ImageData(image));
         self
     }
 
-    /// Sets the image path for the notification˝.
+    /// Sets the image path for the notification.
     ///
     /// The path is passed to the platform's native notification API directly — no additional
     /// dependencies or crate features are required.
@@ -191,14 +192,14 @@ impl Notification {
         self
     }
 
-    /// app's System.AppUserModel.ID
+    /// Sets the app's `System.AppUserModel.ID`.
     #[cfg(target_os = "windows")]
     pub fn app_id(&mut self, app_id: &str) -> &mut Notification {
         self.app_id = Some(app_id.to_string());
         self
     }
 
-    /// Wrapper for `Hint::ImageData`
+    /// Wrapper for [`Hint::ImageData`].
     #[cfg(all(feature = "images_no_default_features", unix, not(target_os = "macos")))]
     pub fn image<T: AsRef<std::path::Path> + Sized>(
         &mut self,
@@ -209,14 +210,14 @@ impl Notification {
         Ok(self)
     }
 
-    /// Wrapper for `Hint::SoundName`
+    /// Wrapper for [`Hint::SoundName`].
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.hint(Hint::SoundName(name.to_owned()));
         self
     }
 
-    /// Set the `sound_name` for the `NSUserNotification`
+    /// Set the `sound_name` for the `NSUserNotification`.
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
@@ -276,10 +277,10 @@ impl Notification {
     /// This method will add a hint to the internal hint [`HashSet`].
     /// Hints must be of type [`Hint`].
     ///
-    /// Many of these are again wrapped by more convenient functions such as:
+    /// Many of these are wrapped by more convenient functions such as:
     ///
-    /// * `sound_name(...)`
-    /// * `urgency(...)`
+    /// * [`sound_name()`](Self::sound_name)
+    /// * [`urgency()`](Self::urgency)
     /// * [`image(...)`](#method.image) or
     ///   * [`image_data(...)`](#method.image_data)
     ///   * [`image_path(...)`](#method.image_path)
@@ -325,10 +326,10 @@ impl Notification {
     ///
     /// Accepts multiple types that implement `Into<Timeout>`.
     ///
-    /// ## `i31`
+    /// ## `i32`
     ///
     /// This sets the time (in milliseconds) from the time the notification is displayed until it is
-    /// closed again by the Notification Server.
+    /// closed again by the notification server.
     /// According to [specification](https://developer.gnome.org/notification-spec/)
     /// -1 will leave the timeout to be set by the server and
     /// 0 will cause the notification never to expire.
@@ -453,10 +454,10 @@ impl Notification {
         self
     }
 
-    /// Set an Id ahead of time
+    /// Set an id ahead of time.
     ///
     /// Setting the id ahead of time allows overriding a known other notification.
-    /// Though if you want to update a notification, it is easier to use the `update()` method of
+    /// If you want to update a notification, it is easier to use the `update()` method of
     /// the `NotificationHandle` object that `show()` returns.
     ///
     /// (XDG, Windows, and legacy macOS)
@@ -478,16 +479,14 @@ impl Notification {
         self
     }
 
-    /// Finalizes a Notification.
+    /// Finalizes a notification.
     ///
     /// Part of the builder pattern, returns a complete copy of the built notification.
     pub fn finalize(&self) -> Notification {
         self.clone()
     }
 
-    /// Schedules a Notification
-    ///
-    /// Sends a Notification at the specified date.
+    /// Schedules a notification to be sent at the specified date.
     #[cfg(all(target_os = "macos", feature = "chrono"))]
     pub fn schedule<T: chrono::TimeZone>(
         &self,
@@ -496,36 +495,35 @@ impl Notification {
         macos::schedule_notification(self, delivery_date.timestamp() as f64)
     }
 
-    /// Schedules a Notification
+    /// Schedules a notification to be sent at the specified timestamp.
     ///
-    /// Sends a Notification at the specified timestamp.
-    /// This is a raw `f64`, if that is a bit too raw for you please activate the feature `"chrono"`,
-    /// then you can use `Notification::schedule()` instead, which accepts a `chrono::DateTime<T>`.
+    /// This is a raw `f64`. If you prefer a typed date, activate the `"chrono"` feature
+    /// and use [`Notification::schedule()`] instead, which accepts a `chrono::DateTime<T>`.
     #[cfg(target_os = "macos")]
     pub fn schedule_raw(&self, timestamp: f64) -> Result<macos::NotificationHandle> {
         macos::schedule_notification(self, timestamp)
     }
 
-    /// Sends Notification to D-Bus.
+    /// Sends the notification to D-Bus.
     ///
-    /// Returns a handle to a notification
+    /// Returns a handle to the notification.
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn show(&self) -> Result<xdg::NotificationHandle> {
         xdg::show_notification(self)
     }
 
-    /// Sends Notification to D-Bus.
+    /// Sends the notification to D-Bus asynchronously.
     ///
-    /// Returns a handle to a notification
+    /// Returns a handle to the notification.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[cfg(feature = "zbus")]
     pub async fn show_async(&self) -> Result<xdg::NotificationHandle> {
         xdg::show_notification_async(self).await
     }
 
-    /// Sends Notification to D-Bus.
+    /// Sends the notification to D-Bus at the given sub-bus path.
     ///
-    /// Returns a handle to a notification
+    /// Returns a handle to the notification.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[cfg(feature = "zbus")]
     // #[cfg(test)]
@@ -555,7 +553,7 @@ impl Notification {
         windows::show_notification(self)
     }
 
-    /// Wraps [`Notification::show()`] but prints notification to stdout.
+    /// Wraps [`Notification::show()`] but prints the notification to stdout.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[deprecated = "this was never meant to be public API"]
     pub fn show_debug(&mut self) -> Result<xdg::NotificationHandle> {

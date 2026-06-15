@@ -46,7 +46,7 @@ impl From<u32> for CloseReason {
 
 /// The outcome of a shown notification.
 ///
-/// [`wait_for_response`](crate::NotificationHandle::wait_for_response).
+/// Returned by [`wait_for_response`](crate::NotificationHandle::wait_for_response).
 ///
 /// Match on this to handle every possible outcome:
 ///
@@ -101,10 +101,10 @@ impl From<&str> for NotificationResponse {
     }
 }
 
-/// Response to an action — backward-compatible facade.
+/// Response to an action, a backward-compatible facade.
 ///
 /// This type is preserved for source compatibility with existing match arms and type signatures.
-/// Prefer [`NotificationResponse`] for new code — it owns its data and covers more cases.
+/// Prefer [`NotificationResponse`] for new code, which owns its data and covers more cases.
 ///
 /// **Deprecated since 4.18.0** — use [`NotificationResponse`] instead.
 #[derive(Clone, Debug)]
@@ -123,7 +123,7 @@ impl<'a> From<&'a str> for ActionResponse<'a> {
 
 /// Helper trait implemented by closures used with [`NotificationHandle::wait_for_response`](crate::NotificationHandle::wait_for_response).
 ///
-/// Any `FnOnce(&NotificationResponse)` closure automatically implements this.
+/// Any `FnOnce(&NotificationResponse)` closure automatically implements this trait.
 pub trait ResponseHandler {
     /// Invoke the handler with the given response.
     fn call(self, response: &NotificationResponse);
@@ -140,8 +140,8 @@ where
 
 /// Callback for the close signal of a notification.
 ///
-/// Implemented for both `Fn(CloseReason)` and `Fn()`, so there is rarely a
-/// good reason to implement this manually.
+/// Implemented for both `Fn(CloseReason)` and `Fn()`, so there is rarely
+/// a good reason to implement this manually.
 pub trait CloseHandler<T> {
     /// Called with the [`CloseReason`].
     fn call(&self, reason: CloseReason);

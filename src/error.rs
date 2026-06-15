@@ -18,11 +18,11 @@ pub struct Error {
     kind: ErrorKind,
 }
 
-/// The kind of an error.
+/// The kind of an error used by [`Error`].
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ErrorKind {
-    /// only here for backwards compatibility
+    /// Only here for backwards compatibility.
     Msg(String),
 
     #[cfg(all(feature = "dbus", unix, not(target_os = "macos")))]
