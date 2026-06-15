@@ -104,6 +104,7 @@ impl NotificationHandle {
             #[cfg(feature = "dbus")]
             NotificationHandleInner::Dbus(inner) => {
                 let _ = inner.wait_for_action(|response: &NotificationResponse| match response {
+                    NotificationResponse::Default => invocation_closure("default"),
                     NotificationResponse::Action(ref action) => invocation_closure(action),
                     NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
                     NotificationResponse::Closed(_) => invocation_closure("__closed"),
@@ -114,6 +115,7 @@ impl NotificationHandle {
             NotificationHandleInner::Zbus(inner) => {
                 block_on(
                     inner.wait_for_action(|response: &NotificationResponse| match response {
+                        NotificationResponse::Default => invocation_closure("default"),
                         NotificationResponse::Action(ref action) => invocation_closure(action),
                         NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
                         NotificationResponse::Closed(_) => invocation_closure("__closed"), // FIXME: remove backward compatibility with 5.0
@@ -622,6 +624,7 @@ where
     F: FnOnce(&ActionResponse<'_>),
 {
     move |response: &NotificationResponse| match response {
+        NotificationResponse::Default => func(&ActionResponse::Custom("default")),
         NotificationResponse::Action(ref s) => func(&ActionResponse::Custom(s.as_str())),
         NotificationResponse::Reply(_) => { /* XDG does not support inline replies */ }
         NotificationResponse::Closed(r) => func(&ActionResponse::Closed(*r)),

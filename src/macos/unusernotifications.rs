@@ -2,7 +2,7 @@ use crate::{
     error::*,
     notification::Notification,
     notification_id::NotificationId,
-    response::{CloseHandler, NotificationResponse},
+    response::{CloseHandler, NotificationResponse, ResponseHandler},
     CloseReason, Timeout, Urgency,
 };
 use std::{ops::Deref, time::Duration};
@@ -131,6 +131,26 @@ impl NotificationHandle {
         }
     }
 
+    /// Waits for the user to act on the notification and then calls `handler`
+    /// with a typed [`NotificationResponse`].
+    ///
+    /// This is the typed, forward-compatible replacement for
+    /// [`wait_for_action`](Self::wait_for_action).
+    pub fn wait_for_response(self, handler: impl ResponseHandler) -> Result<()> {
+        match mac_usernotifications::block_on_current(self.inner.response()).flatten() {
+            Ok(response) => {
+                handler.call(&response.into());
+                Ok(())
+            }
+            Err(error) => {
+                log::error!("failed to get response: {error}");
+                Err(Error::from(ErrorKind::Msg(format!(
+                    "failed to get notification response: {error}"
+                ))))
+            }
+        }
+    }
+
     /// Executes a closure after the notification has closed.
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         match mac_usernotifications::block_on_current(self.inner.response()).flatten() {
@@ -162,6 +182,8 @@ impl From<mac_usernotifications::NotificationResponse> for NotificationResponse 
     fn from(resp: mac_usernotifications::NotificationResponse) -> Self {
         if resp.is_dismiss_action() {
             NotificationResponse::Closed(CloseReason::Dismissed)
+        } else if resp.is_default_action() {
+            NotificationResponse::Default
         } else if let Some(ref text) = resp.reply_text {
             NotificationResponse::Reply(text.clone())
         } else {

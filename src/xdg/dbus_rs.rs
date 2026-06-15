@@ -300,7 +300,12 @@ fn wait_for_action_signal(
                         (&items[0], &items[1])
                     {
                         if nid == id {
-                            handler.call(&NotificationResponse::Action(action.to_string()));
+                            let response = if action == "default" {
+                                NotificationResponse::Default
+                            } else {
+                                NotificationResponse::Action(action.to_string())
+                            };
+                            handler.call(&response);
                             break;
                         }
                     }

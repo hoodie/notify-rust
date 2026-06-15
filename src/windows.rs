@@ -1,3 +1,5 @@
+use crate::response::NotificationResponse;
+use crate::CloseReason;
 pub use crate::{error::*, notification::Notification, timeout::Timeout, urgency::Urgency};
 
 use std::{
@@ -8,11 +10,6 @@ use std::{
 };
 
 use winrt_notification::{Toast, ToastDismissalReason};
-
-enum HandleEvent {
-    Action(String),
-    Closed(CloseReason),
-}
 
 pub(crate) fn show_notification(notification: &Notification) -> Result<NotificationHandle> {
     let (sender, receiver) = channel();
@@ -28,12 +25,15 @@ pub(crate) fn show_notification(notification: &Notification) -> Result<Notificat
 
     toast = toast
         .on_activated(move |action| {
-            let action = action.unwrap_or_else(|| "default".to_owned());
-            let _ = activated_sender.send(HandleEvent::Action(action));
+            let response = match action {
+                None => NotificationResponse::Default,
+                Some(key) => NotificationResponse::Action(key),
+            };
+            let _ = activated_sender.send(response);
             Ok(())
         })
         .on_dismissed(move |reason| {
-            let _ = sender.send(HandleEvent::Closed(reason.into()));
+            let _ = sender.send(NotificationResponse::Closed(reason.into()));
             Ok(())
         });
 
@@ -103,7 +103,7 @@ fn build_toast(notification: &Notification) -> Toast {
 #[derive(Debug)]
 pub struct NotificationHandle {
     notification: Notification,
-    events: Receiver<HandleEvent>,
+    events: Receiver<NotificationResponse>,
 }
 
 impl NotificationHandle {
@@ -114,35 +114,33 @@ impl NotificationHandle {
         F: FnOnce(&str),
     {
         match self.events.recv() {
-            Ok(HandleEvent::Action(action)) => invocation_closure(&action),
-            Ok(HandleEvent::Closed(_reason)) => invocation_closure("__closed"),
+            Ok(NotificationResponse::Action(action)) => invocation_closure(&action),
+            Ok(_) => invocation_closure("__closed"),
             Err(_error) => invocation_closure("__closed"),
         }
     }
 
-    /// Waits for the user to act on the notification and calls `invocation_closure` with the
-    /// full action response.
-    pub fn wait_for_action_response<F>(self, invocation_closure: F)
-    where
-        F: FnOnce(&ActionResponse),
-    {
+    /// Waits for the user to act on the notification and then calls `handler`
+    /// with a typed [`NotificationResponse`](crate::NotificationResponse).
+    ///
+    /// This is the typed, forward-compatible replacement for
+    /// [`wait_for_action`](Self::wait_for_action).
+    pub fn wait_for_response(self, handler: impl crate::response::ResponseHandler) -> Result<()> {
         match self.events.recv() {
-            Ok(HandleEvent::Action(action)) => {
-                invocation_closure(&ActionResponse::Custom(action.as_str()));
+            Ok(response) => {
+                handler.call(&response);
+                Ok(())
             }
-            Ok(HandleEvent::Closed(reason)) => {
-                invocation_closure(&ActionResponse::Closed(reason));
-            }
-            Err(_error) => {
-                invocation_closure(&ActionResponse::Closed(CloseReason::Other(0)));
-            }
+            Err(error) => Err(Error::from(ErrorKind::Msg(format!(
+                "failed to get notification response: {error}"
+            )))),
         }
     }
 
     /// Executes a closure after the notification has closed.
     pub fn on_close<A>(self, handler: impl CloseHandler<A>) {
         while let Ok(event) = self.events.recv() {
-            if let HandleEvent::Closed(reason) = event {
+            if let NotificationResponse::Closed(reason) = event {
                 handler.call(reason);
                 break;
             }
@@ -164,19 +162,6 @@ impl DerefMut for NotificationHandle {
     }
 }
 
-/// Reason a Windows notification was closed.
-#[derive(Copy, Clone, Debug)]
-pub enum CloseReason {
-    /// The notification expired.
-    Expired,
-    /// The notification was dismissed by the user.
-    Dismissed,
-    /// The notification was hidden by the application.
-    CloseAction,
-    /// Windows did not provide a known dismissal reason.
-    Other(u32),
-}
-
 impl From<Option<ToastDismissalReason>> for CloseReason {
     fn from(reason: Option<ToastDismissalReason>) -> Self {
         match reason {
@@ -186,16 +171,6 @@ impl From<Option<ToastDismissalReason>> for CloseReason {
             Some(_) | None => CloseReason::Other(0),
         }
     }
-}
-
-/// Response to a Windows toast action.
-#[derive(Clone, Debug)]
-pub enum ActionResponse<'a> {
-    /// Custom action configured by the notification.
-    Custom(&'a str),
-
-    /// The notification was closed.
-    Closed(CloseReason),
 }
 
 /// Callback for the close event of a Windows notification.
@@ -226,7 +201,7 @@ where
 mod tests {
     use super::*;
 
-    fn handle_with(event: HandleEvent) -> NotificationHandle {
+    fn handle_with(event: NotificationResponse) -> NotificationHandle {
         let (sender, receiver) = channel();
         sender.send(event).unwrap();
         NotificationHandle {
@@ -237,7 +212,7 @@ mod tests {
 
     #[test]
     fn wait_for_action_returns_custom_action() {
-        let handle = handle_with(HandleEvent::Action("clicked_a".to_owned()));
+        let handle = handle_with(NotificationResponse::Action("clicked_a".to_owned()));
         let mut actual = String::new();
 
         handle.wait_for_action(|action| {
@@ -249,7 +224,7 @@ mod tests {
 
     #[test]
     fn wait_for_action_keeps_closed_compatibility_keyword() {
-        let handle = handle_with(HandleEvent::Closed(CloseReason::Dismissed));
+        let handle = handle_with(NotificationResponse::Closed(CloseReason::Dismissed));
         let mut actual = String::new();
 
         handle.wait_for_action(|action| {
@@ -260,13 +235,17 @@ mod tests {
     }
 
     #[test]
-    fn wait_for_action_response_preserves_close_reason() {
-        let handle = handle_with(HandleEvent::Closed(CloseReason::Expired));
+    fn wait_for_response_preserves_close_reason() {
+        use crate::response::{CloseReason as Reason, NotificationResponse};
+
+        let handle = handle_with(NotificationResponse::Closed(CloseReason::Expired));
         let mut expired = false;
 
-        handle.wait_for_action_response(|response| {
-            expired = matches!(response, ActionResponse::Closed(CloseReason::Expired));
-        });
+        handle
+            .wait_for_response(|response: &NotificationResponse| {
+                expired = matches!(response, NotificationResponse::Closed(Reason::Expired));
+            })
+            .unwrap();
 
         assert!(expired);
     }
