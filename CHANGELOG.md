@@ -1,5 +1,20 @@
 # Changelog
 
+## [v4.18.0](https://github.com/hoodie/notify-rust/compare/v4.17.0...v4.18.0) (2026-06-16)
+
+### Features
+
+* add common wait_for_response on all platforms
+([b20c59c](https://github.com/hoodie/notify-rust/commit/b20c59c9dd4db0d83c99dc37ebda1f550334f27b))
+* add wait_for_actions and on_close using mac-notification-sys
+([2627ef7](https://github.com/hoodie/notify-rust/commit/2627ef772b792f9e1660dfc611b4ea026054329c))
+* **macos:** add mac-usernotifications backend
+([602cd5f](https://github.com/hoodie/notify-rust/commit/602cd5f2c22b72c85f3895ad95543b38dc966a0b))
+* add common response types
+([25994d5](https://github.com/hoodie/notify-rust/commit/25994d58e0ea97a34ff31de8fbcee72d927c4290))
+* add Windows notification handles
+([eaaa540](https://github.com/hoodie/notify-rust/commit/eaaa5404da373727c4902d31456dae005afb7348))
+
 ## [v4.17.0](https://github.com/hoodie/notify-rust/compare/v4.16.1...v4.17.0) (2026-05-05)
 
 ### Features
