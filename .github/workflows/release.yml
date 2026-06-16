@@ -24,9 +24,9 @@ jobs:
       - name: Get latest tag
         id: tag
         run: |
-          TAG=$(git tag --points-at HEAD)
+          TAG=$(git describe --tags --abbrev=0)
           if [ -z "${TAG}" ]; then
-            echo "Error: no tag points at HEAD on main. Did you forget to push your tag?"
+            echo "Error: no tag found. Did you forget to push your tag?"
             exit 1
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
