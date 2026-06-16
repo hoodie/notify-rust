@@ -44,7 +44,7 @@ jobs:
       - name: Check no unreleased commits after tag
         run: |
           curl -sSfL https://github.com/convco/convco/releases/download/v0.6.4/convco-ubuntu.zip -o convco-ubuntu.zip
-          echo "2d09c55e78d27925dababce6c12398c57dae8b05  convco-ubuntu.zip" | sha1sum -c
+          echo "d6e43a1975949ef05d31bb1ac64fdd7c2dbc18b0b65df075c16dc296b8153be7  convco-ubuntu.zip" | sha256sum -c
           zcat convco-ubuntu.zip > convco
           chmod +x convco
           rm convco-ubuntu.zip
