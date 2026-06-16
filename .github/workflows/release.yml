@@ -1,0 +1,71 @@
+
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Publish & Release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Get latest tag
+        id: tag
+        run: |
+          TAG=$(git tag --points-at HEAD)
+          if [ -z "${TAG}" ]; then
+            echo "Error: no tag points at HEAD on main. Did you forget to push your tag?"
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag matches Cargo.toml
+        run: |
+          CARGO_VERSION="v$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+          TAG="${{ steps.tag.outputs.tag }}"
+          if [ "${CARGO_VERSION}" != "${TAG}" ]; then
+            echo "Error: Cargo.toml version (${CARGO_VERSION}) does not match tag (${TAG})"
+            exit 1
+          fi
+          echo "In sync: ${TAG}"
+
+      - name: Check no unreleased commits after tag
+        run: |
+          curl -sSfL https://github.com/convco/convco/releases/download/v0.6.4/convco-ubuntu.zip -o convco-ubuntu.zip
+          echo "2d09c55e78d27925dababce6c12398c57dae8b05  convco-ubuntu.zip" | sha1sum -c
+          zcat convco-ubuntu.zip > convco
+          chmod +x convco
+          rm convco-ubuntu.zip
+          NEXT=$(./convco version --bump HEAD)
+          TAG="${{ steps.tag.outputs.tag }}"
+          rm convco
+          if [ "v${NEXT}" != "${TAG}" ]; then
+            echo "Error: convco expects next version to be v${NEXT} but tag is ${TAG}"
+            echo "There may be unreleased breaking changes or features after ${TAG}"
+            exit 1
+          fi
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      - name: Publish to crates.io
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
