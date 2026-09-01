@@ -1,0 +1,567 @@
+# notify-rust: Contributor's Guide
+
+This document is for developers contributing to the `notify-rust` crate itself. If you're looking to use this library in your application, see the API documentation at docs.rs.
+
+## Project Mission
+
+`notify-rust` provides a cross-platform desktop notification API with first-class support for Linux/BSD systems implementing the freedesktop.org Desktop Notifications Specification.
+
+**Primary Specification**: https://specifications.freedesktop.org/notification-spec/latest/
+
+## Architecture Philosophy
+
+### Design Principles
+
+1. **XDG-First, Cross-Platform Second**: The Linux/BSD freedesktop.org specification is the primary target. All features are designed around this spec, with macOS/Windows support added as platform-specific adapters with reduced capabilities.
+
+2. **Dual D-Bus Backend Strategy**: Support both `zbus` (modern, async-first) and `dbus-rs` (mature, blocking) with a unified internal interface. This allows users to choose based on their runtime requirements.
+
+3. **Zero Unsafe Code**: The entire codebase maintains `#![deny(unsafe_code)]` to ensure memory safety.
+
+4. **Builder Pattern API**: The public API uses a fluent builder pattern, but internally this is just state accumulation until `show()` is called.
+
+5. **Platform Abstraction via Conditional Compilation**: Platform-specific code is isolated using `#[cfg(...)]` attributes rather than runtime polymorphism.
+
+## Architectural Layers
+
+### Layer 1: Public API Surface (`notification.rs`, `lib.rs`)
+
+**Responsibility**: Provide a unified, ergonomic builder API that works across platforms.
+
+**Key Components**:
+- `Notification` struct: Accumulates notification parameters
+- Builder methods: Each returns `self` for method chaining
+- Platform-agnostic method signatures with compile-time guards for platform-specific features
+
+**Design Decisions**:
+- Fields are public but marked `pub(crate)` where possible to allow internal access without exposing implementation details
+- The builder pattern delays all validation until `show()` time
+- Methods like `.hint()` append to vectors rather than checking for duplicates (server handles this)
+- Separate `show()`, `show_async()`, and platform-specific show methods
+
+**Critical Code Paths**:
+```
+Notification::new() -> Notification::summary() -> ... -> Notification::show()
+                                                            |
+                                                            v
+                                                    xdg::show_notification()
+```
+
+### Layer 2: Platform Abstraction (`xdg/mod.rs`)
+
+**Responsibility**: Provide a unified interface over multiple D-Bus implementations and manage backend selection.
+
+**Key Components**:
+- `NotificationHandle`: Enum wrapper over backend-specific handles
+- `NotificationHandleInner`: Internal enum discriminating between `Dbus` and `Zbus` variants
+- Backend selection logic via `dbus_stack()` function
+- Trait-based abstractions for callbacks (`ActionResponseHandler`, `CloseHandler`)
+
+**Design Decisions**:
+- Runtime backend selection when both features are enabled (via `DBUSRS` env var)
+- Deref/DerefMut implementation on `NotificationHandle` allows transparent access to underlying handle
+- Both backends must implement the same logical interface, enforced by the wrapper
+- Action/close callbacks use trait objects to allow flexible function signatures
+
+**Backend Selection Algorithm**:
+```
+1. Check if only one backend is compiled in -> use it
+2. Check DBUSRS environment variable -> use dbus-rs if set
+3. Default to zbus
+```
+
+**Critical Types**:
+- `DbusStack` enum: Runtime representation of active backend
+- `NotificationHandleInner`: Wraps `DbusNotificationHandle` or `ZbusNotificationHandle`
+
+### Layer 3: D-Bus Transport (`xdg/dbus_rs.rs`, `xdg/zbus_rs.rs`)
+
+**Responsibility**: Implement the actual D-Bus communication with notification daemons.
+
+**Key Components**:
+
+#### `dbus_rs.rs` (Blocking Backend)
+- Uses `dbus` crate's connection and proxy patterns
+- Synchronous blocking calls
+- Manual argument marshalling
+- Connection pooling via connection reuse
+
+#### `zbus_rs.rs` (Async Backend)
+- Uses `zbus` crate's modern async API
+- Async/await throughout
+- Automatic serialization via `zvariant` and `serde`
+- Connection caching per-bus
+
+**D-Bus Protocol Implementation**:
+
+Both backends implement these D-Bus methods on `org.freedesktop.Notifications`:
+
+1. **Notify** - Main notification method
+   - Signature: `(susssasa{sv}i) -> u`
+   - Parameters: app_name, replaces_id, icon, summary, body, actions, hints, timeout
+   - Returns: notification ID
+
+2. **GetCapabilities** - Query server features
+   - Signature: `() -> as`
+   - Returns: array of capability strings
+
+3. **GetServerInformation** - Query server metadata
+   - Signature: `() -> (ssss)`
+   - Returns: name, vendor, version, spec_version
+
+4. **CloseNotification** - Dismiss notification
+   - Signature: `(u) -> ()`
+   - Parameters: notification ID
+
+**Signal Handling**:
+
+Both backends listen for these signals:
+
+1. **ActionInvoked** - User clicked an action
+   - Signature: `(us)` - notification ID, action key
+   - Used by `wait_for_action()` and action callbacks
+
+2. **NotificationClosed** - Notification was dismissed
+   - Signature: `(uu)` - notification ID, reason code
+   - Reason codes: 1=expired, 2=dismissed by user, 3=closed by CloseNotification, 4=undefined
+
+**Design Decisions**:
+- Each backend maintains its own connection management strategy
+- Signal matching filters by notification ID to avoid cross-notification interference
+- `zbus` uses strongly-typed proxies, `dbus-rs` uses method call builders
+- Both translate their errors into our unified error types
+
+### Layer 4: Data Serialization (`hints.rs`, `hints/`)
+
+**Responsibility**: Convert Rust types into D-Bus wire format and vice versa.
+
+**Key Components**:
+- `Hint` enum: Rust representation of freedesktop.org notification hints
+- `hints/constants.rs`: String constants for hint names
+- `hints_to_map()`: Convert hint vector to D-Bus dictionary
+- Backend-specific `From` implementations for serialization
+
+**Serialization Strategy**:
+
+The `Hint` enum provides:
+1. Type-safe Rust API (e.g., `Hint::Urgency(Urgency::Critical)`)
+2. Conversion to D-Bus types via `From` trait implementations
+3. Handling of custom/unknown hints via `Hint::Custom`
+
+**Format Differences**:
+- `zbus`: Uses `zvariant::Value` enum, automatic via serde
+- `dbus-rs`: Manual `dbus::arg::RefArg` trait implementation
+
+**Critical Implementation Details**:
+- Hint deduplication: The API allows duplicate hints; consumers must handle this (usually last-wins)
+- `hints_unique` field in `Notification`: Used for hints that should only appear once
+- Image hints: Special handling for spec version differences (1.1 vs 1.2+)
+
+### Layer 5: Image Handling (`image.rs`)
+
+**Responsibility**: Convert image formats to D-Bus-compatible raw pixel data.
+
+**Conditional Compilation**: Only available with `images` feature flag.
+
+**Key Components**:
+- `Image` struct: Wraps raw image data with metadata (width, height, rowstride, etc.)
+- Conversion from `image` crate types
+- Spec-version-aware hint key selection
+
+**Image Format**:
+```
+(iiibiiay) structure:
+- width: i32
+- height: i32
+- rowstride: i32
+- has_alpha: bool
+- bits_per_sample: i32
+- channels: i32
+- data: array of bytes
+```
+
+**Design Decisions**:
+- Images are always converted to raw pixel data before sending
+- Spec version detection at runtime determines hint key (`image-data` vs `icon_data`)
+- Lazy static `SPEC_VERSION` initialized once at first use
+- RGB/RGBA support with automatic channel detection
+
+### Layer 6: Platform-Specific Adapters (`macos.rs`, `windows.rs`)
+
+**Responsibility**: Provide minimal notification support on non-Linux platforms.
+
+**Architecture**:
+- Thin wrappers over platform notification APIs
+- Implement only methods that compile on their respective platforms
+- Most methods are no-ops or compile errors (via `#[cfg(...)]`)
+
+**macOS (`macos.rs`)**:
+- Wraps `mac-notification-sys` crate
+- Maps summary → title, body → informativeText
+- Subtitle support
+- No action/hint/callback support
+
+**Windows (`windows.rs`)**:
+- Wraps `tauri-winrt-notification` crate
+- Similar mapping to macOS
+- Toast notification API
+- No action/hint/callback support
+
+## Critical Internal Workflows
+
+### Notification Display Flow
+
+```
+1. User calls Notification::new()
+   - Creates default Notification struct
+   - All fields empty/default
+
+2. User chains builder methods
+   - Each method modifies fields
+   - Returns &mut self or self
+   - No validation yet
+
+3. User calls .show() / .show_async()
+   - XDG: Calls xdg::show_notification()
+   - macOS: Calls macos::show_notification()
+   - Windows: Calls windows::show_notification()
+
+4. [XDG Path] xdg::show_notification()
+   - Calls dbus_stack() to determine backend
+   - Dispatches to dbus_rs::show() or zbus_rs::show()
+
+5. [XDG Path] Backend show()
+   - Establishes D-Bus connection
+   - Serializes Notification fields to D-Bus types
+   - Calls Notify method on notification daemon
+   - Receives notification ID
+   - Returns NotificationHandle
+
+6. User can interact with handle
+   - wait_for_action(): Blocks on ActionInvoked signal
+   - on_close(): Registers callback for NotificationClosed
+   - update(): Modifies and re-sends with same ID
+   - close(): Calls CloseNotification method
+```
+
+### Hint Processing Flow
+
+```
+1. User calls .hint(Hint::Something(...))
+   - Appends to notification.hints vector
+   - No deduplication
+
+2. At show() time
+   - hints_to_map() called (zbus) or hints iterated (dbus-rs)
+   - Each Hint converted via From trait
+   - Becomes D-Bus dictionary: a{sv}
+
+3. Server receives hints
+   - May ignore unknown hints
+   - May override with later hints of same key
+   - Implementation-dependent behavior
+
+4. [Images] Special handling
+   - Image data serialized as (iiibiiay)
+   - Hint key depends on SPEC_VERSION
+   - Lazy static determines this once at runtime
+```
+
+### Signal Handling Flow
+
+```
+1. User calls .wait_for_action(callback) or .on_close(callback)
+   - Stores callback in closure
+   - Registers D-Bus signal match rule for this notification ID
+
+2. Signal arrives from daemon
+   - ActionInvoked(id, action_key) or NotificationClosed(id, reason)
+   - D-Bus backend filters by ID
+
+3. Backend invokes callback
+   - Passes action_key or CloseReason
+   - User code executes in signal handler context
+
+4. Special handling
+   - "__closed" is a hardcoded action key for closed notifications
+   - CloseReason enum maps from u32 reason codes
+   - wait_for_action() blocks current thread until signal
+```
+
+## Key Design Patterns
+
+### Conditional Compilation Strategy
+
+```rust
+// lib.rs structure:
+#[cfg(all(unix, not(target_os = "macos")))]
+mod xdg;
+
+#[cfg(target_os = "macos")]
+mod macos;
+
+#[cfg(target_os = "windows")]
+mod windows;
+
+// Re-exports based on platform:
+#[cfg(all(unix, not(target_os = "macos")))]
+pub use crate::xdg::{NotificationHandle, get_capabilities, ...};
+
+#[cfg(target_os = "macos")]
+pub use macos::NotificationHandle;
+```
+
+**Rationale**: Keeps platform code completely separate; impossible to accidentally use wrong platform APIs.
+
+### Deref Coercion for Handle Polymorphism
+
+```rust
+pub struct NotificationHandle {
+    inner: NotificationHandleInner,
+}
+
+impl Deref for NotificationHandle {
+    type Target = NotificationHandleInner;
+    fn deref(&self) -> &Self::Target { &self.inner }
+}
+```
+
+**Rationale**: Allows transparent method calls on the inner handle regardless of backend, while keeping a unified public type.
+
+### Lazy Static for Runtime Detection
+
+```rust
+lazy_static! {
+    pub static ref SPEC_VERSION: miniver::Version =
+        get_server_information()
+        .and_then(|info| info.spec_version.parse::<miniver::Version>())
+        .unwrap_or_else(|_| miniver::Version::new(1,1));
+}
+```
+
+**Rationale**: Spec version affects image hint key; must be detected at runtime but only once per process.
+
+### Trait-Based Callback Abstraction
+
+```rust
+pub trait ActionResponseHandler {
+    fn call(&mut self, action: &str);
+}
+
+impl<F> ActionResponseHandler for F
+where F: FnMut(&str)
+{
+    fn call(&mut self, action: &str) { self(action) }
+}
+```
+
+**Rationale**: Allows both closures and function pointers as callbacks; enables internal polymorphism without Box<dyn Fn>.
+
+## Feature Flag Architecture
+
+### Feature Dependency Tree
+
+```
+default = ["z"]
+z = ["zbus", "serde", "async"]
+z-with-tokio = ["zbus", "serde", "tokio"]
+d = ["dbus"]
+d_vendored = ["dbus/vendored"]
+async = ["zbus/async-io"]
+tokio = ["zbus/tokio"]
+images = ["image", "lazy_static"]
+chrono = ["dep:chrono"]  # macOS only
+```
+
+### Backend Selection Matrix
+
+| Features Enabled | Active Backend | Runtime Override |
+|-----------------|----------------|------------------|
+| `z` only | zbus | N/A |
+| `d` only | dbus-rs | N/A |
+| Both `z` and `d` | zbus (default) | `DBUSRS=1` → dbus-rs |
+| Neither | Compile error on XDG | N/A |
+
+**Implementation**: `xdg/mod.rs` uses `#[cfg(all(feature = "dbus", feature = "zbus"))]` to detect both enabled, then checks `std::env::var("DBUSRS")` at runtime.
+
+## Error Handling Strategy
+
+### Error Types
+
+The `error` module defines platform-specific error types:
+- XDG: D-Bus errors (connection, method call, serialization)
+- Image: Image loading/conversion errors
+- All: Generic error wrapping
+
+### Error Propagation
+
+- Internal functions return `Result<T, Error>`
+- Public API returns `Result<T, Error>` or panics (for builder methods)
+- D-Bus errors are wrapped in our error types to abstract backend differences
+
+### Design Decision
+
+No custom error types exposed publicly; uses `std::error::Error` trait. This keeps error handling simple and doesn't lock users into our types.
+
+## Testing Strategy
+
+### Unit Tests
+
+- `hints/tests.rs`: Hint serialization tests
+- Inline tests in modules (e.g., `#[test] fn test_hints_to_map()`)
+- Feature-gated tests for optional functionality
+
+### Integration Testing
+
+- `examples/` directory serves as integration tests
+- Each example demonstrates a specific feature or combination
+- Can be run manually against different notification servers
+
+### Testing Challenges
+
+- D-Bus tests require a running notification daemon
+- Signal handling tests require async runtime
+- Cross-platform tests require multiple environments
+- CI runs basic compilation tests; manual testing needed for full validation
+
+## Development Workflow
+
+### Adding a New Hint
+
+1. Add variant to `Hint` enum in `hints.rs`
+2. Add constant to `hints/constants.rs`
+3. Implement `From<&Hint>` for both backends (if applicable)
+4. Add documentation with freedesktop.org spec link
+5. Update examples if demonstrating new capability
+
+### Adding a New Feature
+
+1. Add feature flag to `Cargo.toml`
+2. Gate code with `#[cfg(feature = "feature_name")]`
+3. Update conditional compilation in `lib.rs`
+4. Document in rustdoc and this guide
+5. Add example demonstrating the feature
+
+### Backend Modifications
+
+1. Changes must maintain interface parity between backends
+2. Update both `dbus_rs.rs` and `zbus_rs.rs` if applicable
+3. Test with both backends (set/unset `DBUSRS`)
+4. Consider async vs sync implications
+
+### Platform Support
+
+- XDG: All changes tested here first
+- macOS/Windows: Only add features if platform supports them
+- Use `#[cfg(...)]` to prevent compilation of unsupported features
+- Document platform support in method rustdocs
+
+## Code Organization Principles
+
+### Module Visibility
+
+- Public API: Exported via `lib.rs`
+- Internal utilities: `pub(crate)` visibility
+- Backend internals: Private to their modules
+- Platform code: Completely isolated
+
+### Dependency Management
+
+- Core dependencies: Minimal, well-maintained
+- Platform dependencies: Only included on relevant platforms
+- Optional dependencies: Gated behind feature flags
+- Dev dependencies: Only for testing/examples
+
+### Documentation Standards
+
+- All public items require rustdoc comments
+- Link to freedesktop.org spec where relevant
+- Include platform compatibility notes
+- Provide usage examples in doc comments
+
+## Common Contributor Pitfalls
+
+1. **Forgetting platform guards**: Always use `#[cfg(...)]` for platform-specific code
+2. **Assuming zbus only**: Test both backends when making D-Bus changes
+3. **Hint deduplication**: Don't deduplicate in library code; let server handle it
+4. **Blocking in async**: Keep async functions truly async; don't block executor
+5. **Hardcoded paths**: Use env vars or discovery for testing
+6. **Signal ID filtering**: Always filter signals by notification ID
+7. **Spec version assumptions**: Use runtime detection, not compile-time
+
+## Debugging Tips
+
+### Enable D-Bus Monitoring
+
+```bash
+dbus-monitor "interface='org.freedesktop.Notifications'"
+```
+
+### Enable Library Logging
+
+```bash
+RUST_LOG=notify_rust=debug cargo run --example simple
+```
+
+### Test with Different Servers
+
+- GNOME Shell (gnome-shell)
+- KDE Plasma (plasma-workspace)
+- Xfce (xfce4-notifyd)
+- Dunst (dunst)
+- Mako (mako)
+
+Each has different capability sets and behavior.
+
+## Performance Considerations
+
+- Connection caching: Both backends cache D-Bus connections
+- Lazy initialization: SPEC_VERSION only queried once
+- Zero-copy where possible: String references rather than clones
+- Signal filtering: Filter by ID at D-Bus level, not in Rust
+
+## Security Considerations
+
+- No unsafe code anywhere in codebase
+- D-Bus security handled by system bus policy
+- No credential storage or sensitive data handling
+- Image data: User-provided, passed directly to notification daemon
+
+## Future Architecture Considerations
+
+- Server implementation (currently commented out)
+- Alternative transport protocols (Wayland notification protocol?)
+- Additional platform support (Haiku, Redox?)
+- Capability negotiation improvements
+- Structured notification templates
+
+## Resources for Contributors
+
+- **freedesktop.org Spec**: https://specifications.freedesktop.org/notification-spec/latest/
+- **D-Bus Specification**: https://dbus.freedesktop.org/doc/dbus-specification.html
+- **zbus Documentation**: https://docs.rs/zbus/
+- **dbus-rs Documentation**: https://docs.rs/dbus/
+- **Repository**: https://github.com/hoodie/notify-rust
+
+## Commit Conventions
+
+This project uses Conventional Commits: https://www.conventionalcommits.org/
+
+**Format**: `<type>(<scope>): <description>`
+
+**Types**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `refactor`: Code refactoring
+- `test`: Test additions/changes
+- `chore`: Maintenance tasks
+
+**Examples**:
+- `feat(hints): add ImageData hint support`
+- `fix(zbus): correct signal filtering logic`
+- `docs(readme): update platform support matrix`
+
+## License
+
+Dual-licensed under MIT or Apache-2.0. All contributions must be compatible with both licenses.

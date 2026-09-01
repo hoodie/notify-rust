@@ -71,6 +71,36 @@
 //! Notification::new().show();
 //! ```
 //!
+//! ## Example 4: Desktop Portal (Linux / BSD)
+//!
+//! On systems with an XDG desktop portal (`org.freedesktop.portal.Notification`) you can
+//! send notifications through the portal instead of talking directly to a notification
+//! daemon. This works inside sandboxed environments (Flatpak, Snap) where direct D-Bus
+//! access to `org.freedesktop.Notifications` may be restricted.
+//!
+//! A unique notification ID is generated automatically; the returned handle lets you
+//! replace (`update`) or dismiss (`close`) the notification later.
+//!
+//! ```no_run
+//! # #[cfg(all(unix, not(target_os = "macos"), feature = "async", feature = "zbus"))]
+//! # async fn portal_example() -> Result<(), Box<dyn std::error::Error>> {
+//! # use notify_rust::Notification;
+//! let handle = Notification::new()
+//!     .summary("Portal notification")
+//!     .body("Sent via org.freedesktop.portal.Notification")
+//!     .icon("dialog-information") // themed icon — bypasses portal icon validation
+//!     // Or use a file path (png/jpeg/svg, square, ≤ 512 px, ≤ 4 MB):
+//!     // .image_path("/path/to/icon-256.png")
+//!     .show_via_portal()
+//!     .await?;
+//!
+//! // Later: replace the notification in-place, or close it.
+//! // handle.update();
+//! handle.close();
+//! # Ok(())
+//! # }
+//! ```
+//!
 //! more [examples](https://github.com/hoodie/notify-rust/tree/main/examples) in the repository.
 //!
 //! # Platform Differences
@@ -162,9 +192,11 @@ mod hints;
 mod miniver;
 mod notification;
 mod notification_id;
-mod response;
+#[cfg(all(unix, not(target_os = "macos"), feature = "zbus"))]
+pub mod portal;
 #[cfg(feature = "zbus")]
 pub(crate) mod priority;
+mod response;
 mod timeout;
 pub(crate) mod urgency;
 

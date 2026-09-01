@@ -40,6 +40,7 @@ images_no_default_features = ["image", "lazy_static"]
 
 [dependencies]
 log = "0.4"
+memfd = "0.6.6"
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 dbus = { version = "0.9", optional = true }
@@ -102,4 +103,14 @@ required-features = ["async"]
 [[example]]
 name = "simple_async"
 path = "examples/simple_async.rs"
+required-features = ["async"]
+
+[[example]]
+name = "desktop-portal"
+path = "examples/desktop-portal.rs"
+required-features = ["async"]
+
+[[example]]
+name = "portal-update"
+path = "examples/portal-update.rs"
 required-features = ["async"]

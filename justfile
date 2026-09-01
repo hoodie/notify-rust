@@ -1,6 +1,10 @@
 default:
     just --list
 
+ci:
+    cargo check --no-default-features --features d
+    cargo check --no-default-features --features z
+
 coverage:
     # cargo llvm-cov test --lib --no-default-features --features async_runtime
     # cargo llvm-cov test --lib --no-default-features --features tokio_runtime

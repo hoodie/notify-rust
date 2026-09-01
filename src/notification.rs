@@ -63,7 +63,7 @@ pub struct Notification {
     pub body: String,
 
     /// Use a `file://` URI or a name in an icon theme, must be compliant with freedesktop.org.
-    pub icon: String,
+    pub icon: Option<String>,
 
     /// Check out [`Hint`].
     ///
@@ -248,17 +248,41 @@ impl Notification {
         self
     }
 
-    /// Set the `icon` field.
+    /// Set the themed icon name.
     ///
-    /// You can use common icon names here, usually those in `/usr/share/icons`
-    /// can all be used.
-    /// You can also use an absolute path to file.
+    /// This sets a freedesktop.org themed icon name (e.g. "dialog-information").
+    /// For file-based icons, use [`icon_path`](#method.icon_path) or [`image_path`](#method.image_path).
     ///
     /// # Platform support
     /// macOS does not have support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn icon(&mut self, icon: &str) -> &mut Notification {
-        icon.clone_into(&mut self.icon);
+        self.icon = Some(icon.into());
         self
+    }
+
+    /// Set a themed icon name explicitly (same as [`icon`](#method.icon)).
+    ///
+    /// Use this when you want to pass an icon name from the current icon theme.
+    pub fn icon_named(&mut self, name: &str) -> &mut Notification {
+        self.icon = Some(name.into());
+        self
+    }
+
+    /// Set a file-based icon path explicitly.
+    ///
+    /// This is preferred for passing image files to the portal implementation.
+    /// On XDG this is equivalent to calling [`image_path`](#method.image_path).
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn icon_path(&mut self, path: &str) -> &mut Notification {
+        self.image_path(path)
+    }
+
+    /// Set a file-based icon path explicitly (Windows).
+    ///
+    /// On Windows this is equivalent to calling [`image_path`](#method.image_path).
+    #[cfg(target_os = "windows")]
+    pub fn icon_path(&mut self, path: &str) -> &mut Notification {
+        self.image_path(path)
     }
 
     /// Set the `icon` field automatically.
@@ -268,7 +292,7 @@ impl Notification {
     /// # Platform support
     /// macOS does not support manually setting the icon. However you can pretend to be another app using [`set_application()`](fn.set_application.html)
     pub fn auto_icon(&mut self) -> &mut Notification {
-        self.icon = exe_name();
+        self.icon = exe_name().into();
         self
     }
 
@@ -521,13 +545,133 @@ impl Notification {
         xdg::show_notification_async(self).await
     }
 
-    /// WIP
-    /// TODO: impl new NotificationHandleType
-    /// * this converts [`Urgency`] into [`Priority`]
+    /// Sends this notification via the XDG desktop portal
+    /// (`org.freedesktop.portal.Notification`).
+    ///
+    /// A unique notification ID is generated automatically and stored in the returned
+    /// handle; use `handle.update()` to replace the notification in-place, or
+    /// `handle.close()` to dismiss it.
+    ///
+    /// # Platform support
+    /// Linux / BSD only (requires a portal-capable session bus).
+    ///
+    /// # GNOME requirement: app ID and `.desktop` file
+    ///
+    /// The GNOME portal backend (`xdg-desktop-portal-gnome`) forwards notifications
+    /// through GNOME Shell's `org.gtk.Notifications` API. Before displaying anything,
+    /// GNOME Shell performs two checks (source: `GtkNotificationDaemonAppSource`):
+    ///
+    /// 1. The app ID must be a valid GLib application ID — reverse-DNS form with at
+    ///    least two dot-separated alphanumeric components (e.g. `"org.example.MyApp"`).
+    ///
+    /// 2. A `.desktop` file named `<app-id>.desktop` must exist somewhere GIO can find
+    ///    it: `$XDG_DATA_HOME/applications` (`~/.local/share/applications/`) **or** any
+    ///    directory in `$XDG_DATA_DIRS`. `~/.local/share/applications/` is sufficient —
+    ///    no system path is required.
+    ///
+    /// If either check fails the notification is silently dropped from the caller's
+    /// perspective, and the portal daemon logs:
+    ///
+    /// ```text
+    /// Error from gnome-shell: GDBus.Error:org.gtk.Notifications.Error.InvalidApp:
+    ///     The app by ID "" could not be found
+    /// ```
+    ///
+    /// The app ID is derived by `xdg-desktop-portal` from the **systemd user unit
+    /// name** of the D-Bus sender's process (read from its cgroup). Processes launched
+    /// directly from a terminal have no matching user service unit, so the app ID falls
+    /// back to `""`, which immediately fails check 1.
+    ///
+    /// ## Making it work on GNOME
+    ///
+    /// You need exactly two things:
+    ///
+    /// **Step 1** — install a `.desktop` file. `~/.local/share/applications/` is fine:
+    ///
+    /// ```text
+    /// # ~/.local/share/applications/org.example.myapp.desktop
+    /// [Desktop Entry]
+    /// Name=My App
+    /// Type=Application
+    /// Exec=/path/to/my-binary
+    /// NoDisplay=true
+    /// ```
+    ///
+    /// Then refresh the cache: `update-desktop-database ~/.local/share/applications/`
+    ///
+    /// The stem of the filename (`org.example.myapp`) is the app ID. Prefer IDs with
+    /// no hyphens; hyphens are allowed but get systemd-escaped in the unit name (see
+    /// step 2).
+    ///
+    /// **Step 2** — launch the binary as a systemd user service with a matching name.
+    /// `xdg-desktop-portal` extracts the app ID from the unit name using:
+    ///
+    /// ```text
+    /// app[-<launcher>]-<ApplicationID>[@<instance>].service
+    /// ```
+    ///
+    /// So for app ID `org.example.myapp`:
+    ///
+    /// ```text
+    /// systemd-run --user --service-type=oneshot \
+    ///     --unit=app-org.example.myapp.service \
+    ///     /path/to/my-binary
+    /// ```
+    ///
+    /// **Note on hyphens**: systemd hex-escapes hyphens in unit names
+    /// (`org.notify-rust` → `app-org.notify\x2drust.service`). Use pure dot-separated
+    /// IDs to avoid the escaping.
+    ///
+    /// **Note on working directory**: `systemd-run` defaults to `$HOME`, not the
+    /// current directory. Pass `--working-directory=…` if your binary uses relative
+    /// paths.
+    ///
+    /// This restriction is specific to the GNOME backend. Other portal backends (KDE,
+    /// mako, dunst, …) do not enforce an app-ID lookup and show notifications
+    /// unconditionally, even when launched from a terminal.
     #[cfg(all(unix, not(target_os = "macos")))]
     #[cfg(all(feature = "async", feature = "zbus"))]
-    pub async fn show_via_portal(&self, id: &str) -> Result<() /*xdg::NotificationHandle*/> {
-        xdg::show_notification_via_portal(self, id).await
+    pub async fn show_via_portal(&self) -> Result<xdg::NotificationHandle> {
+        xdg::show_notification_via_portal(self).await
+    }
+
+    /// Convert this notification into a [`portal::Notification`](crate::portal::Notification)
+    /// for sending via the XDG desktop portal.
+    ///
+    /// This performs a best-effort translation of the classic notification fields into
+    /// their portal equivalents.  Fields that have no portal equivalent — `hint()`,
+    /// `timeout()`, `urgency()`, etc. — are silently dropped at the conversion boundary.
+    ///
+    /// After calling `.portal()` only methods defined on
+    /// [`portal::Notification`](crate::portal::Notification) are available, giving you
+    /// access to portal-specific features such as
+    /// [`button()`](crate::portal::Notification::button),
+    /// [`priority()`](crate::portal::Notification::priority), and
+    /// [`id()`](crate::portal::Notification::id).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # #[cfg(all(unix, not(target_os = "macos"), feature = "async", feature = "zbus"))]
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # use notify_rust::Notification;
+    /// Notification::new()
+    ///     .summary("Download complete")
+    ///     .body("Your file is ready.")
+    ///     .icon("document-save")
+    ///     .portal()
+    ///     .show()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Platform support
+    /// Linux / BSD only (requires the `zbus` feature).
+    #[cfg(all(unix, not(target_os = "macos"), feature = "zbus"))]
+    pub fn portal(&self) -> crate::portal::Notification {
+        use crate::portal::IntoPortalNotification;
+        self.clone().portal()
     }
 
     /// Sends the notification to D-Bus at the given sub-bus path.
@@ -572,7 +716,7 @@ impl Notification {
             summary = self.summary,
             body = self.body,
             hints = self.hints,
-            icon = self.icon,
+            icon = self.icon.as_deref().unwrap_or_default()
         );
         self.show()
     }
@@ -586,7 +730,7 @@ impl Default for Notification {
             summary: String::new(),
             subtitle: None,
             body: String::new(),
-            icon: String::new(),
+            icon: Default::default(),
             hints: HashSet::new(),
             hints_unique: HashMap::new(),
             actions: Vec::new(),
@@ -603,7 +747,7 @@ impl Default for Notification {
             summary: String::new(),
             subtitle: None,
             body: String::new(),
-            icon: String::new(),
+            icon: None,
             actions: Vec::new(),
             timeout: Timeout::Default,
             sound_name: Default::default(),
@@ -621,7 +765,7 @@ impl Default for Notification {
             summary: String::new(),
             subtitle: None,
             body: String::new(),
-            icon: String::new(),
+            icon: None,
             actions: Vec::new(),
             timeout: Timeout::Default,
             sound_name: Default::default(),

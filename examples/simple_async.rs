@@ -13,5 +13,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .icon("dialog-positive")
         .show_async()
         .await?;
+
+    Notification::new()
+        .summary("portal notification")
+        .body("this notification was sent via an desktop portal api")
+        .icon("dialog-positive")
+        .show_via_portal()
+        .await?;
     Ok(())
 }

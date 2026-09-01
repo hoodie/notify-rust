@@ -36,14 +36,14 @@ pub fn send_notification_via_connection_at_bus(
     let mut message = build_message("Notify", bus);
     let timeout: i32 = notification.timeout.into();
     message.append_items(&[
-        notification.appname.to_owned().into(), // appname
-        id.into(),                              // notification to update
-        notification.icon.to_owned().into(),    // icon
-        notification.summary.to_owned().into(), // summary (title)
-        notification.body.to_owned().into(),    // body
-        pack_actions(notification),             // actions
-        pack_hints(notification)?,              // hints
-        timeout.into(),                         // timeout
+        notification.appname.to_owned().into(),            // appname
+        id.into(),                                         // notification to update
+        notification.icon.as_deref().unwrap_or("").into(), // icon
+        notification.summary.to_owned().into(),            // summary (title)
+        notification.body.to_owned().into(),               // body
+        pack_actions(notification),                        // actions
+        pack_hints(notification)?,                         // hints
+        timeout.into(),                                    // timeout
     ]);
 
     let reply = connection.send_with_reply_and_block(message, 2000)?;

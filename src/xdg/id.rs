@@ -1,0 +1,43 @@
+/// The identifier returned by [`NotificationHandle::id`](crate::NotificationHandle::id).
+///
+/// Classic D-Bus notifications use a server-assigned `u32` ([`Global`](NotificationId::Global)),
+/// while portal notifications use a caller-supplied `String`
+/// ([`Portal`](NotificationId::Portal)).
+pub enum NotificationId {
+    /// A server-assigned `u32` ID — used by the classic `org.freedesktop.Notifications` path.
+    Global(u32),
+    /// A caller-supplied string ID — used by the `org.freedesktop.portal.Notification` path.
+    Portal(String),
+}
+
+impl NotificationId {
+    /// Returns the inner `u32` if this is a [`Global`](NotificationId::Global) ID, or `None`
+    /// for a [`Portal`](NotificationId::Portal) ID.
+    pub fn as_global(&self) -> Option<u32> {
+        match self {
+            NotificationId::Global(id) => Some(*id),
+            NotificationId::Portal(_) => None,
+        }
+    }
+
+    /// Returns the inner string slice if this is a [`Portal`](NotificationId::Portal) ID, or
+    /// `None` for a [`Global`](NotificationId::Global) ID.
+    pub fn as_portal(&self) -> Option<&str> {
+        match self {
+            NotificationId::Global(_) => None,
+            NotificationId::Portal(id) => Some(id),
+        }
+    }
+}
+
+impl From<u32> for NotificationId {
+    fn from(id: u32) -> NotificationId {
+        NotificationId::Global(id)
+    }
+}
+
+impl From<String> for NotificationId {
+    fn from(id: String) -> NotificationId {
+        NotificationId::Portal(id)
+    }
+}

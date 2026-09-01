@@ -1,14 +1,23 @@
+use std::fmt;
+
 use zbus::zvariant::Type;
 
 use crate::Urgency;
 
-/// Used in desktop portals.
+/// Priority of a notification sent via the desktop portal.
+///
+/// Maps directly to the `priority` field of the
+/// `org.freedesktop.portal.Notification` `AddNotification` call.
 #[derive(Eq, Hash, Copy, Clone, Debug, Type, PartialEq)]
 #[zvariant(signature = "s")]
 pub enum Priority {
+    /// Background, unimportant — the notification may be shown silently or not at all.
     Low,
+    /// Ordinary notification — the default priority level.
     Normal,
+    /// Needs attention soon — elevated but not critical.
     High,
+    /// Requires immediate action — the highest urgency level.
     Urgent,
 }
 
@@ -21,9 +30,10 @@ impl From<Urgency> for Priority {
         }
     }
 }
-impl Into<&str> for &Priority {
-    fn into(self) -> &'static str {
-        match self {
+
+impl From<&Priority> for &'static str {
+    fn from(priority: &Priority) -> &'static str {
+        match priority {
             Priority::Low => "low",
             Priority::Normal => "normal",
             Priority::High => "high",
@@ -32,10 +42,9 @@ impl Into<&str> for &Priority {
     }
 }
 
-impl ToString for Priority {
-    fn to_string(&self) -> String {
-        let prio: &str = self.into();
-        prio.to_string()
+impl fmt::Display for Priority {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(<&'static str>::from(self))
     }
 }
 
@@ -44,6 +53,6 @@ impl serde::Serialize for Priority {
     where
         S: serde::Serializer,
     {
-        serde::Serialize::serialize(&self.to_string(), serializer)
+        serializer.serialize_str(<&'static str>::from(self))
     }
 }

@@ -1,13 +1,14 @@
 use crate::{error::*, notification::Notification, xdg};
 use futures_lite::stream::StreamExt;
+use zbus::zvariant::Value;
 use zbus::MatchRule;
 
 use super::bus::NotificationBus;
 use crate::response::{NotificationResponse, ResponseHandler};
 
 pub mod bus;
+pub(crate) mod handle;
 pub mod portal;
-mod handle;
 
 pub use handle::ZbusNotificationHandle;
 
@@ -34,7 +35,7 @@ async fn send_notification_via_connection_at_bus(
             &(
                 &notification.appname,
                 id,
-                &notification.icon,
+                notification.icon.as_deref().unwrap_or(""),
                 &notification.summary,
                 &notification.body,
                 &notification.actions,
@@ -118,6 +119,51 @@ pub async fn get_server_information() -> Result<xdg::ServerInformation> {
 pub async fn handle_action(id: u32, func: impl ResponseHandler) {
     let connection = zbus::Connection::session().await.unwrap();
     wait_for_action_signal(&connection, id, func).await;
+}
+
+/// Waits for an `ActionInvoked` signal on the portal interface for the notification with the
+/// given string `id`.
+///
+/// `org.freedesktop.portal.Notification` does **not** define a `NotificationClosed` signal —
+/// that signal only exists on the backend implementation interface, which sandboxed apps cannot
+/// access. Only `ActionInvoked` is listened for here.
+pub(crate) async fn wait_for_action_signal_portal(
+    connection: &zbus::Connection,
+    id: &str,
+    handler: impl ResponseHandler,
+) {
+    let action_signal_rule = MatchRule::builder()
+        .msg_type(zbus::message::Type::Signal)
+        .interface(xdg::NOTIFICATION_PORTAL_INTERFACE)
+        .unwrap()
+        .member("ActionInvoked")
+        .unwrap()
+        .build();
+
+    let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
+    proxy.add_match_rule(action_signal_rule).await.unwrap();
+
+    while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
+        let header = msg.header();
+        let zbus::message::Type::Signal = header.message_type() else {
+            continue;
+        };
+        if header.member().map_or(true, |m| m != "ActionInvoked") {
+            continue;
+        }
+        match msg.body().deserialize::<(String, String, Vec<Value>)>() {
+            Ok((nid, action, _parameters)) if nid == id => {
+                let response = if action == "default" {
+                    NotificationResponse::Default
+                } else {
+                    NotificationResponse::Action(action)
+                };
+                handler.call(&response);
+                break;
+            }
+            _ => {}
+        }
+    }
 }
 
 async fn wait_for_action_signal(

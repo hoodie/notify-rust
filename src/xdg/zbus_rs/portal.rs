@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use crate::{
     error::*,
     notification::Notification,
@@ -7,48 +9,367 @@ use crate::{
     },
     Hint,
 };
-use zbus::zvariant::{SerializeDict, Type};
+use zbus::zvariant::{Fd, SerializeDict, Type};
 
-#[derive(SerializeDict, Type)]
+pub use super::handle::PortalNotificationHandle as NotificationHandle;
+
+// ---------------------------------------------------------------------------
+// Notification ID generation
+// ---------------------------------------------------------------------------
+
+static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+/// Generate a process-unique notification ID string.
+///
+/// Uses a monotonically increasing counter, so IDs are short, human-readable,
+/// and guaranteed unique within the lifetime of the process. The counter starts
+/// at 1 so that the first notification gets `"1"` rather than `"0"`.
+fn next_id() -> String {
+    NEXT_ID.fetch_add(1, Ordering::Relaxed).to_string()
+}
+
+// ---------------------------------------------------------------------------
+// Sound (stubbed — always None for now)
+// ---------------------------------------------------------------------------
+
+mod sound {
+    use super::*;
+    /// A sound to play when the notification is shown.
+    ///
+    /// This field is stubbed and always `None` in the current implementation.
+    /// It corresponds to the `sound` key in the `AddNotification` vardict of
+    /// `org.freedesktop.portal.Notification`.
+    #[derive(serde::Serialize, PartialEq, Debug, Type)]
+    pub struct Sound(Fd<'static>);
+}
+use sound::Sound;
+
+// ---------------------------------------------------------------------------
+// Icon
+// ---------------------------------------------------------------------------
+
+pub mod icon {
+    use memfd::{FileSeal, MemfdOptions, SealsHashSet};
+    use std::{fs::File, os::fd::OwnedFd, path::Path};
+    use zbus::zvariant::{Fd, Type, Value};
+
+    /// Wire representation: `(sv)` — a string discriminant paired with a variant value.
+    ///
+    /// Themed:          `("themed",          Array of strings)`
+    /// File-descriptor: `("file-descriptor", UnixFd)`
+    pub type RawIcon = (&'static str, Value<'static>);
+
+    /// The icon to display with a portal notification.
+    ///
+    /// Serializes on the wire as an `(sv)` tuple — a string discriminant paired with a
+    /// variant value — as required by `org.freedesktop.portal.Notification`.
+    ///
+    /// # Variants
+    ///
+    /// - [`Icon::Themed`] — one or more names from the current icon theme, tried in order.
+    ///   Bypasses portal icon validation entirely; safe to use with any icon theme name.
+    /// - [`Icon::File`] — raw image data passed as a Unix file descriptor (via a sealed
+    ///   `memfd`). Subject to portal icon validation; see [`Icon::open`] for constraints.
+    #[derive(serde::Serialize, PartialEq, Debug, Type)]
+    #[zvariant(signature = "(sv)")]
+    pub enum Icon {
+        /// One or more icon theme names, tried in order (first match wins).
+        ///
+        /// Maps to the `("themed", as)` wire representation.
+        Themed(Vec<String>),
+        /// A file descriptor pointing to image data in a sealed `memfd`.
+        ///
+        /// Maps to the `("file-descriptor", h)` wire representation.
+        /// Use [`Icon::open`] to construct this variant from a file path.
+        File(Fd<'static>),
+    }
+
+    impl From<Icon> for RawIcon {
+        fn from(icon: Icon) -> RawIcon {
+            match icon {
+                Icon::Themed(names) => ("themed", Value::from(names)),
+                Icon::File(fd) => ("file-descriptor", Value::from(fd)),
+            }
+        }
+    }
+
+    impl From<OwnedFd> for Icon {
+        fn from(fd: OwnedFd) -> Self {
+            Icon::File(Fd::from(fd))
+        }
+    }
+
+    impl From<File> for Icon {
+        fn from(file: File) -> Self {
+            Icon::File(Fd::from(OwnedFd::from(file)))
+        }
+    }
+
+    impl Icon {
+        /// Create an [`Icon::Themed`] from a list of icon theme names.
+        ///
+        /// Names are tried in order; the first one found in the current icon theme is used.
+        /// Themed icons bypass portal icon validation entirely and are always safe to use.
+        pub fn themed<I: Into<String>>(names: Vec<I>) -> Self {
+            Icon::Themed(names.into_iter().map(Into::into).collect())
+        }
+
+        /// Open a file from disk, copy its contents into a sealed `memfd`, and return an
+        /// [`Icon::File`] wrapping that file descriptor.
+        ///
+        /// Returns `None` if the file cannot be opened or the memfd operation fails.
+        ///
+        /// # Portal icon validation constraints
+        ///
+        /// The portal validates every `file-descriptor` icon by passing it through
+        /// `xdg-desktop-portal-validate-icon --ruleset=notification` before forwarding it
+        /// to the notification backend. Icons that fail validation are **silently dropped**
+        /// and the notification is shown without an icon.
+        ///
+        /// Constraints enforced by the `notification` ruleset
+        /// (source: [`validate-icon.c`](https://github.com/flatpak/xdg-desktop-portal/blob/main/src/validate-icon.c)):
+        ///
+        /// | Constraint        | Limit                          |
+        /// |-------------------|--------------------------------|
+        /// | Formats accepted  | `png`, `jpeg`, `svg`           |
+        /// | Must be square    | `width == height` required     |
+        /// | Max dimensions    | 512 × 512 px (raster)          |
+        /// | Max SVG size      | 4096 × 4096 px                 |
+        /// | Max file size     | 4 MB                           |
+        ///
+        /// Themed icons (`Icon::Themed`) bypass this validation entirely and are always safe
+        /// to use regardless of the notification server.
+        pub fn open(path: &str) -> Option<Self> {
+            match Self::copy_file_to_sealed_memfd(path) {
+                Ok(file) => Some(file.into()),
+                Err(err) => {
+                    log::warn!("portal: failed to open icon '{}': {}", path, err);
+                    None
+                }
+            }
+        }
+
+        fn copy_file_to_sealed_memfd<P: AsRef<Path>>(
+            path: P,
+        ) -> Result<File, Box<dyn std::error::Error>> {
+            // Step 1: Open the source file on disk.
+            let mut src_file = File::open(&path)?;
+
+            // Step 2: Create a sealable anonymous memory file.
+            let opts = MemfdOptions::default().allow_sealing(true);
+            let mfd = opts.create("notify-rust-icon")?;
+
+            // Step 3: Size the memfd to match the source file.
+            let src_size = src_file.metadata()?.len();
+            mfd.as_file().set_len(src_size)?;
+
+            // Step 4: Copy file contents into the memfd.
+            let mut memfd_file = mfd.as_file().try_clone()?;
+            std::io::copy(&mut src_file, &mut memfd_file)?;
+
+            // Step 5: Seal against further size changes so the portal can trust the data.
+            // Note: no seek needed here — xdg-desktop-portal-validate-icon calls
+            // lseek(fd, 0, SEEK_SET) itself before reading.
+            let mut seals = SealsHashSet::new();
+            seals.insert(FileSeal::SealShrink);
+            seals.insert(FileSeal::SealGrow);
+            mfd.add_seals(&seals)?;
+
+            Ok(mfd.into_file())
+        }
+    }
+}
+
+pub use icon::Icon;
+use icon::RawIcon;
+
+// ---------------------------------------------------------------------------
+// Button
+// ---------------------------------------------------------------------------
+
+/// A portal notification action button.
+///
+/// Corresponds to a single entry in the `buttons` array of the
+/// `org.freedesktop.portal.Notification` `AddNotification` vardict.
+///
+/// # Example
+/// ```no_run
+/// # use notify_rust::portal::{Notification, Button};
+/// Notification::new("Ready")
+///     .button(Button::new("open", "Open"))
+///     .button(Button::new("dismiss", "Dismiss"));
+/// ```
+#[derive(Debug, Clone, SerializeDict, Type)]
 #[zvariant(signature = "a{sv}")]
-struct PortalNotification {
+pub struct Button {
+    action: String,
+    label: String,
+}
+
+impl Button {
+    /// Create a new action button with the given action key and human-readable label.
+    ///
+    /// The `action` string is what you receive back in the `ActionInvoked` signal when
+    /// the user clicks this button.  The `label` is the visible text shown on the button.
+    pub fn new(action: impl Into<String>, label: impl Into<String>) -> Self {
+        Button {
+            action: action.into(),
+            label: label.into(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// PortalNotification
+// ---------------------------------------------------------------------------
+
+/// Vardict sent to `org.freedesktop.portal.Notification.AddNotification`.
+///
+/// This is the wire representation of a notification sent through the XDG desktop
+/// portal (`org.freedesktop.portal.Notification`). It is constructed from a
+/// [`Notification`] via `PortalNotification::from(&notification)` and then
+/// serialized as an `a{sv}` vardict on the D-Bus call.
+///
+/// # Field mapping from [`Notification`]
+///
+/// | Portal field           | Source                                              |
+/// |------------------------|-----------------------------------------------------|
+/// | `title`                | `notification.summary`                              |
+/// | `body`                 | `notification.body`                                 |
+/// | `priority`             | `Hint::Urgency` → [`Priority`]; default `Normal`    |
+/// | `icon`                 | `Hint::ImagePath` → `file-descriptor`; `notification.icon` → `themed` |
+/// | `default-action`       | action pair with id `"default"` from `actions` vec  |
+/// | `buttons`              | remaining action pairs from `actions` vec           |
+/// | `markup-body`          | always `None` (not yet implemented)                 |
+/// | `sound`                | always `None` (not yet implemented)                 |
+/// | `default-action-target`| always `None` (no classic equivalent)               |
+///
+/// # Action conversion
+///
+/// Classic notifications store actions as a flat alternating `Vec<String>`:
+/// `["action-id-1", "Label 1", "action-id-2", "Label 2", ...]`.
+///
+/// The portal separates this into:
+/// - `default-action`: the label of the pair whose id is `"default"`.
+/// - `buttons`: all other pairs, each becoming a [`Button`] with `action` and `label`.
+#[derive(Debug, SerializeDict, Type)]
+#[zvariant(signature = "a{sv}")]
+pub struct PortalNotification {
+    /// The notification title (maps to `summary`).
     title: String,
+    /// The notification body text.
     body: String,
-    // #[zvariant(rename = "markup-body")]
-    // markup_body: Option<String>,
-    priority: Priority, // low, normal, high, urgent
+    /// Body text with markup. Always `None` in the current implementation.
+    #[zvariant(rename = "markup-body")]
+    markup_body: Option<String>,
+    /// Notification priority, derived from [`Urgency`](crate::Urgency).
+    priority: Priority,
+    /// The icon to display. Either a themed icon name or a file descriptor.
+    icon: Option<RawIcon>,
+    /// Sound to play. Always `None` in the current implementation.
+    sound: Option<Sound>,
+    /// The default action identifier, invoked when the notification body is clicked.
+    #[zvariant(rename = "default-action")]
+    default_action: Option<String>,
+    /// An optional parameter passed to the default action handler.
+    #[zvariant(rename = "default-action-target")]
+    default_action_target: Option<String>,
+    /// Additional action buttons shown alongside the notification.
+    buttons: Option<Vec<Button>>,
 }
 
 impl From<&Notification> for PortalNotification {
     fn from(notification: &Notification) -> Self {
-        let urgency = notification
+        // --- priority ---
+        let priority = notification
             .hints
             .iter()
-            .find(|h| matches!(h, Hint::Urgency(_)));
+            .find_map(|h| {
+                if let Hint::Urgency(u) = h {
+                    Some(Priority::from(*u))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(Priority::Normal);
 
-        eprintln!("urgency: {:?}", urgency);
+        log::debug!("portal: priority = {:?}", priority);
 
-        let priority = if let Some(Hint::Urgency(urgency)) = urgency {
-            Priority::from(*urgency)
-        } else {
-            Priority::Normal
+        // --- icon ---
+        let icon = {
+            let path_from_hint = notification.get_hints().find_map(|h| match h {
+                Hint::ImagePath(ref p) => Some(p.clone()),
+                _ => None,
+            });
+
+            if let Some(path) = path_from_hint {
+                log::debug!("portal: icon from image path '{}'", path);
+                Icon::open(&path).map(Into::into)
+            } else if let Some(name) = notification.icon.as_deref() {
+                log::debug!("portal: icon themed '{}'", name);
+                Some(Icon::themed(vec![name]).into())
+            } else {
+                None
+            }
         };
 
-        eprintln!("priority: {:?}", priority);
+        // --- actions → default-action + buttons ---
+        //
+        // Classic notifications store actions as a flat alternating vec:
+        //   ["action-id-1", "Label 1", "action-id-2", "Label 2", ...]
+        //
+        // The portal separates the "default" action from ordinary buttons.
+        let (default_action, buttons) = {
+            let pairs: Vec<(&str, &str)> = notification
+                .actions
+                .chunks_exact(2)
+                .map(|chunk| (chunk[0].as_str(), chunk[1].as_str()))
+                .collect();
+
+            if pairs.is_empty() {
+                (None, None)
+            } else {
+                let mut default: Option<String> = None;
+                let mut btns: Vec<Button> = Vec::new();
+
+                for (id, label) in pairs {
+                    if id == "default" {
+                        // The portal spec requires `default-action` to be the action *key*
+                        // (the id string), not the human-readable label.
+                        default = Some(id.to_owned());
+                    } else {
+                        btns.push(Button::new(id, label));
+                    }
+                }
+
+                let buttons = if btns.is_empty() { None } else { Some(btns) };
+                (default, buttons)
+            }
+        };
+
         Self {
             title: notification.summary.clone(),
             body: notification.body.clone(),
-            // markup_body: None,
+            markup_body: None,
             priority,
+            icon,
+            sound: None,
+            default_action,
+            default_action_target: None,
+            buttons,
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// D-Bus calls
+// ---------------------------------------------------------------------------
 
 async fn add_notification(
     notification: &Notification,
     id: &str,
     connection: &zbus::Connection,
-) -> Result<()> {
+) -> Result<NotificationHandle> {
     connection
         .call_method(
             NOTIFICATION_PORTAL_BUS_NAME.into(),
@@ -58,21 +379,170 @@ async fn add_notification(
             &(id, PortalNotification::from(notification)),
         )
         .await?;
+
+    Ok(NotificationHandle::new(
+        id,
+        connection.clone(),
+        notification.clone(),
+    ))
+}
+
+/// Re-send an existing notification via the portal, reusing its `id`.
+///
+/// Used by [`PortalNotificationHandle::update_fallible`] to replace a live
+/// notification in-place. The caller's connection is reused so no new session
+/// handshake is required and the signal subscription remains intact.
+pub(crate) async fn update_notification(
+    notification: &Notification,
+    id: &str,
+    connection: &zbus::Connection,
+) -> Result<()> {
+    add_notification(notification, id, connection).await?;
     Ok(())
 }
 
-pub(crate) async fn connect_and_send_notification(
-    notification: &Notification,
-    id: &str,
-    // ) -> Result<ZbusNotificationHandle> {
-) -> Result<()> {
-    let connection = zbus::Connection::session().await?;
-    add_notification(notification, id, &connection).await?;
+pub async fn remove_notification(id: &str, connection: &zbus::Connection) -> Result<()> {
+    connection
+        .call_method(
+            NOTIFICATION_PORTAL_BUS_NAME.into(),
+            NOTIFICATION_PORTAL_OBJECTPATH,
+            NOTIFICATION_PORTAL_INTERFACE.into(),
+            "RemoveNotification",
+            &id,
+        )
+        .await?;
 
     Ok(())
-    // Ok(ZbusNotificationHandle::new(
-    // id,
-    // connection,
-    // notification.clone(),
-    // ))
+}
+
+/// Send `notification` via the desktop portal.
+///
+/// A unique notification ID is generated automatically; it is stored in the returned
+/// [`NotificationHandle`] and used by `update()` and `close()`.
+pub(crate) async fn connect_and_send_notification(
+    notification: &Notification,
+) -> Result<NotificationHandle> {
+    let id = next_id();
+    let connection = zbus::Connection::session().await?;
+    add_notification(notification, &id, &connection).await
+}
+
+/// Build a [`PortalNotification`] wire type from a standalone
+/// [`portal::Notification`](crate::portal::Notification).
+fn portal_notif_from_standalone(n: &crate::portal::Notification) -> PortalNotification {
+    PortalNotification {
+        title: n.title.clone(),
+        body: n.body.clone().unwrap_or_default(),
+        markup_body: None,
+        priority: n.priority.unwrap_or(Priority::Normal),
+        // Icon cannot be cloned (Fd is not Clone), so we produce None here;
+        // callers that need the icon must pass an owned portal::Notification
+        // via connect_and_send_portal_notification instead.
+        icon: None,
+        sound: None,
+        default_action: n.default_action.clone(),
+        default_action_target: None,
+        buttons: if n.buttons.is_empty() {
+            None
+        } else {
+            Some(n.buttons.clone())
+        },
+    }
+}
+
+/// Re-send a portal notification on an **existing** connection, replacing the
+/// visible notification in-place.
+///
+/// This is the core of `handle.update()` for portal handles: because the portal
+/// scopes its active-notification table by `(app_id, id)` and evicts all entries
+/// for an `app_id` when the originating D-Bus sender disconnects, updates **must**
+/// reuse the same connection that was used to send the original notification.
+/// Opening a new connection would cause the portal to treat the call as a fresh
+/// notification from a different sender rather than a replacement.
+pub(crate) async fn send_portal_notification_on_connection(
+    notification: &crate::portal::Notification,
+    id: &str,
+    connection: &zbus::Connection,
+) -> Result<()> {
+    let portal_notif = portal_notif_from_standalone(notification);
+
+    connection
+        .call_method(
+            NOTIFICATION_PORTAL_BUS_NAME.into(),
+            NOTIFICATION_PORTAL_OBJECTPATH,
+            NOTIFICATION_PORTAL_INTERFACE.into(),
+            "AddNotification",
+            &(id, portal_notif),
+        )
+        .await?;
+
+    Ok(())
+}
+
+/// Send a standalone [`portal::Notification`](crate::portal::Notification) via the
+/// desktop portal.
+///
+/// If the caller supplied an explicit ID via `.id()`, that ID is used; otherwise a
+/// process-unique monotonic ID is generated.  The ID is stored in the returned handle.
+///
+/// # Connection lifetime and updates
+///
+/// The portal daemon (xdg-desktop-portal) scopes its active-notification table by
+/// `(app_id, id)` and calls `on_peer_disconnect` when a D-Bus sender goes away,
+/// removing **all** notifications originating from that sender.  For unsandboxed apps
+/// this means: if the connection that sent the original `AddNotification` is closed, the
+/// portal forgets the notification.  A subsequent `AddNotification` with the same ID
+/// from a **new** connection is treated as a fresh notification, not a replacement.
+///
+/// Therefore, to update an existing notification in-place, always use
+/// [`PortalNotificationHandle::update_with`] (or [`PortalNotificationHandle::update`])
+/// on the handle returned by this function — those methods reuse the same connection.
+pub(crate) async fn connect_and_send_portal_notification(
+    notification: crate::portal::Notification,
+) -> Result<NotificationHandle> {
+    let id = notification.id.clone().unwrap_or_else(next_id);
+    let connection = zbus::Connection::session().await?;
+
+    // Build the PortalNotification wire type directly from the standalone builder
+    // fields.  We consume `notification` here so we can move the Icon (which is not
+    // Clone because Fd is not Clone).
+    let portal_notif = PortalNotification {
+        title: notification.title.clone(),
+        body: notification.body.clone().unwrap_or_default(),
+        markup_body: None,
+        priority: notification.priority.unwrap_or(Priority::Normal),
+        icon: notification.icon.map(Into::into),
+        sound: None,
+        default_action: notification.default_action.clone(),
+        default_action_target: None,
+        buttons: if notification.buttons.is_empty() {
+            None
+        } else {
+            Some(notification.buttons)
+        },
+    };
+
+    connection
+        .call_method(
+            NOTIFICATION_PORTAL_BUS_NAME.into(),
+            NOTIFICATION_PORTAL_OBJECTPATH,
+            NOTIFICATION_PORTAL_INTERFACE.into(),
+            "AddNotification",
+            &(id.as_str(), portal_notif),
+        )
+        .await?;
+
+    // Build a minimal classic Notification for the handle.  The handle uses this only
+    // for the legacy update() path (which re-sends via PortalNotification::from); for
+    // the preferred update_with() path it is not consulted at all.
+    let classic = {
+        let mut n = Notification::new();
+        n.summary = notification.title;
+        if let Some(body) = notification.body {
+            n.body = body;
+        }
+        n
+    };
+
+    Ok(NotificationHandle::new(id, connection, classic))
 }
