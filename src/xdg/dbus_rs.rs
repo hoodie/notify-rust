@@ -5,7 +5,7 @@ use dbus::{
 };
 
 use super::{bus::NotificationBus, NOTIFICATION_INTERFACE};
-use crate::response::{CloseReason, NotificationResponse, ResponseHandler};
+use crate::response::{NotificationResponse, ResponseHandler};
 
 use crate::{
     error::*,
@@ -14,103 +14,10 @@ use crate::{
     xdg::{ServerInformation, NOTIFICATION_OBJECTPATH},
 };
 
-pub mod bus {
+pub mod bus;
 
-    use crate::xdg::NOTIFICATION_DEFAULT_BUS;
-
-    fn skip_first_slash(s: &str) -> &str {
-        if let Some('/') = s.chars().next() {
-            &s[1..]
-        } else {
-            s
-        }
-    }
-
-    use std::path::PathBuf;
-
-    type BusNameType = dbus::strings::BusName<'static>;
-
-    #[derive(Clone, Debug)]
-    pub struct NotificationBus(BusNameType);
-
-    impl Default for NotificationBus {
-        fn default() -> Self {
-            Self(dbus::strings::BusName::from_slice(NOTIFICATION_DEFAULT_BUS).unwrap())
-        }
-    }
-
-    impl NotificationBus {
-        fn namespaced_custom(custom_path: &str) -> Option<String> {
-            // abusing path for semantic join
-            skip_first_slash(
-                PathBuf::from("/de/hoodie/Notification")
-                    .join(custom_path)
-                    .to_str()?,
-            )
-            .replace('/', ".")
-            .into()
-        }
-
-        pub fn custom(custom_path: &str) -> Option<Self> {
-            let name = dbus::strings::BusName::new(Self::namespaced_custom(custom_path)?).ok()?;
-            Some(Self(name))
-        }
-
-        pub fn into_name(self) -> BusNameType {
-            self.0
-        }
-    }
-}
-
-/// A handle to a shown notification.
-///
-/// This keeps a connection alive to ensure actions work on certain desktops.
-#[derive(Debug)]
-pub struct DbusNotificationHandle {
-    pub(crate) id: u32,
-    pub(crate) connection: Connection,
-    pub(crate) notification: Notification,
-}
-
-impl DbusNotificationHandle {
-    pub(crate) fn new(
-        id: u32,
-        connection: Connection,
-        notification: Notification,
-    ) -> DbusNotificationHandle {
-        DbusNotificationHandle {
-            id,
-            connection,
-            notification,
-        }
-    }
-
-    pub fn wait_for_action(self, invocation_closure: impl ResponseHandler) -> Result<()> {
-        wait_for_action_signal(&self.connection, self.id, invocation_closure)
-    }
-
-    pub fn close(self) {
-        let mut message = build_message("CloseNotification", Default::default());
-        message.append_items(&[self.id.into()]);
-        let _ = self.connection.send(message); // If closing fails there's nothing we could do anyway
-    }
-
-    pub fn on_close<F>(self, closure: F) -> Result<()>
-    where
-        F: FnOnce(CloseReason),
-    {
-        self.wait_for_action(|action: &NotificationResponse| {
-            if let NotificationResponse::Closed(reason) = action {
-                closure(*reason);
-            }
-        })
-    }
-
-    pub fn update(&mut self) -> Result<()> {
-        self.id = send_notification_via_connection(&self.notification, self.id, &self.connection)?;
-        Ok(())
-    }
-}
+mod handle;
+pub use handle::DbusNotificationHandle;
 
 pub fn send_notification_via_connection(
     notification: &Notification,
