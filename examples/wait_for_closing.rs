@@ -4,7 +4,6 @@ fn main() {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-
 fn main() {
     use notify_rust::CloseReason;
 

@@ -9,9 +9,10 @@ use zbus::{block_on, zvariant};
 
 use crate::{error::*, notification::Notification};
 
-pub use crate::response::ActionResponse;
-pub use crate::response::{CloseHandler, CloseReason, NotificationResponse, ResponseHandler};
-pub use crate::response::ResponseHandler as ActionResponseHandler;
+pub use crate::response::{
+    ActionResponse, CloseHandler, CloseReason, NotificationResponse,
+    ResponseHandler as ActionResponseHandler,
+};
 
 use std::ops::{Deref, DerefMut};
 
