@@ -377,7 +377,10 @@ impl NotificationHandle {
             #[cfg(feature = "zbus")]
             NotificationHandleInner::Zbus(ref mut inner) => inner.update(),
             #[cfg(feature = "zbus")]
-            NotificationHandleInner::ZbusPortal(ref mut inner) => Ok(inner.update()),
+            NotificationHandleInner::ZbusPortal(ref mut inner) => {
+                let _: () = inner.update();
+                Ok(())
+            }
         }
     }
 

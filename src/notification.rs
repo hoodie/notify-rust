@@ -561,7 +561,7 @@ impl Notification {
     /// through GNOME Shell's `org.gtk.Notifications` API. Before displaying anything,
     /// GNOME Shell performs two checks (source: `GtkNotificationDaemonAppSource`):
     ///
-    /// 1. The app ID must be a valid GLib application ID — reverse-DNS form with at
+    /// 1. The app ID must be a valid `GLib` application ID — reverse-DNS form with at
     ///    least two dot-separated alphanumeric components (e.g. `"org.example.MyApp"`).
     ///
     /// 2. A `.desktop` file named `<app-id>.desktop` must exist somewhere GIO can find

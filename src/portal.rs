@@ -324,7 +324,7 @@ impl Notification {
     /// through GNOME Shell's `org.gtk.Notifications` API. Before displaying anything,
     /// GNOME Shell performs two checks (source: `GtkNotificationDaemonAppSource`):
     ///
-    /// 1. The app ID must be a valid GLib application ID — reverse-DNS form with at
+    /// 1. The app ID must be a valid `GLib` application ID — reverse-DNS form with at
     ///    least two dot-separated alphanumeric components (e.g. `"org.example.MyApp"`).
     ///
     /// 2. A `.desktop` file named `<app-id>.desktop` must exist somewhere GIO can find
@@ -477,7 +477,7 @@ impl IntoPortalNotification for crate::notification::Notification {
         let (default_action, buttons) = {
             let pairs: Vec<(&str, &str)> = self
                 .actions
-                .chunks_exact(2)
+                .as_chunks::<2>().0.iter()
                 .map(|c| (c[0].as_str(), c[1].as_str()))
                 .collect();
 

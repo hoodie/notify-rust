@@ -148,7 +148,7 @@ pub(crate) async fn wait_for_action_signal_portal(
         let zbus::message::Type::Signal = header.message_type() else {
             continue;
         };
-        if header.member().map_or(true, |m| m != "ActionInvoked") {
+        if header.member().is_none_or(|m| m != "ActionInvoked") {
             continue;
         }
         match msg.body().deserialize::<(String, String, Vec<Value>)>() {
