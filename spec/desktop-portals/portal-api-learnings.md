@@ -258,7 +258,17 @@ implemented correctly for portal notifications. It will block forever waiting
 for an `ActionInvoked` signal that will never arrive for a plain dismissal.
 Document this limitation clearly rather than silently hanging.
 
+<<<<<<< HEAD
 The `NotificationClosed` signal _does_ exist on the **backend implementation**
+=======
+> **Update:** the *other* half of this — what happens once an action click *does* fire —
+> was also buggy: `on_close`/`wait_for_action` used to consume the handle (`self`), so
+> there was no way to call `handle.close()` afterwards even though the portal never
+> auto-removes a notification on action click (see §14). Fixed by changing both to take
+> `&self`, matching the classic handle. See `tasks.md` Phase 4 for details.
+
+The `NotificationClosed` signal *does* exist on the **backend implementation**
+>>>>>>> a1b9ff5 (WIP)
 interface (`org.freedesktop.impl.portal.Notification`), which only the portal
 daemon's backend plugins can access — not applications.
 
@@ -469,7 +479,42 @@ for unsandboxed applications.
 
 ---
 
-## 12. KDE Plasma (`xdg-desktop-portal-kde`) does not implement in-place update
+## 12. RETRACTED — KDE Plasma in-place update claim was unverified and appears incorrect
+
+> **Correction (2026-09-01):** This section originally claimed that KDE Plasma's portal
+> backend *always* creates a new popup instead of replacing an existing notification, and
+> cited `xdg-desktop-portal-kde/src/notification.cpp` — including a supposed source snippet
+> of `NotificationPortal::AddNotification` — as evidence.
+>
+> Both claims turned out to be wrong:
+>
+> 1. **Live re-test on KDE Plasma 6.7.4-2 (Wayland, `xdg-desktop-portal` 1.22.1-2 +
+>    `xdg-desktop-portal-kde` 6.7.4-2)** showed the *opposite* of what was documented here:
+>    - `examples/portal-update-plain.rs` (bare `handle.update()`, three consecutive calls) —
+>      the notification **refreshed in place**, not three separate popups.
+>    - `examples/portal-reuse.rs` (two `AddNotification` calls with the same explicit `.id()`,
+>      each on its own connection) — the second call **replaced** the first, not stacked.
+> 2. **The cited source file does not exist.** A full listing of `src/` in the
+>    `xdg-desktop-portal-kde` repo (`master` branch, checked via the GitLab API) contains no
+>    `notification.cpp` or similarly named file implementing `org.freedesktop.impl.portal.Notification`.
+>    The only notification-related file is `notificationinhibition.cpp`, which implements Do
+>    Not Disturb inhibition, not `AddNotification`. The C++ snippet quoted below as "what KDE
+>    actually does" cannot be verified against any file in the current upstream repository.
+>
+> **Conclusion:** this section's central claim was not backed by a real investigation and
+> should be treated as unreliable. It's possible an older KDE Plasma version genuinely had
+> this bug and it was later fixed (upstream KDE notifications went through some plumbing
+> changes around Plasma 6), or the original claim was simply fabricated. Either way, **do
+> not rely on the content below** — it is kept only for historical context. The corrected,
+> verified behavior is: bare `update()` and same-ID reuse both correctly replace the visible
+> notification in place on KDE Plasma 6.7.4. All rustdoc and example doc comments referencing
+> this alleged limitation have been corrected to reflect the verified behavior. If you hit a
+> KDE version where this *does* stack popups, please replace this section with an actually
+> verified repro (KDE version, exact commands, screenshots/observations) rather than
+> restoring the text below.
+
+<details>
+<summary>Original (unverified, likely incorrect) claim — kept for historical context only</summary>
 
 **TL;DR**: On KDE Plasma, calling `AddNotification` with the same ID a second time (even over the same D-Bus connection) will **always** produce a new popup rather than replacing the first. This is a backend bug/limitation, not a caller error.
 
@@ -486,7 +531,7 @@ The freedesktop.org portal spec says:
 
 The `xdg-desktop-portal` frontend daemon (`notification.c`) enforces exactly this: it records `(app_id, id) → sender` in its `active` hash table, and a second `AddNotification` with the same key is forwarded to the backend as a replacement call.
 
-### What KDE actually does
+### What KDE actually does (UNVERIFIED — see correction above)
 
 `xdg-desktop-portal-kde`'s `NotificationPortal::AddNotification` (`notification.cpp`) **unconditionally** creates a brand new `KNotification` object for every call, regardless of whether a notification with that `(app_id, id)` key already exists in `m_notifications`:
 
@@ -503,7 +548,7 @@ void NotificationPortal::AddNotification(const QString &app_id, const QString &i
 
 `QHash::insert` silently replaces the old pointer in the map (causing a memory leak of the old `KNotification` object) and `sendEvent()` fires a fresh popup. The old visible notification is **never closed** before the new one is shown.
 
-### Observed behaviour on KDE Plasma 6.x
+### Observed behaviour on KDE Plasma 6.x (UNVERIFIED — contradicted by live re-test, see correction above)
 
 | Call sequence                                            | GNOME / mako / dunst | KDE Plasma   |
 | -------------------------------------------------------- | -------------------- | ------------ |
@@ -556,26 +601,66 @@ AddNotification(id s, notification a{sv})
 
 The replacement semantic is entirely implicit: the backend is supposed to infer "this
 is a replacement" by checking whether `(app_id, id)` already exists in its active
+<<<<<<< HEAD
 table. That inference step is what `xdg-desktop-portal-kde` skips.
+=======
+table.  That inference step is what `xdg-desktop-portal-kde` supposedly skips (per the
+unverified claim above).
+>>>>>>> a1b9ff5 (WIP)
 
-In short:
+In short (per the unverified claim above — contradicted by live re-test):
 
+<<<<<<< HEAD
 | Interface                                             | Update mechanism                   | KDE behaviour       |
 | ----------------------------------------------------- | ---------------------------------- | ------------------- |
 | `org.freedesktop.Notifications.Notify`                | Explicit `replaces_id u` parameter | ✅ Works            |
 | `org.freedesktop.portal.Notification.AddNotification` | Implicit: same `(app_id, id)` key  | ❌ Always new popup |
+=======
+| Interface | Update mechanism | KDE behaviour |
+|-----------|-----------------|---------------|
+| `org.freedesktop.Notifications.Notify` | Explicit `replaces_id u` parameter | ✅ Works |
+| `org.freedesktop.portal.Notification.AddNotification` | Implicit: same `(app_id, id)` key | ❌ Always new popup (claimed, unverified) |
+>>>>>>> a1b9ff5 (WIP)
 
-### Upstream reference
+### Upstream reference (citation could not be verified — file does not exist upstream)
 
 - KDE source: `xdg-desktop-portal-kde/src/notification.cpp`, `NotificationPortal::AddNotification`
   — https://invent.kde.org/plasma/xdg-desktop-portal-kde/-/blob/master/src/notification.cpp
+  (checked 2026-09-01: no such file exists in `master`'s `src/` directory)
 - No upstream bug filed as of the time of writing (KDE 6.6.x); the issue has been
   present since at least the initial KNotification-based implementation.
+
+</details>
+
+---
+
+## 14. Notifications outlast the app: no auto-removal on `ActionInvoked`
+
+The portal spec says:
+
+> "Note that in contrast to most other portal requests, notifications are expected to
+> outlast the running application. If a user clicks on a notification after the
+> application has exited, it will get activated again."
+
+Neither `AddNotification` nor the `ActionInvoked` signal description say anything about
+the notification being removed when an action is invoked. In other words: clicking a
+button fires `ActionInvoked`, but the notification **stays visible** until the app calls
+`RemoveNotification` (or the user dismisses it). This was confirmed live on KDE Plasma
+6.7.4 — clicking a button did not make the popup disappear on its own.
+
+**Bug this exposed:** `PortalNotificationHandle::wait_for_action` and `::on_close` used
+to take `self` (consuming the handle), so there was no way to call `handle.close()`
+afterwards even if you wanted to clean up once the action was handled — the handle was
+already gone. Fixed by changing both to take `&self`, matching the classic
+`ZbusNotificationHandle`'s signatures. `examples/portal-actions.rs` and
+`examples/portal-on-close.rs` now call `handle.close()` after handling the response, and
+this was verified live to actually withdraw the notification.
 
 ---
 
 ## Summary: rules for correct portal notification updates
 
+<<<<<<< HEAD
 | Rule                                                                                           | Reason                                                                         |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Keep the `PortalNotificationHandle` alive for the duration                                     | Its `zbus::Connection` must not drop                                           |
@@ -585,3 +670,14 @@ In short:
 | Themed icons are always safe; file-descriptor icons require a sealed memfd and pass validation | Silent drop on failure; no error returned                                      |
 | Do not register a `NotificationClosed` signal listener on the portal interface                 | The signal does not exist; listening for it will block forever                 |
 | In-place update via `AddNotification` with the same ID is **not guaranteed** on KDE Plasma     | The KDE backend always creates a new popup; see §12                            |
+=======
+| Rule | Reason |
+|------|--------|
+| Keep the `PortalNotificationHandle` alive for the duration | Its `zbus::Connection` must not drop |
+| Use `handle.update_with(new_notification)` to change content | Sends `AddNotification` on the existing connection |
+| Never open a new connection for a second `AddNotification` with the same ID | Connection drop evicts the active-table entry; second send creates a new popup |
+| Use caller-supplied `.id()` only when you need stable identity across explicit close+reopen | Within a single handle lifetime the auto-generated ID is sufficient |
+| Themed icons are always safe; file-descriptor icons require a sealed memfd and pass validation | Silent drop on failure; no error returned |
+| Do not register a `NotificationClosed` signal listener on the portal interface | The signal does not exist; listening for it will block forever |
+| In-place update via `AddNotification` with the same ID replaces the notification correctly on KDE Plasma 6.7.4 (live-verified) | An earlier claim that KDE always creates a new popup turned out to be unverified/incorrect; see §12 |
+>>>>>>> a1b9ff5 (WIP)

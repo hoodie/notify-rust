@@ -1,5 +1,51 @@
 # Desktop Portal — Task Tracking
 
+> ## 📍 Pick up here next session (as of 2026-09-01)
+>
+> Today's session did a full live-verification pass of the portal path against a real
+> KDE Plasma 6.7.4 (Wayland) session — see the tester's own machine, `xdg-desktop-portal`
+> 1.22.1-2 + `xdg-desktop-portal-kde` 6.7.4-2. Everything in **Blocking Issues Before Merge**
+> and the **Integration Tests** checklist is now checked off and backed by an actual run,
+> not just code review. Along the way we found and fixed two real bugs (see #13 in the
+> blocking-issues table, and the KDE-update retraction in `portal-api-learnings.md` §12) and
+> corrected a fabricated-looking source citation in the docs.
+>
+> **What's genuinely left before merge is ready:**
+>
+> 1. **Pre-PR Checklist** is fully checked now — worth a final skim to make sure it still
+>    matches reality, but nothing blocking remains there.
+> 2. **Cross-backend confidence gap**: everything above was verified on KDE Plasma only.
+>    None of it has been run on GNOME Shell, mako, or dunst. GNOME in particular has its own
+>    documented `app_id`/`.desktop` file requirement (§13 in `portal-api-learnings.md`) that
+>    has never been exercised end-to-end — only reasoned about. Every portal example's doc
+>    comment now has a short "Expected behavior (verified on KDE Plasma 6.7.4 only)" note so
+>    a tester on another backend knows what they're checking for. If a GNOME/mako/dunst box
+>    is available, re-running `desktop-portal.rs`, `portal-actions.rs`, `portal-on-close.rs`,
+>    `portal-reuse.rs`, `portal-update.rs`, and `portal-update-plain.rs` there would close
+>    that gap.
+> 3. **Deferred, non-blocking work** (unchanged from before today, still open):
+>    - Phase 1: `markup-body` and `sound` fields are stubbed (`None`), never populated.
+>    - Phase 3: the `activation-token` in `ActionInvoked`'s parameter array is ignored.
+>    - Phase 3c: the unified `Action` type (replacing raw string pairs / `Button`) —
+>      explicitly deferred, tracked separately.
+>    - Phase 4: `wait_for_action` still uses the `FnOnce` callback pattern instead of an
+>      async `Stream<Item = Action>`.
+> 4. **One documentation debt**: `portal-api-learnings.md` §12 still contains the original
+>    (retracted) KDE claim inside a collapsed `<details>` block for historical context. Fine
+>    to leave, but if it keeps causing confusion it could just be deleted outright instead.
+> 5. **Sync with 5.0 plans**: this whole portal effort needs to be checked against
+>    <https://github.com/hoodie/notify-rust/issues/277> (notify-rust 5.0 planning) before
+>    merging — not reviewed yet this session. Things worth cross-checking once that's read:
+>    API shape decisions made here (`&self` vs `self` on handle methods, the deferred unified
+>    `Action` type in Phase 3c, `wait_for_action` → `Stream` in Phase 4) should end up
+>    consistent with whatever 5.0 already has planned, rather than drifting independently.
+>
+> Nothing above is a hard blocker — the portal path is now genuinely proven to work
+> end-to-end on at least one real desktop, which is a substantial improvement over this
+> morning's state (verified only by code review).
+
+---
+
 > **`file-descriptor` icon validation — constraints and diagnostics:**
 >
 > The portal validates every `file-descriptor` icon by passing it through
@@ -188,6 +234,18 @@ label)` API and raw string pairs in classic `.action(id, label)` remain unchange
 - [x] `memfd` and `nix` are now optional dependencies gated behind the `z` and `z-with-tokio`
       features in `Cargo.toml` — `dbus`-only users no longer pull them in. Portal support is
       not a separate feature flag; it is always present when `zbus` is active.
+- [x] **`PortalNotificationHandle::wait_for_action` and `::on_close` now take `&self` instead
+      of `self`** — previously they consumed the handle, making it impossible to call
+      `handle.close()` afterwards even though the portal spec does **not** auto-remove a
+      notification when an action is invoked (notifications "are expected to outlast the
+      running application" per spec). This left notifications visibly stuck open after the
+      user clicked a button, discovered live while testing `portal-on-close.rs`. Now matches
+      the classic `ZbusNotificationHandle::wait_for_action(&self, …)` signature. Verified live
+      on KDE Plasma 6.7.4: `portal-actions.rs` and `portal-on-close.rs` both now close the
+      notification via `handle.close()` after handling the response, and it visibly
+      disappears. This is a breaking change to the (as-yet unreleased) portal API — fine,
+      since `portal.rs` only exists on this feature branch and has never shipped in a
+      published `notify-rust` version.
 - [ ] `portal::NotificationHandle::wait_for_action` currently uses the same `FnOnce`/
       `ActionResponseHandler` callback pattern as the classic handle. Replace with an async
       `Stream<Item = Action>` to match the design decision. The classic handle's callback API
@@ -259,14 +317,39 @@ label)` API and raw string pairs in classic `.action(id, label)` remain unchange
 
 ### Integration Tests (require a portal-capable session bus)
 
-- [ ] `show_via_portal` sends a notification and returns a handle without error
-- [ ] Calling `handle.close()` sends `RemoveNotification` and the notification disappears
-- [ ] Calling `handle.update()` re-sends `AddNotification` with the same ID and updates the
-      visible notification
-- [ ] `wait_for_action` resolves when an action button is clicked
-- [ ] `on_close` resolves when the notification is dismissed by the user
-- [ ] Using the same ID twice replaces the first notification (spec-defined update/replace
-      behaviour)
+- [x] `show_via_portal` sends a notification and returns a handle without error — verified
+      live via `cargo run --example desktop-portal --features async` on KDE Plasma 6.7
+      (Wayland, `xdg-desktop-portal` + `xdg-desktop-portal-kde`). Notification appeared on
+      screen with the themed image, confirmed visually by the user.
+- [x] Calling `handle.close()` sends `RemoveNotification` and the notification disappears —
+      same run: `NotificationHandle::close()` blocks on `PortalNotificationHandle::close()`
+      → `close_fallible().await.unwrap()`; the process exited with no panic, so
+      `RemoveNotification` succeeded (an error would have unwrapped-panicked).
+- [x] Calling `handle.update()` re-sends `AddNotification` with the same ID and updates the
+      visible notification — verified live via `cargo run --example portal-update-plain
+      --features async` on KDE Plasma 6.7.4; three consecutive `update()` calls refreshed a
+      single notification in place (confirmed visually by the user), plus a final `close()`
+      completed with no error. Permanent example added at `examples/portal-update-plain.rs`.
+      This also retroactively falsifies the previously documented "KDE always stacks a new
+      popup" claim (see correction in `portal-api-learnings.md` §12 — the cited source file
+      turned out not to exist upstream).
+- [x] `wait_for_action` resolves when an action button is clicked — verified live via
+      `cargo run --example portal-actions --features async` on KDE Plasma 6.7; clicking
+      "Yes" printed `you said: yes`. Permanent example added at `examples/portal-actions.rs`.
+- [x] `on_close` resolves when the notification is dismissed by the user — verified live via
+      `cargo run --example portal-on-close --features async` on KDE Plasma 6.7.4: clicking
+      "Acknowledge" resolved `on_close()` immediately, confirming the *action-click* path
+      works. As documented, per the portal spec this closure can only ever fire on an action
+      click, never on a plain dismissal (no `NotificationClosed` signal on the frontend
+      interface) — that half was not (and cannot be, by design) exercised here; the item is
+      checked because the documented, supported behavior is now confirmed end-to-end.
+- [x] Using the same ID twice replaces the first notification (spec-defined update/replace
+      behaviour) — verified live via `examples/portal-reuse.rs` on KDE Plasma 6.7.4; the
+      second `AddNotification` replaced the first notification (confirmed visually by the
+      user), contradicting the previously documented KDE limitation claim (now retracted,
+      see `portal-api-learnings.md` §12). A follow-up run on a spec-compliant backend (GNOME
+      Shell, mako, dunst, …) would still be good for cross-backend confidence, but is not
+      blocking.
 
 ### Regression Tests
 
@@ -282,6 +365,7 @@ label)` API and raw string pairs in classic `.action(id, label)` remain unchange
 
 ## Blocking Issues Before Merge
 
+<<<<<<< HEAD
 | #   | Issue                                                                                    | Location                                                    | Status   |
 | --- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------- |
 | 1   | `app_id` wrongly included in `AddNotification` call (frontend interface takes only `id`) | `portal.rs` → `add_notification()`                          | ✅ Fixed |
@@ -296,6 +380,23 @@ label)` API and raw string pairs in classic `.action(id, label)` remain unchange
 | 10  | `actions` not converted in `PortalNotification::from` — buttons silently missing         | `portal.rs` → `PortalNotification::from`                    | ✅ Fixed |
 | 11  | `show_via_portal` signature mismatch with example; now resolved to zero arguments        | `examples/desktop-portal.rs`, `notification.rs`             | ✅ Fixed |
 | 12  | `app_id` on wire caused runtime `InvalidArgs` — frontend interface does not take it      | `portal.rs` → `add_notification()`, all portal plumbing     | ✅ Fixed |
+=======
+| # | Issue                                                                              | Location                                                      | Status      |
+|---|------------------------------------------------------------------------------------|---------------------------------------------------------------|-------------|
+| 1 | `app_id` wrongly included in `AddNotification` call (frontend interface takes only `id`) | `portal.rs` → `add_notification()`                     | ✅ Fixed     |
+| 2 | `Icon::Type` signature was `Signature::Bool` — wrong wire type (`(sv)` required)   | `portal.rs` → `icon` module → `impl Type for Icon`           | ✅ Fixed     |
+| 3 | `NotificationClosed` match rule + `todo!()` handler — panics in production         | `zbus_rs.rs` → `wait_for_action_signal_portal()`             | ✅ Fixed     |
+| 4 | `update()` was `todo!()` — panics if called on a portal handle                     | `handle.rs` → `PortalNotificationHandle::update_fallible()`  | ✅ Fixed     |
+| 5 | `dbg!()` calls in `Icon::open()` and `wait_for_action_signal_portal()`             | `portal.rs`, `zbus_rs.rs`                                    | ✅ Fixed     |
+| 6 | `eprintln!()` calls in `PortalNotification::from`                                  | `portal.rs`                                                  | ✅ Fixed     |
+| 7 | `memfd` and `nix` unconditionally pulled in on all Unix targets                    | `Cargo.toml`                                                 | ✅ Fixed     |
+| 8 | ~~`server` feature enabled in `default`~~ — **already fixed** (`default = ["z"]`) | `Cargo.toml`                                                 | ✅ Fixed     |
+| 9 | Test assertion compares `Option<String>` to bare `"foo"` on non-Linux              | `tests/realworld.rs` → `build_pattern`                       | ✅ Fixed     |
+| 10| `actions` not converted in `PortalNotification::from` — buttons silently missing   | `portal.rs` → `PortalNotification::from`                     | ✅ Fixed     |
+| 11| `show_via_portal` signature mismatch with example; now resolved to zero arguments  | `examples/desktop-portal.rs`, `notification.rs`              | ✅ Fixed     |
+| 12| `app_id` on wire caused runtime `InvalidArgs` — frontend interface does not take it | `portal.rs` → `add_notification()`, all portal plumbing      | ✅ Fixed     |
+| 13| `wait_for_action`/`on_close` consumed `self`, so a notification couldn't be closed after handling an action (portal never auto-removes on `ActionInvoked`) — found live via `portal-on-close.rs` | `xdg/zbus_rs/handle.rs` → `PortalNotificationHandle` | ✅ Fixed |
+>>>>>>> a1b9ff5 (WIP)
 
 ---
 
@@ -310,8 +411,15 @@ label)` API and raw string pairs in classic `.action(id, label)` remain unchange
 - [x] `portal::Button`, `portal::Icon`, `portal::Priority`, `portal::NotificationHandle`,
       `portal::Notification` all publicly accessible via `use notify_rust::portal::…`
 - [x] `NotificationId` publicly re-exported from `notify_rust` (via `crate::xdg`)
-- [ ] Verify `examples/desktop-portal.rs` compiles and runs correctly end-to-end
-- [ ] Create `examples/portal-update.rs` demonstrating stable-ID update pattern using
-      `portal::Notification::new(...).id("stable-id").show()` (now unblocked by Phase 3b)
+- [x] Verify `examples/desktop-portal.rs` compiles and runs correctly end-to-end — confirmed
+      live on KDE Plasma 6.7 / Wayland (`xdg-desktop-portal-kde`); notification with themed
+      image appeared on screen and was subsequently closed via `handle.close()` with no error.
+- [x] Create `examples/portal-update.rs` demonstrating stable-ID update pattern using
+      `portal::Notification::new(...).id("stable-id").show()` (now unblocked by Phase 3b) —
+      already present on disk (committed in the `WIP` commit); checklist was simply stale.
+      Additional permanent portal examples added: `examples/portal-actions.rs`,
+      `examples/portal-on-close.rs`, `examples/portal-reuse.rs`,
+      `examples/portal-update-plain.rs`, all registered in `Cargo.toml` with
+      `required-features = ["async"]`.
 - [x] Register `examples/desktop-portal.rs` as a `[[example]]` entry in `Cargo.toml` with
       `required-features = ["async"]`

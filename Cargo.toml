@@ -114,3 +114,23 @@ required-features = ["async"]
 name = "portal-update"
 path = "examples/portal-update.rs"
 required-features = ["async"]
+
+[[example]]
+name = "portal-actions"
+path = "examples/portal-actions.rs"
+required-features = ["async"]
+
+[[example]]
+name = "portal-on-close"
+path = "examples/portal-on-close.rs"
+required-features = ["async"]
+
+[[example]]
+name = "portal-reuse"
+path = "examples/portal-reuse.rs"
+required-features = ["async"]
+
+[[example]]
+name = "portal-update-plain"
+path = "examples/portal-update-plain.rs"
+required-features = ["async"]

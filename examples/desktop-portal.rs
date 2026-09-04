@@ -100,7 +100,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This restriction is specific to the GNOME portal backend.  Other backends
     // do not enforce an app-ID lookup and will show portal notifications
     // unconditionally, even when launched from a terminal.
+    // -------------------------------------------------------------------------
+    // Expected behavior (verified on KDE Plasma 6.7.4 only, see tasks.md)
+    // -------------------------------------------------------------------------
     //
+    // Notification with image appears, then closes after 2s via handle.close().
     // -------------------------------------------------------------------------
 
     let handle = Notification::new()

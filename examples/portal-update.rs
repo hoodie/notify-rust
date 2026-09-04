@@ -23,27 +23,15 @@
 //! `AddNotification` call, so the portal always sees the same sender and performs a
 //! true in-place replacement.
 //!
-//! # KDE Plasma caveat
-//!
-//! In-place update **does not work on KDE Plasma** regardless of connection reuse.
-//! `xdg-desktop-portal-kde`'s `NotificationPortal::AddNotification` unconditionally
-//! creates a new `KNotification` object on every call without first closing the
-//! existing one for that `(app_id, id)` key.  The result is that each `update_with()`
-//! call produces a new popup rather than replacing the existing one.
-//!
-//! This is a limitation of the KDE backend, not of `notify-rust` or the portal
-//! frontend.  On spec-compliant backends (GNOME Shell, mako, dunst, …) a single
-//! notification is shown and its content is replaced in place.
-//!
 //! Run with:
 //!
 //! ```text
 //! cargo run --example portal-update --features async
 //! ```
 //!
-//! On a spec-compliant backend you should see a single notification whose body text
-//! ticks from "0%" up to "100%" without a new popup appearing for each step.
-//! On KDE Plasma you will see one new popup per update step instead.
+//! # Expected behavior (verified on KDE Plasma 6.7.4 only, see tasks.md)
+//!
+//! One notification, body ticks from "0%" to "100%" — not a new popup per step.
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn main() {

@@ -110,10 +110,17 @@ impl PortalNotificationHandle {
     /// Blocks asynchronously until the portal emits an `ActionInvoked` signal for this
     /// notification's ID, then calls `invocation_closure` with the action key string.
     ///
+    /// Takes `&self` (unlike an earlier version of this method, which consumed `self`) so
+    /// the handle can still be used afterwards — typically to call
+    /// [`close`](Self::close) once the action has been handled. Per the portal spec,
+    /// notifications are **not** automatically removed when an action is invoked; they are
+    /// expected to outlast the application and remain visible until explicitly withdrawn via
+    /// `RemoveNotification` or dismissed by the user.
+    ///
     /// Note: `org.freedesktop.portal.Notification` does **not** define a
     /// `NotificationClosed` signal, so a plain dismissal by the user will never resolve
     /// this future.  Only explicit action button clicks will trigger the closure.
-    pub async fn wait_for_action(self, invocation_closure: impl ActionResponseHandler) {
+    pub async fn wait_for_action(&self, invocation_closure: impl ActionResponseHandler) {
         wait_for_action_signal_portal(&self.connection, &self.id, invocation_closure).await;
     }
 
@@ -134,12 +141,18 @@ impl PortalNotificationHandle {
 
     /// Execute `closure` when the notification is dismissed by the user.
     ///
+    /// Takes `&self` so the handle remains usable afterwards — e.g. to call
+    /// [`close`](Self::close) once the closure has run. The portal does **not**
+    /// automatically remove a notification just because an action was invoked (see
+    /// [`wait_for_action`](Self::wait_for_action) for details); if you want the
+    /// notification to disappear after handling an action, close it explicitly.
+    ///
     /// Note: `org.freedesktop.portal.Notification` does **not** expose a
     /// `NotificationClosed` signal.  This method blocks waiting for any
     /// `ActionInvoked` signal (which includes the user clicking a button); a
     /// plain dismissal will never resolve it.  Prefer using
     /// `wait_for_action` with an async runtime instead.
-    pub fn on_close<F>(self, closure: F)
+    pub fn on_close<F>(&self, closure: F)
     where
         F: FnOnce(CloseReason),
     {
@@ -202,16 +215,6 @@ impl PortalNotificationHandle {
     /// By reusing `self.connection` this method guarantees the portal sees the same
     /// sender for the entire lifetime of the notification.
     ///
-    /// # KDE Plasma limitation
-    ///
-    /// In-place update **does not work on KDE Plasma** regardless of connection reuse.
-    /// `xdg-desktop-portal-kde` unconditionally creates a new `KNotification` object
-    /// for every `AddNotification` call without first closing the existing one for that
-    /// `(app_id, id)` key, so each call to this method will produce a new popup rather
-    /// than replacing the visible one.  This is a bug in the KDE backend, not in this
-    /// library.  On spec-compliant backends (GNOME Shell, mako, dunst, …) a true
-    /// in-place replacement is performed.
-    ///
     /// # Errors
     ///
     /// Returns an error if the D-Bus call fails.
@@ -228,8 +231,7 @@ impl PortalNotificationHandle {
     /// Use [`update_with_fallible`](Self::update_with_fallible) to handle errors.
     ///
     /// See [`update_with_fallible`](Self::update_with_fallible) for an explanation of
-    /// why this reuses the existing connection rather than opening a new one, and for
-    /// the KDE Plasma caveat that applies to this method.
+    /// why this reuses the existing connection rather than opening a new one.
     pub async fn update_with(&mut self, notification: crate::portal::Notification) {
         self.update_with_fallible(notification).await.unwrap();
     }
