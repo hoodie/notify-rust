@@ -192,6 +192,9 @@ pub use macos::{
     request_auth_blocking, NotificationHandle,
 };
 
+#[cfg(target_os = "windows")]
+pub use windows::NotificationHandle;
+
 #[cfg(all(
     any(feature = "dbus", feature = "zbus"),
     unix,
