@@ -1,5 +1,12 @@
 # Changelog
 
+### [v4.18.2](https://github.com/hoodie/notify-rust/compare/v4.18.1...v4.18.2) (2026-10-07)
+
+#### Fixes
+
+* re-export `NotificationHandle` for `windows`
+([cb0d07e](https://github.com/hoodie/notify-rust/commit/cb0d07ec08377499c44cdbf027250ab7378024a6))
+
 ### [v4.18.1](https://github.com/hoodie/notify-rust/compare/v4.18.0...v4.18.1) (2026-09-27)
 
 #### Fixes
