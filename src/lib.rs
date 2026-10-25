@@ -94,6 +94,7 @@
 //! | `fn action(...)`             | ✔︎        | ⚠︎ (labels only)               | ✔︎                                  |         |
 //! | `fn id(...)`                 | ✔︎ (u32)  | ignored                       | ✔︎                                  |         |
 //! | `fn reply(...)`              | -        | ✔︎ (excludes actions)          | ✔︎                                  | -       |
+
 //! | `fn show(...)`               | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
 //! | `fn show_async(...)`         | ✔︎        |                               | ✔︎                                  |         |
 //! | `fn schedule(...)`           |          | ✔︎                             | ✔︎                                  |         |
@@ -107,6 +108,15 @@
 //! | `fn close(...)`           | ✔︎   |                               | ✔︎                            |         |
 //! | `fn update(...)`          | ✔︎   |                               | ✔︎                            |         |
 //! | `fn id(...)`              | ✔︎   |                               | ✔︎                            |         |
+//!
+//! ## `NsNotificationExt`
+//!
+//! Options only the `NSUserNotificationCenter` backend knows about (macOS only, `use notify_rust::NsNotificationExt`).
+//!
+//! | method                    | XDG | macOS (`NSUserNotifictation`) | macOS (`UNUserNotification`) | windows |
+//! |---------------------------|-----|-------------------------------|------------------------------|---------|
+//! | `fn close_button(...)`    | -   | ✔︎                             | ignored                      | -       |
+//! | `fn actions_label(...)`   | -   | ✔︎                             | ignored                      | -       |
 //!
 //! ## Functions
 //!
@@ -185,7 +195,7 @@ mod image;
 #[cfg(all(target_os = "macos", not(feature = "preview-macos-un")))]
 pub use macos::NotificationHandle;
 #[cfg(target_os = "macos")]
-pub use macos::{get_bundle_identifier_or_default, set_application};
+pub use macos::{get_bundle_identifier_or_default, set_application, NsNotificationExt};
 
 #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
 pub use macos::{

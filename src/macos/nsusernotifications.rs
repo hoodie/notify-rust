@@ -198,16 +198,18 @@ fn send_mac_notification(
         );
     }
 
+    let actions_label = notification.actions_label.as_deref().unwrap_or("Options");
     let main_button = match (notification.reply_placeholder.as_deref(), labels.as_slice()) {
         // NSUserNotification can't show a reply field and action buttons at once
         (Some(placeholder), _) => Some(mac_notification_sys::MainButton::Response(placeholder)),
         (None, []) => None,
         (None, [single]) => Some(mac_notification_sys::MainButton::SingleAction(single)),
         // "Options" is a neutral button title not present in labels, so no visual duplicate.
-        // Clicking the button directly (idx == LONG_MAX in ObjC) returns "Options"; we remap
+        // Clicking the button directly (idx == LONG_MAX in ObjC) returns the button title; we remap
         // that below to the first action's id.
         (None, _) => Some(mac_notification_sys::MainButton::DropdownActions(
-            "Options", &labels,
+            actions_label,
+            &labels,
         )),
     };
 
@@ -220,11 +222,15 @@ fn send_mac_notification(
         n.main_button(btn.clone());
     }
 
+    if let Some(ref label) = notification.close_button {
+        n.close_button(label);
+    }
+
     if asynchronous {
         log::trace!("Notification will be sent asynchronously");
     } else {
         log::trace!("Notification will be sent synchronously");
-        if force_close_button {
+        if force_close_button && notification.close_button.is_none() {
             // on_close needs a close button to block until the user dismisses
             n.close_button("Close");
         }

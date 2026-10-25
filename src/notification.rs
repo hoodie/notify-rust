@@ -92,6 +92,14 @@ pub struct Notification {
     #[cfg(target_os = "macos")]
     pub(crate) reply_placeholder: Option<String>,
 
+    /// See [`NsNotificationExt::close_button()`](crate::NsNotificationExt::close_button).
+    #[cfg(target_os = "macos")]
+    pub(crate) close_button: Option<String>,
+
+    /// See [`NsNotificationExt::actions_label()`](crate::NsNotificationExt::actions_label).
+    #[cfg(target_os = "macos")]
+    pub(crate) actions_label: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
 
@@ -624,6 +632,8 @@ impl Default for Notification {
             sound_name: Default::default(),
             path_to_image: None,
             reply_placeholder: None,
+            close_button: None,
+            actions_label: None,
             #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
             interruption_level: None,
             id: None,
