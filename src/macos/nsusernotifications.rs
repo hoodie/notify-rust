@@ -192,13 +192,21 @@ fn send_mac_notification(
         })
         .collect();
 
-    let main_button = match labels.as_slice() {
-        [] => None,
-        [single] => Some(mac_notification_sys::MainButton::SingleAction(single)),
+    if notification.reply_placeholder.is_some() && !labels.is_empty() {
+        log::warn!(
+            "NSUserNotification can't show a reply field and actions at once, ignoring actions"
+        );
+    }
+
+    let main_button = match (notification.reply_placeholder.as_deref(), labels.as_slice()) {
+        // NSUserNotification can't show a reply field and action buttons at once
+        (Some(placeholder), _) => Some(mac_notification_sys::MainButton::Response(placeholder)),
+        (None, []) => None,
+        (None, [single]) => Some(mac_notification_sys::MainButton::SingleAction(single)),
         // "Options" is a neutral button title not present in labels, so no visual duplicate.
         // Clicking the button directly (idx == LONG_MAX in ObjC) returns "Options"; we remap
         // that below to the first action's id.
-        _ => Some(mac_notification_sys::MainButton::DropdownActions(
+        (None, _) => Some(mac_notification_sys::MainButton::DropdownActions(
             "Options", &labels,
         )),
     };

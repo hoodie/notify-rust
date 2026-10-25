@@ -237,6 +237,15 @@ impl From<&Notification> for mac_usernotifications::Notification {
             }
         }
 
+        if let Some(ref placeholder) = n.reply_placeholder {
+            un = un.action(mac_usernotifications::Action::reply(
+                "__reply",
+                "Reply",
+                "Send",
+                placeholder,
+            ));
+        }
+
         if let Timeout::Milliseconds(ms) = n.timeout {
             un = un.timeout(Duration::from_millis(ms as u64));
         }

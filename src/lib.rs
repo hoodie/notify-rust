@@ -93,6 +93,7 @@
 //! | `fn interruption_level(...)` |          |                               | ✔︎                                  |         |
 //! | `fn action(...)`             | ✔︎        | ⚠︎ (labels only)               | ✔︎                                  |         |
 //! | `fn id(...)`                 | ✔︎ (u32)  | ignored                       | ✔︎                                  |         |
+//! | `fn reply(...)`              | -        | ✔︎ (excludes actions)          | ✔︎                                  | -       |
 //! | `fn show(...)`               | ✔︎        | ✔︎                             | ✔︎                                  | ✔︎       |
 //! | `fn show_async(...)`         | ✔︎        |                               | ✔︎                                  |         |
 //! | `fn schedule(...)`           |          | ✔︎                             | ✔︎                                  |         |

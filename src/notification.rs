@@ -88,6 +88,10 @@ pub struct Notification {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(crate) path_to_image: Option<String>,
 
+    /// Placeholder of the inline reply field, see [`Notification::reply()`].
+    #[cfg(target_os = "macos")]
+    pub(crate) reply_placeholder: Option<String>,
+
     #[cfg(target_os = "windows")]
     pub(crate) app_id: Option<String>,
 
@@ -221,6 +225,23 @@ impl Notification {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub fn sound_name(&mut self, name: &str) -> &mut Notification {
         self.sound_name = Some(name.to_owned());
+        self
+    }
+
+    /// Show an inline text field the user can reply with (macOS only).
+    ///
+    /// The submitted text is delivered as [`NotificationResponse::Reply`](crate::NotificationResponse::Reply).
+    ///
+    /// Use [`wait_for_response`](crate::NotificationHandle::wait_for_response) to receive it,
+    /// `wait_for_action` can't tell a reply apart from an action id.
+    ///
+    /// Platform behaviour:
+    /// - **`NSUserNotificationCenter`:** the reply field replaces any [actions](Notification::action),
+    ///   the system can't show both. A warning is logged if both are set.
+    /// - **`UNUserNotificationCenter`:** added as an extra "Reply" action next to the other actions.
+    #[cfg(target_os = "macos")]
+    pub fn reply(&mut self, placeholder: &str) -> &mut Notification {
+        self.reply_placeholder = Some(placeholder.to_owned());
         self
     }
 
@@ -448,6 +469,9 @@ impl Notification {
     /// Add an action.
     ///
     /// This adds a single action to the internal list of actions.
+    ///
+    /// On macOS with `NSUserNotificationCenter` actions are not shown if a reply field is set
+    /// via `reply()`.
     pub fn action(&mut self, identifier: &str, label: &str) -> &mut Notification {
         self.actions.push(identifier.to_owned());
         self.actions.push(label.to_owned());
@@ -599,6 +623,7 @@ impl Default for Notification {
             timeout: Timeout::Default,
             sound_name: Default::default(),
             path_to_image: None,
+            reply_placeholder: None,
             #[cfg(all(target_os = "macos", feature = "preview-macos-un"))]
             interruption_level: None,
             id: None,
