@@ -71,8 +71,16 @@ This is functionally identical to the default feature set.
 ## macOS support
 
 This library shines on linux and bsd, which is its original target platform.
-Lately it gained support for macOS thanks to [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
-However this only includes a small subset of the current functionality, since [`NSNotification`](https://developer.apple.com/reference/foundation/nsnotification)s don't have as many features.
+macOS is supported via two backends:
+
+- **`NSUserNotificationCenter`** (default) via [mac-notification-sys](https://crates.io/crates/mac-notification-sys).
+  Deprecated by Apple, but it works from plain CLI binaries without an app bundle.
+- **`UNUserNotificationCenter`** (preview, `--features preview-macos-un`) via [mac-usernotifications](https://crates.io/crates/mac-usernotifications).
+  The modern API, requires running from an app bundle.
+
+Both support actions, close callbacks, `wait_for_response()` and inline replies via `Notification::reply()`.
+Options that only the `NSUserNotificationCenter` backend knows about (close button and actions dropdown labels) live in the `NsNotificationExt` trait.
+See the [platform differences](https://docs.rs/notify-rust/latest/notify_rust/#platform-differences) for details.
 
 **call for participation:** You are a versed macOS UI developer with mad Objective-C skillz? <abbr title="pull request sil vous plait">PRSV</abbr>.
 
