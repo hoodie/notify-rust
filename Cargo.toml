@@ -45,7 +45,7 @@ log = "0.4"
 dbus = { version = "0.9", optional = true }
 lazy_static = { version = "1.5", optional = true }
 image = { version = "0.25", optional = true, default-features = false }
-zbus = { version = "5", optional = true, default-features = false }
+zbus = { version = "6", optional = true, default-features = false }
 serde = { version = "1", features = ["derive"], optional = true }
 env_logger = { version = "0.11", optional = true }                      # TODO: remove from here
 futures-lite = { version = "2.6.1" }
