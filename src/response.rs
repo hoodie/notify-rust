@@ -74,8 +74,8 @@ pub enum NotificationResponse {
 
     /// The user submitted an inline text reply.
     ///
-    /// Only produced by the `preview-macos-un` backend (macOS `UNUserNotificationCenter`
-    /// with an inline reply action). On all other backends this variant is never emitted.
+    /// Only produced on macOS (both backends) when the notification has a reply field,
+    /// see `Notification::reply()`. On all other platforms this variant is never emitted.
     Reply(String),
 
     /// The notification was closed without any action being taken.

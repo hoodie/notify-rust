@@ -19,7 +19,7 @@ fn main() {
         .wait_for_response(|response: &NotificationResponse| match response {
             NotificationResponse::Default => log::info!("body clicked"),
             NotificationResponse::Action(key) => log::info!("button {key:?} clicked"),
-            // inline replies only come from the macOS `preview-macos-un` backend
+            // inline replies only come from macOS, see `Notification::reply()`
             NotificationResponse::Reply(text) => log::info!("user replied: {text}"),
             // no more hardcoded `"__closed"`, the close reason is typed
             NotificationResponse::Closed(CloseReason::Dismissed) => {

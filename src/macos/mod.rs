@@ -1,3 +1,6 @@
+mod ns_ext;
+pub use ns_ext::NsNotificationExt;
+
 /// `NSUserNotificationCenter` backend.
 #[cfg(not(feature = "preview-macos-un"))]
 mod nsusernotifications;
