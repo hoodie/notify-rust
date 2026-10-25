@@ -222,6 +222,8 @@ fn send_mac_notification(
         }
     }
     n.asynchronous(asynchronous);
+    // without buttons mac-notification-sys would return right away instead of waiting for a click
+    n.wait_for_click(!asynchronous);
 
     if let Some(ref image_path) = notification.path_to_image {
         n.content_image(image_path);
