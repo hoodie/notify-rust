@@ -52,6 +52,16 @@ jobs:
       - name: clippy (default features)
         run: cargo clippy
 
+  nightly:
+    name: nightly (zbus compile check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo check --no-default-features --features z
+      - run: cargo check --no-default-features --features z-with-tokio
+
   windows:
     name: windows
     runs-on: windows-latest
