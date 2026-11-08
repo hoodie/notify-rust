@@ -9,7 +9,7 @@ pub fn setup(example_file: &str) -> bool {
             log::trace!("setup env_logger");
 
             // for NSUserNotifications we need to set the application bundle identifier to the default of safari
-            let bundle_id = notify_rust::get_bundle_identifier_or_default("safari");
+            let bundle_id = notify_rust::get_bundle_identifier_or_default("zed");
             notify_rust::set_application(&bundle_id).unwrap();
             log::trace!("set_application: {bundle_id}");
             true
