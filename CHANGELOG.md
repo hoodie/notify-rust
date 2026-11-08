@@ -1,5 +1,21 @@
 # Changelog
 
+## [v4.19.0](https://github.com/hoodie/notify-rust/compare/v4.18.2...v4.19.0) (2026-11-08)
+
+### Features
+
+* **macos:** add NsNotificationExt for close button and actions label
+([1ae865e](https://github.com/hoodie/notify-rust/commit/1ae865e469ba4fb810a7de72a4a57c67bfe142c9))
+* **macos:** add inline reply support
+([d311c2a](https://github.com/hoodie/notify-rust/commit/d311c2a78ac276e5ed4dc3fb20e2dac20688f7e8))
+
+### Fixes
+
+* **deps:** bump zbus to 6 and add nightly compile check
+([fcf3ce7](https://github.com/hoodie/notify-rust/commit/fcf3ce700cac717b4648e5c0ec729f741c5a6b57))
+* **macos:** wait for click in wait_for_action/wait_for_response without
+([f1eec5c](https://github.com/hoodie/notify-rust/commit/f1eec5c35735788550c09f1afc77838f43491758))
+
 ### [v4.18.2](https://github.com/hoodie/notify-rust/compare/v4.18.1...v4.18.2) (2026-10-07)
 
 #### Fixes
