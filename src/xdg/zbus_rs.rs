@@ -127,10 +127,9 @@ async fn wait_for_action_signal(
     let action_signal_rule = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
-        .unwrap()
         .member("ActionInvoked")
-        .unwrap()
-        .build();
+        .build()
+        .unwrap();
 
     let proxy = zbus::fdo::DBusProxy::new(connection).await.unwrap();
     proxy.add_match_rule(action_signal_rule).await.unwrap();
@@ -138,10 +137,9 @@ async fn wait_for_action_signal(
     let close_signal_rule = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
         .interface(xdg::NOTIFICATION_INTERFACE)
-        .unwrap()
         .member("NotificationClosed")
-        .unwrap()
-        .build();
+        .build()
+        .unwrap();
     proxy.add_match_rule(close_signal_rule).await.unwrap();
 
     while let Ok(Some(msg)) = zbus::MessageStream::from(connection).try_next().await {
